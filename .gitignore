@@ -1,0 +1,26 @@
+# --- Java / Spring Boot ---
+.gradle/
+build/
+target/
+*.class
+*.jar
+*.war
+
+# --- Node / Angular ---
+node_modules/
+/dist
+.angular/
+npm-debug.log*
+
+# --- Python (IA) ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# --- Base de données & Environnement ---
+.env
+*.sql
+*.sqlite
