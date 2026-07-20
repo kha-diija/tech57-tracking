@@ -1,0 +1,14 @@
+<div class="flex h-screen bg-gray-100">
+  <!-- Votre Sidebar partagée -->
+  <app-sidebar></app-sidebar>
+
+  <div class="flex flex-col flex-1 overflow-hidden">
+    <!-- Votre Navbar partagée -->
+    <app-navbar></app-navbar>
+
+    <!-- Zone principale dynamique où s'afficheront vos pages (dashboard, missions, etc.) -->
+    <main class="flex-1 overflow-x-hidden overflow-y-auto p-6">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
