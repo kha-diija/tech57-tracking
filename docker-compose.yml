@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -21,6 +22,45 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    networks:
+      - tech57-network
+
+  # ENVIRONNEMENT IA (Python 3.12 conforme à votre version)
+  ia:
+    image: python:3.12-slim
+    container_name: tech57-ia
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ia:/app
+    working_dir: /app
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    networks:
+      - tech57-network
+
+  # ENVIRONNEMENT BACKEND (Java 21 conforme à votre pom.xml)
+  backend:
+    image: eclipse-temurin:21-jdk
+    container_name: tech57-backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+    working_dir: /app
+    command: ./mvnw spring-boot:run
+    networks:
+      - tech57-network
+
+# ENVIRONNEMENT FRONTEND
+  frontend:
+    image: node:22
+    container_name: tech57-frontend
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app
+    working_dir: /app
+    command: sh -c "npm install && npm start -- --host 0.0.0.0 --disable-host-check"
     networks:
       - tech57-network
 
