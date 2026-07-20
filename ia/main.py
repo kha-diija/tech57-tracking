@@ -16,7 +16,7 @@ app.add_middleware(
 # Connexion à Ollama via le port exposé par Docker sur votre machine
 llm = ChatOllama(
     model="llama3",
-    base_url="http://localhost:11434"
+    base_url="http://tech57-ollama:11434"
 )
 
 class ChatRequest(BaseModel):

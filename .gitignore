@@ -24,3 +24,24 @@ ENV/
 .env
 *.sql
 *.sqlite
+
+# Frontend
+frontend/node_modules/
+frontend/.angular/
+frontend/dist/
+
+# Backend
+backend/target/
+backend/.mvn/
+backend/mvnw.cmd
+
+# IA & Base de données
+ia/.venv/
+ia/__pycache__/
+postgres_data/
+ollama_data/
+
+# Divers
+.DS_Store
+.idea/
+.vscode/
