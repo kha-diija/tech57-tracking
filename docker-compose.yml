@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: tech57-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: tech57_user
+      POSTGRES_PASSWORD: tech57_password
+      POSTGRES_DB: gestionevenements
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tech57-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: tech57-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - tech57-network
+
+volumes:
+  postgres_data:
+  ollama_data:
+
+networks:
+  tech57-network:
+    driver: bridge
