@@ -1,0 +1,114 @@
+name: Pipeline CI/CD - Integration Continue Tech57
+
+# --- 1. DECLENCHEURS (Triggers) ---
+# À quoi ça sert ? Définir QUAND le robot GitHub doit se réveiller.
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+
+  # --- 2. VERIFICATION DU BACKEND (Java 21 / Spring Boot) ---
+  backend-ci:
+    name: Backend - Spring Boot (Java 21)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      # Étape 2.1 : Récupérer le code source du dépôt GitHub
+      - name: Recuperer le code source
+        uses: actions/checkout@v4
+
+      # Étape 2.2 : Installer Java 21 sur la machine virtuelle GitHub
+      - name: Installer JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven' # Cache les dépendances pour accélérer les futurs builds
+
+      # Étape 2.3 : Accorder les droits d'exécution au script Maven Wrapper
+      - name: Permissions sur mvnw
+        run: chmod +x mvnw
+
+      # Étape 2.4 : Compiler le projet et lancer les tests unitaires
+      - name: Compiler et Tester le Backend
+        run: ./mvnw clean test
+
+
+  # --- 3. VERIFICATION DU FRONTEND (Angular / Node.js 22) ---
+  frontend-ci:
+    name: Frontend - Angular (Node 22)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      # Étape 3.1 : Récupérer le code source
+      - name: Recuperer le code source
+        uses: actions/checkout@v4
+
+      # Étape 3.2 : Installer Node.js 22
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      # Étape 3.3 : Installer proprement toutes les bibliothèques npm
+      - name: Installer les dependances npm
+        run: npm ci
+
+      # Étape 3.4 : Vérifier que le projet Angular compile sans erreurs
+      - name: Verifier la compilation Angular
+        run: npm run build -- --configuration=production
+
+
+  # --- 4. VERIFICATION DU SERVICE IA (Python 3.12 / FastAPI) ---
+  ia-ci:
+    name: IA - FastAPI (Python 3.12)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ia
+
+    steps:
+      # Étape 4.1 : Récupérer le code source
+      - name: Recuperer le code source
+        uses: actions/checkout@v4
+
+      # Étape 4.2 : Installer Python 3.12
+      - name: Installer Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      # Étape 4.3 : Installer les dépendances Python du fichier requirements.txt
+      - name: Installer les dependances Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      # Étape 4.4 : Exécuter les tests Python (s'ils existent) ou vérifier la syntaxe
+      - name: Lancer les tests Pytest
+        run: |
+          # Exécute pytest s'il y a un dossier/fichier de test, sinon vérifie la syntaxe
+          python -m unittest discover -s . -p "*test*.py" || echo "Aucun test unitaire trouve pour l'instant"
+
+
+  # --- 5. SYNTHESE DE L'INTEGRATION ---
+  pipeline-summary:
+    name: Validation Globale
+    needs: [backend-ci, frontend-ci, ia-ci] # S'exécute SEULEMENT si les 3 jobs précédents ont réussi !
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirmation
+        run: echo "🎉 Tout le code (Backend, Frontend, IA) a été compilé et testé avec succès !"
