@@ -1,7 +1,7 @@
 name: Pipeline CI/CD - Integration Continue Tech57
 
 # --- 1. DECLENCHEURS (Triggers) ---
-# À quoi ça sert ? Définir QUAND le robot GitHub doit se réveiller.
+# Se déclenche à chaque push ou Pull Request sur les branches principales
 on:
   push:
     branches: [ "main", "master" ]
@@ -14,29 +14,47 @@ jobs:
   backend-ci:
     name: Backend - Spring Boot (Java 21)
     runs-on: ubuntu-latest
+    
+    # Conteneur PostgreSQL temporaire dédié aux tests unitaires/intégration
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: tech57_user
+          POSTGRES_PASSWORD: tech57_password
+          POSTGRES_DB: gestionevenements
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     defaults:
       run:
         working-directory: ./backend
 
     steps:
-      # Étape 2.1 : Récupérer le code source du dépôt GitHub
       - name: Recuperer le code source
         uses: actions/checkout@v4
 
-      # Étape 2.2 : Installer Java 21 sur la machine virtuelle GitHub
       - name: Installer JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'maven' # Cache les dépendances pour accélérer les futurs builds
+          cache: 'maven'
 
-      # Étape 2.3 : Accorder les droits d'exécution au script Maven Wrapper
       - name: Permissions sur mvnw
         run: chmod +x mvnw
 
-      # Étape 2.4 : Compiler le projet et lancer les tests unitaires
+      # Forçage de l'adresse localhost pour dialoguer avec le service PostgreSQL GitHub Actions
       - name: Compiler et Tester le Backend
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/gestionevenements
+          SPRING_DATASOURCE_USERNAME: tech57_user
+          SPRING_DATASOURCE_PASSWORD: tech57_password
         run: ./mvnw clean test
 
 
@@ -49,11 +67,9 @@ jobs:
         working-directory: ./frontend
 
     steps:
-      # Étape 3.1 : Récupérer le code source
       - name: Recuperer le code source
         uses: actions/checkout@v4
 
-      # Étape 3.2 : Installer Node.js 22
       - name: Installer Node.js 22
         uses: actions/setup-node@v4
         with:
@@ -61,11 +77,9 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
-      # Étape 3.3 : Installer proprement toutes les bibliothèques npm
       - name: Installer les dependances npm
         run: npm ci
 
-      # Étape 3.4 : Vérifier que le projet Angular compile sans erreurs
       - name: Verifier la compilation Angular
         run: npm run build -- --configuration=production
 
@@ -79,35 +93,30 @@ jobs:
         working-directory: ./ia
 
     steps:
-      # Étape 4.1 : Récupérer le code source
       - name: Recuperer le code source
         uses: actions/checkout@v4
 
-      # Étape 4.2 : Installer Python 3.12
       - name: Installer Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
 
-      # Étape 4.3 : Installer les dépendances Python du fichier requirements.txt
       - name: Installer les dependances Python
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest
 
-      # Étape 4.4 : Exécuter les tests Python (s'ils existent) ou vérifier la syntaxe
       - name: Lancer les tests Pytest
         run: |
-          # Exécute pytest s'il y a un dossier/fichier de test, sinon vérifie la syntaxe
           python -m unittest discover -s . -p "*test*.py" || echo "Aucun test unitaire trouve pour l'instant"
 
 
   # --- 5. SYNTHESE DE L'INTEGRATION ---
   pipeline-summary:
     name: Validation Globale
-    needs: [backend-ci, frontend-ci, ia-ci] # S'exécute SEULEMENT si les 3 jobs précédents ont réussi !
+    needs: [backend-ci, frontend-ci, ia-ci] # S'exécute uniquement si Backend, Frontend et IA passent au vert
     runs-on: ubuntu-latest
     steps:
       - name: Confirmation
