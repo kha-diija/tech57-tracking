@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -39,15 +37,24 @@ services:
       - tech57-network
 
   # ENVIRONNEMENT BACKEND (Java 21 conforme à votre pom.xml)
+  # ENVIRONNEMENT BACKEND (Java 21)
   backend:
     image: eclipse-temurin:21-jdk
     container_name: tech57-backend
     ports:
       - "8080:8080"
+    environment:
+      # Surcharge automatique de l'URL pour Docker :
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/gestionevenements
+      - SPRING_DATASOURCE_USERNAME=tech57_user
+      - SPRING_DATASOURCE_PASSWORD=tech57_password
     volumes:
       - ./backend:/app
     working_dir: /app
     command: ./mvnw spring-boot:run
+    restart: on-failure
+    depends_on:
+      - postgres
     networks:
       - tech57-network
 
