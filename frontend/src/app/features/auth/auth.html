@@ -1,96 +1,104 @@
 <div class="auth-page">
   <div class="auth-page__backdrop"></div>
   <div class="auth-page__scrim"></div>
+  <div class="auth-page__glow" aria-hidden="true"></div>
 
   <main class="auth-page__stage">
-    <section class="auth-card" aria-labelledby="auth-title">
-      <header class="auth-card__header">
-        <span class="auth-card__eyebrow">TECH&#8209;57 &middot; Tracking &amp; Installation</span>
-        <h1 id="auth-title" class="auth-card__title">Bon retour</h1>
-        <p class="auth-card__subtitle">Connectez-vous pour accéder à votre espace de suivi.</p>
-      </header>
+    <div class="auth-card-shell">
+      <section class="auth-card" aria-labelledby="auth-title">
+        <span class="auth-card__badge">
+          <img src="/logo.png" alt="TECH-57" class="auth-card__badge-img" />
+        </span>
 
-      <form class="auth-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
-        <div
-          class="auth-form__alert"
-          role="alert"
-          *ngIf="errorMessage() as message"
-        >
-          {{ message }}
-        </div>
+        <header class="auth-card__header">
+          <span class="auth-card__eyebrow">TECH&#8209;57 &middot; Tracking &amp; Installation</span>
+          <h1 id="auth-title" class="auth-card__title">Bon retour</h1>
+          <p class="auth-card__subtitle">Connectez-vous pour accéder à votre espace de suivi.</p>
+        </header>
 
-        <div class="auth-field">
-          <label class="auth-field__label" for="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            class="auth-field__input"
-            placeholder="nom.prenom@tech57.ma"
-            formControlName="email"
-            autocomplete="email"
-            [class.auth-field__input--invalid]="email.invalid && email.touched"
-          />
-          <span class="auth-field__error" *ngIf="email.invalid && email.touched">
-            Veuillez saisir un email valide.
-          </span>
-        </div>
-
-        <div class="auth-field">
-          <label class="auth-field__label" for="motDePasse">Mot de passe</label>
-          <div class="auth-field__password-wrapper">
-            <input
-              id="motDePasse"
-              [type]="showPassword() ? 'text' : 'password'"
-              class="auth-field__input"
-              placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
-              formControlName="motDePasse"
-              autocomplete="current-password"
-              [class.auth-field__input--invalid]="motDePasse.invalid && motDePasse.touched"
-            />
-            <button
-              type="button"
-              class="auth-field__toggle"
-              (click)="togglePasswordVisibility()"
-              [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
-            >
-              <svg *ngIf="!showPassword()" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <svg *ngIf="showPassword()" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19M6.61 6.61C3.9 8.28 2 12 2 12s4 7 11 7a10.9 10.9 0 0 0 5.1-1.24M1 1l22 22"/>
-                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
-              </svg>
-            </button>
+        <form class="auth-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+          <div
+            class="auth-form__alert"
+            role="alert"
+            *ngIf="errorMessage() as message"
+          >
+            {{ message }}
           </div>
-          <span class="auth-field__error" *ngIf="motDePasse.invalid && motDePasse.touched">
-            Le mot de passe doit contenir au moins 6 caractères.
-          </span>
-        </div>
 
-        <div class="auth-form__row">
-          <a class="auth-form__link" href="#" (click)="$event.preventDefault()">Mot de passe oublié ?</a>
-        </div>
+          <div class="auth-field">
+            <label class="auth-field__label" for="email">Email</label>
+            <div class="auth-field__control">
+              <span class="auth-field__icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16v16H4z" opacity="0"/>
+                  <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+                  <path d="m4 7 8 6 8-6"/>
+                </svg>
+              </span>
+              <input
+                id="email"
+                type="email"
+                class="auth-field__input"
+                placeholder="nom.prenom@tech57.ma"
+                formControlName="email"
+                autocomplete="email"
+                [class.auth-field__input--invalid]="email.invalid && email.touched"
+              />
+            </div>
+            <span class="auth-field__error" *ngIf="email.invalid && email.touched">
+              Veuillez saisir un email valide.
+            </span>
+          </div>
 
-        <button type="submit" class="auth-form__submit" [disabled]="isLoading()">
-          <span *ngIf="!isLoading()">Se connecter</span>
-          <span *ngIf="isLoading()" class="auth-form__spinner" aria-hidden="true"></span>
-        </button>
+          <div class="auth-field">
+            <label class="auth-field__label" for="motDePasse">Mot de passe</label>
+            <div class="auth-field__control auth-field__password-wrapper">
+              <span class="auth-field__icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="10.5" width="16" height="10" rx="2.2"/>
+                  <path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/>
+                </svg>
+              </span>
+              <input
+                id="motDePasse"
+                [type]="showPassword() ? 'text' : 'password'"
+                class="auth-field__input"
+                placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+                formControlName="motDePasse"
+                autocomplete="current-password"
+                [class.auth-field__input--invalid]="motDePasse.invalid && motDePasse.touched"
+              />
+              <button
+                type="button"
+                class="auth-field__toggle"
+                (click)="togglePasswordVisibility()"
+                [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+              >
+                <svg *ngIf="!showPassword()" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg *ngIf="showPassword()" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19M6.61 6.61C3.9 8.28 2 12 2 12s4 7 11 7a10.9 10.9 0 0 0 5.1-1.24M1 1l22 22"/>
+                  <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                </svg>
+              </button>
+            </div>
+            <span class="auth-field__error" *ngIf="motDePasse.invalid && motDePasse.touched">
+              Le mot de passe doit contenir au moins 6 caractères.
+            </span>
+          </div>
 
-        <div class="auth-form__divider">
-          <span>Ou continuer avec</span>
-        </div>
+          <div class="auth-form__row">
+            <a class="auth-form__link" href="#" (click)="$event.preventDefault()">Mot de passe oublié ?</a>
+          </div>
 
-        <button type="button" class="auth-form__google" (click)="onGoogleLogin()">
-          <svg width="18" height="18" viewBox="0 0 18 18">
-            <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.87 2.7-6.62Z"/>
-            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.9v2.33A9 9 0 0 0 9 18Z"/>
-            <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.68 9c0-.59.1-1.16.27-1.7V4.97H.9A9 9 0 0 0 0 9c0 1.45.35 2.83.9 4.03l3.05-2.33Z"/>
-            <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .9 4.97l3.05 2.33C4.66 5.17 6.65 3.58 9 3.58Z"/>
-          </svg>
-          <span>Continuer avec Google</span>
-        </button>
-      </form>
-    </section>
+          <button type="submit" class="auth-form__submit" [disabled]="isLoading()">
+            <span *ngIf="!isLoading()">Se connecter</span>
+            <span *ngIf="isLoading()" class="auth-form__spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+      </section>
+    </div>
   </main>
 </div>
