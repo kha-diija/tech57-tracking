@@ -32,6 +32,30 @@ export const routes: Routes = [
       // },
     ],
   },
+    {
+    path: 'admin/dashboard',
+    canActivate: [roleGuard(['ADMINISTRATEUR'])],
+    loadComponent: () =>
+      import('./features/admin/admin-dashboard').then((m) => m.AdminDashboard),
+  },
+  {
+    path: 'technicien/dashboard',
+    canActivate: [roleGuard(['TECHNICIEN'])],
+    loadComponent: () =>
+      import('./features/technicien/technicien-dashboard').then((m) => m.TechnicienDashboard),
+  },
+  {
+    path: 'client/dashboard',
+    canActivate: [roleGuard(['OBSERVATEUR'])],
+    loadComponent: () =>
+      import('./features/client/client-dashboard').then((m) => m.ClientDashboard),
+  },
+  {
+    path: 'gestionnaire/dashboard',
+    canActivate: [roleGuard(['GESTIONNAIRE_STOCK'])],
+    loadComponent: () =>
+      import('./features/gestionnaire/gestionnaire-dashboard').then((m) => m.GestionnaireDashboard),
+  },
 
   { path: '**', redirectTo: 'login' },
 ];
