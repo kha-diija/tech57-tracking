@@ -1,1 +1,50 @@
-<p>sidebar works!</p>
+<aside class="sidebar" [class.sidebar--collapsed]="collapsed">
+  <!-- En-tête -->
+  <div class="sidebar__header">
+    <div class="sidebar__brand">
+      <div class="sidebar__logo-badge">
+        <span class="sidebar__logo-symbol">57</span>
+      </div>
+      <div class="sidebar__logo-text" *ngIf="!collapsed">
+        <span class="sidebar__logo-title">TECH<span class="sidebar__logo-accent">-57</span></span>
+        <span class="sidebar__logo-sub">Installation Tracking</span>
+      </div>
+    </div>
+
+    <button class="sidebar__toggle-btn" (click)="toggle()" title="Réduire/Agrandir">
+      <lucide-icon [img]="icons.PanelLeft" [size]="18"></lucide-icon>
+    </button>
+  </div>
+
+  <!-- Menu de navigation -->
+  <nav class="sidebar__nav">
+    <a *ngFor="let item of navItems"
+       [routerLink]="item.route"
+       routerLinkActive="sidebar__link--active"
+       class="sidebar__link">
+      <lucide-icon [img]="item.icon" [size]="20" class="sidebar__icon"></lucide-icon>
+      <span *ngIf="!collapsed" class="sidebar__label">{{ item.label }}</span>
+      <span *ngIf="!collapsed" class="sidebar__active-dot"></span>
+    </a>
+
+    <!-- Déconnexion intégrée au menu -->
+    <button class="sidebar__link sidebar__logout-link" (click)="logout()" title="Déconnexion">
+      <lucide-icon [img]="icons.LogOut" [size]="20" class="sidebar__icon"></lucide-icon>
+      <span *ngIf="!collapsed" class="sidebar__label">Déconnexion</span>
+    </button>
+  </nav>
+
+  <!-- Carte IA -->
+  <div class="sidebar__ai-card" *ngIf="!collapsed">
+    <div class="sidebar__ai-header">
+      <lucide-icon [img]="icons.Sparkles" [size]="16" class="sidebar__ai-icon"></lucide-icon>
+      <span>ASSISTANT IA</span>
+    </div>
+    <p class="sidebar__ai-text">
+      Optimisez vos trajets et générez vos rapports d'intervention.
+    </p>
+    <button class="sidebar__ai-btn" [routerLink]="'/chat-ia'">
+      Ouvrir l'assistant
+    </button>
+  </div>
+</aside>

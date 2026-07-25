@@ -1,14 +1,17 @@
-<div class="flex h-screen bg-gray-100">
-  <!-- Votre Sidebar partagée -->
-  <app-sidebar></app-sidebar>
+<!-- Si nous sommes sur la page /login, afficher uniquement le contenu -->
+<ng-container *ngIf="isAuthPage; else fullAppLayout">
+  <router-outlet></router-outlet>
+</ng-container>
 
-  <div class="flex flex-col flex-1 overflow-hidden">
-    <!-- Votre Navbar partagée -->
-    <app-navbar></app-navbar>
-
-    <!-- Zone principale dynamique où s'afficheront vos pages (dashboard, missions, etc.) -->
-    <main class="flex-1 overflow-x-hidden overflow-y-auto p-6">
-      <router-outlet></router-outlet>
-    </main>
+<!-- Sinon, afficher toute l'application avec la Sidebar et la Navbar -->
+<ng-template #fullAppLayout>
+  <div class="app-shell">
+    <app-sidebar [collapsed]="sidebarCollapsed" (collapsedChange)="sidebarCollapsed = $event"></app-sidebar>
+    <div class="app-shell__main" [class.app-shell__main--collapsed]="sidebarCollapsed">
+      <app-navbar></app-navbar>
+      <main class="app-shell__content">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
   </div>
-</div>
+</ng-template>
