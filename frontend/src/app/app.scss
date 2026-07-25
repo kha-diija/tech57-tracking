@@ -1,0 +1,31 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  /* Utilisation des variables CSS pour s'adapter au Light et Dark Mode */
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+
+  &__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 17.5rem; /* Largeur de la sidebar dépliée */
+    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+    background-color: var(--bg-app);
+
+    /* Marge réduite quand la sidebar est repliée */
+    &--collapsed {
+      margin-left: 5.25rem;
+    }
+  }
+
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}

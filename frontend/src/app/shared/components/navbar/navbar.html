@@ -1,1 +1,48 @@
-<p>navbar works!</p>
+<header class="navbar">
+  <!-- Fil d'Ariane Dynamique -->
+  <div class="navbar__breadcrumb">
+    <span>Accueil</span>
+    <span class="navbar__breadcrumb-sep">/</span>
+    <span class="navbar__breadcrumb-active">{{ breadcrumbTitle }}</span>
+  </div>
+
+  <!-- Actions Droite -->
+  <div class="navbar__actions">
+    <button class="navbar__icon-btn" (click)="toggleTheme()" [title]="isDarkMode ? 'Mode clair' : 'Mode sombre'">
+      <lucide-icon [img]="isDarkMode ? icons.Sun : icons.Moon" [size]="18"></lucide-icon>
+    </button>
+
+    <button class="navbar__icon-btn" title="Aide" routerLink="/guides">
+      <lucide-icon [img]="icons.HelpCircle" [size]="18"></lucide-icon>
+    </button>
+
+    <button class="navbar__icon-btn" title="Notifications">
+      <lucide-icon [img]="icons.Bell" [size]="18"></lucide-icon>
+      <span class="navbar__dot"></span>
+    </button>
+
+    <!-- Profil Utilisateur & Déconnexion dans la Navbar -->
+    <div class="navbar__user-wrapper">
+      <button class="navbar__user-btn" (click)="toggleUserMenu()">
+        <div class="navbar__avatar">AA</div>
+        <div class="navbar__user-info">
+          <span class="navbar__user-name">{{ userName }}</span>
+          <span class="navbar__user-role">{{ userRole }}</span>
+        </div>
+        <lucide-icon [img]="icons.ChevronDown" [size]="14" class="navbar__chevron"></lucide-icon>
+      </button>
+
+      <!-- Menu Déroulant Profil & Déconnexion -->
+      <div class="navbar__dropdown" *ngIf="showUserMenu">
+        <a routerLink="/settings" class="navbar__dropdown-item" (click)="showUserMenu = false">
+          <lucide-icon [img]="icons.User" [size]="16"></lucide-icon>
+          <span>Mon profil</span>
+        </a>
+        <button class="navbar__dropdown-item navbar__dropdown-item--danger" (click)="logout()">
+          <lucide-icon [img]="icons.LogOut" [size]="16"></lucide-icon>
+          <span>Déconnexion</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
