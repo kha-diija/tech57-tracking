@@ -1,6 +1,9 @@
 package com.example.backend.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Sous-classe `technicien`.
@@ -16,6 +19,17 @@ public class Technicien extends Utilisateur {
 
     @Column(name = "matricule", length = 50)
     private String matricule;
+
+    // --- NOUVELLES RELATIONS v3.0 ---
+
+    @OneToMany(mappedBy = "technicienRecepteur")
+    private List<SortieMateriel> sortiesRecues = new ArrayList<>();
+
+    @OneToMany(mappedBy = "demandeur")
+    private List<SortieMateriel> sortiesDemandees = new ArrayList<>();
+
+    @OneToMany(mappedBy = "technicien")
+    private List<RetourMateriel> retoursEffectues = new ArrayList<>();
 
     public String getVehicule() {
         return vehicule;
