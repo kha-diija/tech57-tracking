@@ -5,16 +5,19 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Sous-classe `technicien`.
+ */
 @Entity
 @Table(name = "technicien")
+@DiscriminatorValue("TECHNICIEN")
 @PrimaryKeyJoinColumn(name = "id_utilisateur")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Technicien extends Utilisateur {
 
-    @Column(length = 100)
+    @Column(name = "vehicule", length = 100)
     private String vehicule;
 
-    @Column(length = 50)
+    @Column(name = "matricule", length = 50)
     private String matricule;
 
     // --- NOUVELLES RELATIONS v3.0 ---
@@ -27,4 +30,20 @@ public class Technicien extends Utilisateur {
 
     @OneToMany(mappedBy = "technicien")
     private List<RetourMateriel> retoursEffectues = new ArrayList<>();
+
+    public String getVehicule() {
+        return vehicule;
+    }
+
+    public void setVehicule(String vehicule) {
+        this.vehicule = vehicule;
+    }
+
+    public String getMatricule() {
+        return matricule;
+    }
+
+    public void setMatricule(String matricule) {
+        this.matricule = matricule;
+    }
 }

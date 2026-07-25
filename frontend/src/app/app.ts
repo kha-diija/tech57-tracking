@@ -1,15 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Sidebar } from './shared/components/sidebar/sidebar';
-import { Navbar } from './shared/components/navbar/navbar';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, Sidebar, Navbar], 
+  imports: [RouterOutlet], // ← Sidebar et Navbar supprimés
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
-export class AppComponent {
-  title = 'frontend';
-}
+export class App {}
