@@ -57,10 +57,3 @@ html, body {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
-
-/* Appliquer la couleur de fond dynamique sur le conteneur principal */
-main, .main-content, .content, router-outlet + * {
-  background-color: var(--bg-app);
-  color: var(--text-main);
-  transition: background-color 0.3s ease, color 0.3s ease;
-}

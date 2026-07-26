@@ -15,6 +15,9 @@ import { Guides } from './features/guides/guides';
 import { Settings } from './features/settings/settings';
 
 export const routes: Routes = [
+  // 0. Redirection par défaut de la racine vers /login
+  { path: '', pathMatch: 'full', redirectTo: 'login' },
+
   // 1. Route publique : Login (SANS sidebar/navbar)
   { path: 'login', component: Auth },
 
@@ -24,7 +27,6 @@ export const routes: Routes = [
     component: AppShell,
     canActivate: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: Dashboard },
       { path: 'missions', component: Missions },
       { path: 'etablissements', component: Etablissements },
@@ -34,7 +36,7 @@ export const routes: Routes = [
       { path: 'guides', component: Guides },
       { path: 'settings', component: Settings },
 
-      // Dashboards spécifiques par rôle (placés ICI dans AppShell)
+      // Dashboards spécifiques par rôle
       {
         path: 'admin/dashboard',
         canActivate: [roleGuard(['ADMINISTRATEUR'])],
