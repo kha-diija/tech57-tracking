@@ -1,56 +1,29 @@
 package com.example.backend.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
+import java.util.Set;
 
-/**
- * Correspond à la table `role`.
- * nom attendu : Administrateur, Technicien, Observateur, GestionnaireStock...
- */
 @Entity
 @Table(name = "role")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Role {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_role")
-    private Integer id;
+    private Integer idRole;
 
-    @Column(name = "nom", nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true, length = 50)
     private String nom;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    public Role() {
-    }
-
-    public Role(Integer id, String nom, String description) {
-        this.id = id;
-        this.nom = nom;
-        this.description = description;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getNom() {
-        return nom;
-    }
-
-    public void setNom(String nom) {
-        this.nom = nom;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    @ManyToMany
+    @JoinTable(
+            name = "role_permission",
+            joinColumns = @JoinColumn(name = "id_role"),
+            inverseJoinColumns = @JoinColumn(name = "id_permission")
+    )
+    private Set<Permission> permissions;
 }

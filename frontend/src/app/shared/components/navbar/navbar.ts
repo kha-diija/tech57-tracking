@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd, RouterModule } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -12,7 +12,6 @@ import {
   User, 
   ChevronDown 
 } from 'lucide-angular';
-import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -22,26 +21,18 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './navbar.scss'
 })
 export class Navbar implements OnInit {
-  private authService = inject(AuthService);
-  private router = inject(Router);
-
   breadcrumbTitle = 'Tableau de bord';
   isDarkMode = true;
   showUserMenu = false;
 
-  userName = 'Utilisateur';
-  userRole = 'Membre';
-  userInitials = 'U';
+  userName = 'EL AZZOUZI AYA';
+  userRole = 'Administrateur';
 
   readonly icons = { HelpCircle, Bell, Sun, Moon, LogOut, User, ChevronDown };
 
-
+  // Dictionnaire des titres selon l'URL
   private routeTitles: { [key: string]: string } = {
     '/dashboard': 'Tableau de bord',
-    '/admin/dashboard': 'Tableau de bord Administrateur',
-    '/technicien/dashboard': 'Tableau de bord Technicien',
-    '/client/dashboard': 'Tableau de bord Client',
-    '/gestionnaire/dashboard': 'Tableau de bord Gestionnaire',
     '/etablissements': 'Établissements',
     '/missions': 'Missions',
     '/stock': 'Stock & Matériel',
@@ -50,42 +41,23 @@ export class Navbar implements OnInit {
     '/guides': 'Guides & Support',
     '/settings': 'Paramètres'
   };
-  
+
+  constructor(private router: Router) {}
 
   ngOnInit() {
     document.documentElement.classList.add('dark');
     
-    // 1. Charger les données réactives de l'utilisateur
-    this.loadUserData();
-
-    // 2. Gestion du fil d'Ariane
+    // Détecte le changement de route pour mettre à jour le fil d'Ariane
     this.updateBreadcrumb(this.router.url);
     this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event: NavigationEnd) => {
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
         this.updateBreadcrumb(event.urlAfterRedirects || event.url);
       });
   }
 
-  private loadUserData() {
-    // Appel du signal currentUser()
-    const user = this.authService.currentUser();
-
-    if (user) {
-      const nom = user.nom || '';
-      const prenom = user.prenom || '';
-      
-      this.userName = `${prenom} ${nom}`.trim() || user.email || 'Utilisateur';
-      this.userRole = user.role || 'Membre';
-
-      const pInitial = prenom ? prenom.charAt(0).toUpperCase() : '';
-      const nInitial = nom ? nom.charAt(0).toUpperCase() : '';
-      this.userInitials = (pInitial + nInitial) || this.userName.charAt(0).toUpperCase() || 'U';
-    }
-  }
-
   private updateBreadcrumb(url: string) {
-    const cleanUrl = url.split('?')[0];
+    const cleanUrl = url.split('?')[0]; // Nettoie les paramètres d'URL si besoin
     this.breadcrumbTitle = this.routeTitles[cleanUrl] || 'Page';
   }
 
@@ -105,6 +77,6 @@ export class Navbar implements OnInit {
   }
 
   logout() {
-    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }

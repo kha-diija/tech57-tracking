@@ -1,4 +1,20 @@
+version: '3.8'
+
 services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: tech57-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: tech57_user
+      POSTGRES_PASSWORD: tech57_password
+      POSTGRES_DB: gestionevenements
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tech57-network
+
   ollama:
     image: ollama/ollama:latest
     container_name: tech57-ollama
@@ -9,7 +25,7 @@ services:
     networks:
       - tech57-network
 
-  # ENVIRONNEMENT IA (Python 3.12)
+  # ENVIRONNEMENT IA (Python 3.12 conforme à votre version)
   ia:
     image: python:3.12-slim
     container_name: tech57-ia
@@ -22,26 +38,20 @@ services:
     networks:
       - tech57-network
 
-  # ENVIRONNEMENT BACKEND (Java 21)
+  # ENVIRONNEMENT BACKEND (Java 21 conforme à votre pom.xml)
   backend:
     image: eclipse-temurin:21-jdk
     container_name: tech57-backend
     ports:
       - "8080:8080"
-    environment:
-      # Surcharge explicite de l'URL pour pointer vers Neon Cloud :
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-quiet-math-aglw807t-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require
-      - SPRING_DATASOURCE_USERNAME=neondb_owner
-      - SPRING_DATASOURCE_PASSWORD=npg_JN2sakXUmlf8
     volumes:
       - ./backend:/app
     working_dir: /app
     command: ./mvnw spring-boot:run
-    restart: on-failure
     networks:
       - tech57-network
 
-  # ENVIRONNEMENT FRONTEND
+# ENVIRONNEMENT FRONTEND
   frontend:
     image: node:22
     container_name: tech57-frontend
@@ -55,6 +65,7 @@ services:
       - tech57-network
 
 volumes:
+  postgres_data:
   ollama_data:
 
 networks:

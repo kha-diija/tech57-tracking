@@ -1,25 +1,23 @@
 package com.example.backend.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
+import java.util.Set;
 
-/**
- * Sous-classe `observateur` — correspond au rôle "Client" côté métier
- * (accès lecture seule), selon le schéma v3.
- */
 @Entity
 @Table(name = "observateur")
-@DiscriminatorValue("OBSERVATEUR")
 @PrimaryKeyJoinColumn(name = "id_utilisateur")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Observateur extends Utilisateur {
 
     @Column(name = "type_client", length = 50)
     private String typeClient;
 
-    public String getTypeClient() {
-        return typeClient;
-    }
-
-    public void setTypeClient(String typeClient) {
-        this.typeClient = typeClient;
-    }
+    @ManyToMany
+    @JoinTable(
+            name = "etablissement_observateur",
+            joinColumns = @JoinColumn(name = "id_observateur"),
+            inverseJoinColumns = @JoinColumn(name = "id_etablissement")
+    )
+    private Set<Etablissement> etablissementsRattaches;
 }
