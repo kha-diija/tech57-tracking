@@ -1,7 +1,7 @@
 .app-shell {
   display: flex;
   min-height: 100vh;
-  width: 100%;
+  /* Utilisation des variables CSS pour s'adapter au Light et Dark Mode */
   background-color: var(--bg-app);
   color: var(--text-main);
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -10,16 +10,13 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-width: 0; /* Évite le débordement horizontal */
-    
-    /* 260px colle exactement au bord droit de la Sidebar */
-    margin-left: 260px; 
-    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-left: 17.5rem; /* Largeur de la sidebar dépliée */
+    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
     background-color: var(--bg-app);
 
-    /* Quand la sidebar est repliée */
+    /* Marge réduite quand la sidebar est repliée */
     &--collapsed {
-      margin-left: 70px; /* Aligné sur la version réduite de la sidebar */
+      margin-left: 5.25rem;
     }
   }
 

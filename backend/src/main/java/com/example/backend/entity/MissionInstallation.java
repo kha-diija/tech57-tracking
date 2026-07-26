@@ -3,14 +3,11 @@ package com.example.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "mission_installation")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class MissionInstallation {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_mission")
@@ -42,12 +39,4 @@ public class MissionInstallation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_equipe")
     private EquipeTechnique equipe;
-
-    // --- NOUVELLES RELATIONS v3.0 ---
-
-    @OneToMany(mappedBy = "missionInstallation", cascade = CascadeType.ALL)
-    private List<SortieMateriel> sortiesMateriel = new ArrayList<>();
-
-    @OneToMany(mappedBy = "missionInstallation", cascade = CascadeType.ALL)
-    private List<RetourMateriel> retoursMateriel = new ArrayList<>();
 }

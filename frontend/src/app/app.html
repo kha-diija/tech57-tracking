@@ -1,1 +1,17 @@
-<router-outlet></router-outlet>
+<!-- Si nous sommes sur la page /login, afficher uniquement le contenu -->
+<ng-container *ngIf="isAuthPage; else fullAppLayout">
+  <router-outlet></router-outlet>
+</ng-container>
+
+<!-- Sinon, afficher toute l'application avec la Sidebar et la Navbar -->
+<ng-template #fullAppLayout>
+  <div class="app-shell">
+    <app-sidebar [collapsed]="sidebarCollapsed" (collapsedChange)="sidebarCollapsed = $event"></app-sidebar>
+    <div class="app-shell__main" [class.app-shell__main--collapsed]="sidebarCollapsed">
+      <app-navbar></app-navbar>
+      <main class="app-shell__content">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
+  </div>
+</ng-template>

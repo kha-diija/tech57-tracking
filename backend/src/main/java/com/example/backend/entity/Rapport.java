@@ -1,7 +1,6 @@
 package com.example.backend.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.AssertTrue;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -9,7 +8,6 @@ import java.time.LocalDateTime;
 @Table(name = "rapport")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Rapport {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_rapport")
@@ -34,13 +32,4 @@ public class Rapport {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_mission")
     private MissionInstallation mission;
-
-    /**
-     * Contrôle d'exclusivité (XOR) : 
-     * Un rapport doit appartenir à une intervention OU à une mission, mais jamais aux deux ni à aucun.
-     */
-    @AssertTrue(message = "Le rapport doit être lié exclusivement à une intervention OU à une mission.")
-    public boolean isValidRattachement() {
-        return (intervention != null) ^ (mission != null);
-    }
 }
