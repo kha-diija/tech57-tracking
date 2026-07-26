@@ -1,33 +1,42 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { 
-  LucideAngularModule, 
-  LayoutDashboard, 
-  Building2, 
-  Briefcase, 
-  Package, 
-  Users, 
-  Bot, 
-  BookOpen, 
-  Settings, 
-  LogOut, 
+import { AuthService } from '../../services/auth.service'; // ⚠️ adapte selon le chemin réel depuis sidebar/
+import {
+  LucideAngularModule,
+  LayoutDashboard,
+  Building2,
+  Briefcase,
+  Package,
+  Users,
+  Bot,
+  BookOpen,
+  Settings,
+  LogOut,
   PanelLeft,
   Sparkles
 } from 'lucide-angular';
+import { UserRole } from '../../models/auth.model'; // ⚠️ adapte selon le chemin réel
+
+interface NavItem {
+  label: string;
+  route: string;
+  icon: any;
+  roles: UserRole[];
+}
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
   imports: [CommonModule, RouterModule, LucideAngularModule],
   templateUrl: './sidebar.html',
-  styleUrl: './sidebar.scss' // Si ça ne s'applique pas, remplace par styleUrls: ['./sidebar.scss']
+  styleUrl: './sidebar.scss'
 })
 export class Sidebar {
   @Input() collapsed = false;
   @Output() collapsedChange = new EventEmitter<boolean>();
 
-  constructor(private router: Router) {}
+  private authService = inject(AuthService);
 
   readonly icons = {
     LogOut,
@@ -35,16 +44,24 @@ export class Sidebar {
     Sparkles
   };
 
-  navItems = [
-    { label: 'Tableau de bord', route: '/dashboard', icon: LayoutDashboard },
-    { label: 'Établissements', route: '/etablissements', icon: Building2 },
-    { label: 'Missions', route: '/missions', icon: Briefcase },
-    { label: 'Stock & Matériel', route: '/stock', icon: Package },
-    { label: 'Utilisateurs', route: '/users', icon: Users },
-    { label: 'Assistant IA', route: '/chat-ia', icon: Bot },
-    { label: 'Guides & Support', route: '/guides', icon: BookOpen },
-    { label: 'Paramètres', route: '/settings', icon: Settings }
+  private readonly allNavItems: NavItem[] = [
+    { label: 'Tableau de bord', route: '/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
+    { label: 'Établissements', route: '/etablissements', icon: Building2, roles: ['ADMINISTRATEUR'] },
+    { label: 'Missions', route: '/missions', icon: Briefcase, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
+    { label: 'Stock & Matériel', route: '/stock', icon: Package, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
+    { label: 'Utilisateurs', route: '/users', icon: Users, roles: ['ADMINISTRATEUR'] },
+    { label: 'Assistant IA', route: '/chat-ia', icon: Bot, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
+    { label: 'Guides & Support', route: '/guides', icon: BookOpen, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
+    { label: 'Paramètres', route: '/settings', icon: Settings, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] }
   ];
+
+  navItems = computed(() => {
+    const role = this.authService.currentUser()?.role;
+    if (!role) return [];
+    return this.allNavItems.filter(item => item.roles.includes(role));
+  });
+
+  constructor(private router: Router) {}
 
   toggle() {
     this.collapsed = !this.collapsed;
