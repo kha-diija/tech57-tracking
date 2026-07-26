@@ -1,1 +1,211 @@
-<p>dashboard works!</p>
+<div class="dashboard">
+
+  <!-- En-tête -->
+  <div class="dashboard__header">
+    <div>
+      <span class="dashboard__eyebrow">
+        <span class="dashboard__eyebrow-dot"></span>
+        Opérations en direct
+      </span>
+      <h1 class="dashboard__title">Bonjour, {{ prenomAdmin() }} 👋</h1>
+      <p class="dashboard__subtitle">
+        Voici l'état de vos installations et de vos équipes aujourd'hui.
+      </p>
+    </div>
+
+    <div class="dashboard__actions">
+      <button class="btn btn--ghost">
+        <lucide-icon [img]="icons.Filter" [size]="16"></lucide-icon>
+        Filtrer
+      </button>
+      <button class="btn btn--ghost">
+        <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
+        Exporter
+      </button>
+      <button class="btn btn--primary">
+        <lucide-icon [img]="icons.Plus" [size]="16"></lucide-icon>
+        Nouvelle mission
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi-card" *ngFor="let kpi of kpis()">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">{{ kpi.label }}</span>
+        <span class="kpi-card__icon">
+          <lucide-icon [img]="kpiIcon(kpi.id)" [size]="16"></lucide-icon>
+        </span>
+      </div>
+      <div class="kpi-card__value">
+        {{ kpi.value }}<span class="kpi-card__suffix" *ngIf="kpi.suffix">{{ kpi.suffix }}</span>
+      </div>
+      <div class="kpi-card__footer">
+        <span class="kpi-card__trend" [class.kpi-card__trend--down]="!kpi.trendUp">
+          <lucide-icon [img]="kpi.trendUp ? icons.ArrowUpRight : icons.ArrowDownRight" [size]="12"></lucide-icon>
+          {{ kpi.trend }}{{ kpi.suffix === '%' ? ' pts' : '%' }}
+        </span>
+        <span class="kpi-card__comparison">{{ kpi.comparison }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Missions & matériel -->
+  <div class="dashboard__row dashboard__row--2-1">
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Missions \u2014 7 derniers jours</h2>
+          <p class="panel__subtitle">Planifiées vs réalisées</p>
+        </div>
+        <div class="panel__legend">
+          <span class="panel__legend-item"><i class="dot dot--muted"></i>Planifiées</span>
+          <span class="panel__legend-item"><i class="dot dot--primary"></i>Réalisées</span>
+        </div>
+      </div>
+
+      <div class="bar-chart">
+        <div class="bar-chart__col" *ngFor="let point of weeklyMissions()">
+          <div class="bar-chart__bars">
+            <div class="bar-chart__bar bar-chart__bar--muted" [style.height.%]="barHeight(point.planned)"></div>
+            <div class="bar-chart__bar bar-chart__bar--primary" [style.height.%]="barHeight(point.completed)"></div>
+          </div>
+          <span class="bar-chart__label">{{ point.day }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Répartition du matériel</h2>
+          <p class="panel__subtitle">{{ materialTotal() | number }} unités</p>
+        </div>
+      </div>
+
+      <div class="donut">
+        <div class="donut__ring" [style.background]="donutGradient()">
+          <div class="donut__hole">
+            <span class="donut__total">{{ materialTotal() | number }}</span>
+            <span class="donut__total-label">au total</span>
+          </div>
+        </div>
+      </div>
+
+      <ul class="donut-legend">
+        <li class="donut-legend__item" *ngFor="let item of materialDistribution()">
+          <span class="donut-legend__left">
+            <i class="dot" [style.background]="item.color"></i>
+            {{ item.label }}
+          </span>
+          <span class="donut-legend__right">
+            {{ item.value | number }}
+            <span class="donut-legend__percent">({{ materialPercent(item.value) }}%)</span>
+          </span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Progression & conformité/anomalies -->
+  <div class="dashboard__row dashboard__row--2-1">
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Progression des installations</h2>
+          <p class="panel__subtitle">Équipements installés cumulés \u2014 8 dernières semaines</p>
+        </div>
+        <span class="badge badge--success">
+          <lucide-icon [img]="icons.ArrowUpRight" [size]="12"></lucide-icon>
+          Dans les temps
+        </span>
+      </div>
+
+      <svg class="line-chart" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <path class="line-chart__area" [attr.d]="progressPath().area"></path>
+        <path class="line-chart__line" [attr.d]="progressPath().line"></path>
+      </svg>
+      <div class="line-chart__labels">
+        <span *ngFor="let point of installationProgress()">{{ point.week }}</span>
+      </div>
+    </div>
+
+    <div class="side-stack">
+      <div class="panel panel--compact">
+        <div class="panel__header">
+          <h2 class="panel__title">Taux de conformité</h2>
+          <lucide-icon [img]="icons.CheckCircle2" [size]="18" class="panel__title-icon"></lucide-icon>
+        </div>
+        <div class="conformity">
+          <span class="conformity__value">94.6%</span>
+          <span class="conformity__target">Objectif 92%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-bar__fill" style="width: 94.6%"></div>
+        </div>
+      </div>
+
+      <div class="panel panel--compact">
+        <div class="panel__header">
+          <h2 class="panel__title">Anomalies signalées</h2>
+          <span class="badge badge--danger">{{ anomalies().length }}</span>
+        </div>
+        <ul class="anomaly-list">
+          <li class="anomaly-list__item" *ngFor="let anomaly of anomalies()">
+            <lucide-icon [img]="icons.AlertTriangle" [size]="14" class="anomaly-list__icon" [class.anomaly-list__icon--medium]="anomaly.severity !== 'critique'"></lucide-icon>
+            <div>
+              <p class="anomaly-list__label">{{ anomaly.label }}</p>
+              <p class="anomaly-list__location">{{ anomaly.etablissement }}</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activité & missions à venir -->
+  <div class="dashboard__row dashboard__row--2-1">
+    <div class="panel">
+      <div class="panel__header">
+        <h2 class="panel__title">Activité récente</h2>
+        <button class="link-btn">Tout voir</button>
+      </div>
+      <ul class="activity-list">
+        <li class="activity-list__item" *ngFor="let item of recentActivity()">
+          <span class="activity-list__dot" [class]="'activity-list__dot--' + item.status"></span>
+          <div class="activity-list__body">
+            <p class="activity-list__text">
+              <strong>{{ item.author }}</strong> {{ item.action }} <strong>{{ item.target }}</strong>
+            </p>
+            <span class="activity-list__time">{{ item.time }}</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel__header">
+        <h2 class="panel__title">Missions à venir</h2>
+        <span class="badge">Aujourd'hui</span>
+      </div>
+      <ul class="mission-list">
+        <li class="mission-list__item" *ngFor="let mission of upcomingMissions()">
+          <div class="mission-list__meta">
+            <span class="mission-list__code">{{ mission.code }}</span>
+            <span class="mission-list__time">
+              <lucide-icon [img]="icons.Clock" [size]="12"></lucide-icon>
+              {{ mission.time }}
+            </span>
+          </div>
+          <p class="mission-list__title">{{ mission.title }}</p>
+          <span class="mission-list__tech">
+            <lucide-icon [img]="icons.MapPin" [size]="12"></lucide-icon>
+            {{ mission.technicien }}
+          </span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+</div>
