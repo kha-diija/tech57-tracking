@@ -24,11 +24,14 @@
     <!-- Profil Utilisateur & Déconnexion dans la Navbar -->
     <div class="navbar__user-wrapper">
       <button class="navbar__user-btn" (click)="toggleUserMenu()">
-        <div class="navbar__avatar">AA</div>
+        <!-- Initiales dynamiques générées depuis le TypeScript -->
+        <div class="navbar__avatar">{{ userInitials }}</div>
+        
         <div class="navbar__user-info">
           <span class="navbar__user-name">{{ userName }}</span>
           <span class="navbar__user-role">{{ userRole }}</span>
         </div>
+        
         <lucide-icon [img]="icons.ChevronDown" [size]="14" class="navbar__chevron"></lucide-icon>
       </button>
 

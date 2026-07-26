@@ -1,5 +1,5 @@
 .navbar {
-  height: 4.25rem;
+  height: var(--topbar-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
