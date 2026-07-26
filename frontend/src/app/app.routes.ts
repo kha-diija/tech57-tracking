@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-//test conflit 
 import { Auth } from './features/auth/auth';
 import { AppShell } from './layout/app-shell/app-shell';
 import { authGuard } from './shared/guards/auth.guard';

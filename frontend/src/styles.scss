@@ -42,24 +42,27 @@ html.light {
   --ai-btn-bg: #e85002;
   --ai-btn-text: #ffffff;
 }
+
 :root {
   --topbar-height: 4.25rem;
   --sidebar-width: 17.5rem;
   --sidebar-width-collapsed: 5.25rem;
 }
 
+/* Configuration globale de la page */
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background-color: var(--bg-app);
+  background-color: transparent; /* Permet d'afficher l'image de fond du Login */
   color: var(--text-main);
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: color 0.3s ease;
 }
 
-/* Appliquer la couleur de fond dynamique sur le conteneur principal */
-main, .main-content, .content, router-outlet + * {
+/* Application du fond dynamique uniquement sur les conteneurs de l'application (hors Login) */
+/* Au lieu de : main, .main-content, .content */
+main:not(.auth-page__stage), .main-content, .content {
   background-color: var(--bg-app);
   color: var(--text-main);
   transition: background-color 0.3s ease, color 0.3s ease;
