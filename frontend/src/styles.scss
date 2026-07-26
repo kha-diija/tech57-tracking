@@ -1,3 +1,6 @@
+/* Tailwind CSS Framework */
+@use "tailwindcss";
+
 /* Dark Mode (SaaS Sombre) */
 :root, html.dark {
   --bg-app: #0b0c10;
@@ -21,12 +24,12 @@
 
 /* Light Mode (SaaS Lumineux & Épuré) */
 html.light {
-  --bg-app: #f8fafc; /* Gris très doux pour le fond général */
-  --bg-surface: #ffffff; /* Blanc pur pour Sidebar et Navbar */
+  --bg-app: #f8fafc;
+  --bg-surface: #ffffff;
   --bg-surface-hover: #f1f5f9;
-  --bg-pill-active: #fff1eb; /* Effet légèrement orangé pour le lien actif */
+  --bg-pill-active: #fff1eb;
   --border-color: #e2e8f0;
-  --text-main: #0f172a; /* Texte foncé très lisible */
+  --text-main: #0f172a;
   --text-muted: #64748b;
   --primary: #e85002;
   --primary-glow: rgba(232, 80, 2, 0.15);
@@ -38,6 +41,11 @@ html.light {
   --ai-card-text: #334155;
   --ai-btn-bg: #e85002;
   --ai-btn-text: #ffffff;
+}
+:root {
+  --topbar-height: 4.25rem;
+  --sidebar-width: 17.5rem;
+  --sidebar-width-collapsed: 5.25rem;
 }
 
 html, body {

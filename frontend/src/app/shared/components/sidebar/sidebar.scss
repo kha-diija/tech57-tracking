@@ -7,7 +7,7 @@
   top: 0;
   left: 0;
   height: 100vh;
-  width: 17.5rem;
+  width: var(--sidebar-width);
   background-color: var(--bg-surface);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -18,7 +18,7 @@
   box-sizing: border-box;
 
   &--collapsed {
-    width: 5.25rem;
+    width: var(--sidebar-width-collapsed); 
 
     .sidebar__header {
       justify-content: center;
@@ -30,13 +30,15 @@
   }
 
   &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 1.25rem;
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-  }
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--topbar-height);
+  margin: calc(-1.25rem) calc(-0.875rem) 0.5rem;
+  padding: 0 0.875rem;
+  border-bottom: 1px solid var(--border-color);
+  box-sizing: border-box;
+}
 
   &__brand {
     display: flex;
