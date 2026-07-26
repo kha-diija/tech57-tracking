@@ -18,7 +18,7 @@
 
   <!-- Menu de navigation -->
   <nav class="sidebar__nav">
-    <a *ngFor="let item of navItems"
+    <a *ngFor="let item of navItems()"
        [routerLink]="item.route"
        routerLinkActive="sidebar__link--active"
        class="sidebar__link">
