@@ -6,14 +6,20 @@
   color: var(--text-main);
   transition: background-color 0.3s ease, color 0.3s ease;
 
+  main, .main-content, .content, router-outlet + * {
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
   &__main {
     flex: 1;
     display: flex;
     flex-direction: column;
     min-width: 0; /* Évite le débordement horizontal */
-    
+
     /* 260px colle exactement au bord droit de la Sidebar */
-    margin-left: 260px; 
+    margin-left: 260px;
     transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     background-color: var(--bg-app);
 
