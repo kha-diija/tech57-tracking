@@ -2,11 +2,14 @@ package com.example.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "etablissement")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Etablissement {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_etablissement")
@@ -33,11 +36,14 @@ public class Etablissement {
     @Column(name = "email_contact", length = 150)
     private String emailContact;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_commune", nullable = false)
     private Commune commune;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_responsable")
     private Responsable responsable;
+
+    @OneToMany(mappedBy = "etablissement", cascade = CascadeType.ALL)
+    private List<Materiel> materiels = new ArrayList<>();
 }

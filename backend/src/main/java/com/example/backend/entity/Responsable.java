@@ -7,6 +7,7 @@ import lombok.*;
 @Table(name = "responsable")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Responsable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_responsable")
