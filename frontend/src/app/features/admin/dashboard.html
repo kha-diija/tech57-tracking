@@ -1,0 +1,298 @@
+<div class="dashboard">
+
+  <!-- En-tête -->
+  <div class="dashboard__header">
+    <div>
+      <span class="dashboard__eyebrow">
+        <span class="dashboard__eyebrow-dot"></span>
+        Opérations en direct
+      </span>
+      <h1 class="dashboard__title">Bonjour, {{ prenomAdmin() }} 👋</h1>
+      <p class="dashboard__subtitle">
+        Voici l'état de vos installations et de vos équipes aujourd'hui.
+      </p>
+    </div>
+
+    <div class="dashboard__actions">
+      <button class="btn btn--ghost" (click)="onExport()">
+        <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
+        Exporter
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi-card" *ngFor="let kpi of kpis()">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">{{ kpi.label }}</span>
+        <span class="kpi-card__icon">
+          <lucide-icon [img]="kpiIcon(kpi.id)" [size]="16"></lucide-icon>
+        </span>
+      </div>
+      <div class="kpi-card__value">
+        {{ kpi.value }}<span class="kpi-card__suffix" *ngIf="kpi.suffix">{{ kpi.suffix }}</span>
+      </div>
+      <div class="kpi-card__footer">
+        <span class="kpi-card__trend" [class.kpi-card__trend--down]="!kpi.trendUp">
+          <lucide-icon [img]="kpi.trendUp ? icons.ArrowUpRight : icons.ArrowDownRight" [size]="12"></lucide-icon>
+          {{ kpi.trend }}{{ kpi.suffix === '%' ? ' pts' : '%' }}
+        </span>
+        <span class="kpi-card__comparison">{{ kpi.comparison }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Missions & matériel -->
+  <div class="dashboard__row dashboard__row--2-1">
+
+    <!-- Graphique barres -->
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Missions — 7 derniers jours</h2>
+          <p class="panel__subtitle">Planifiées vs réalisées</p>
+        </div>
+        <div class="panel__header-right">
+          <span class="badge badge--success">
+            <lucide-icon [img]="icons.ArrowUpRight" [size]="12"></lucide-icon>
+            {{ weeklyCompletionRate() }}% réalisé
+          </span>
+          <div class="panel__legend">
+            <span class="panel__legend-item"><i class="dot dot--muted"></i>Planifiées</span>
+            <span class="panel__legend-item"><i class="dot dot--primary"></i>Réalisées</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bar-chart-container">
+        <div class="bar-chart">
+          <div class="bar-chart__col" *ngFor="let point of weeklyMissions(); let i = index"
+               (mouseenter)="activeWeeklyTooltip.set(point)"
+               (mouseleave)="activeWeeklyTooltip.set(null)">
+
+            <span class="bar-chart__value">{{ point.completed }}</span>
+
+            <div class="bar-chart__bars">
+              <div class="bar-chart__bar bar-chart__bar--muted"
+                   [style.height.%]="barHeight(point.planned)"></div>
+              <div class="bar-chart__bar bar-chart__bar--primary"
+                   [style.height.%]="barHeight(point.completed)"
+                   [style.animationDelay.ms]="i * 60"></div>
+            </div>
+
+            <span class="bar-chart__ratio"
+                  [class.bar-chart__ratio--full]="dayCompletionRatio(point) >= 100">
+              {{ dayCompletionRatio(point) }}%
+            </span>
+            <span class="bar-chart__label">{{ point.day }}</span>
+          </div>
+        </div>
+
+        <div class="modern-tooltip" *ngIf="activeWeeklyTooltip() as tip">
+          <span class="tooltip-day">{{ tip.day }}</span>
+          <span class="tooltip-val text-muted">Planifiées : <strong>{{ tip.planned }}</strong></span>
+          <span class="tooltip-val text-primary">Réalisées : <strong>{{ tip.completed }}</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donut interactif -->
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Répartition du matériel</h2>
+          <p class="panel__subtitle">{{ materialTotal() | number }} unités</p>
+        </div>
+      </div>
+
+      <div class="donut">
+        <div class="donut__ring" [style.background]="donutGradient()">
+          <div class="donut__hole">
+            <span class="donut__total">
+              {{ activeMaterialTooltip() ? activeMaterialTooltip()?.value : (materialTotal() | number) }}
+            </span>
+            <span class="donut__total-label">
+              {{ activeMaterialTooltip() ? activeMaterialTooltip()?.label : 'au total' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <ul class="donut-legend">
+        <li class="donut-legend__item"
+            *ngFor="let item of materialDistribution()"
+            [class.donut-legend__item--active]="activeMaterialTooltip()?.label === item.label"
+            (mouseenter)="activeMaterialTooltip.set({ label: item.label, value: item.value, percent: materialPercent(item.value) })"
+            (mouseleave)="activeMaterialTooltip.set(null)">
+          <div class="donut-legend__top">
+            <span class="donut-legend__left">
+              <i class="dot" [style.background]="item.color"></i>
+              {{ item.label }}
+            </span>
+            <span class="donut-legend__right">
+              {{ item.value | number }}
+              <span class="donut-legend__percent">({{ materialPercent(item.value) }}%)</span>
+            </span>
+          </div>
+          <div class="donut-legend__bar">
+            <div class="donut-legend__bar-fill"
+                 [style.width.%]="materialPercent(item.value)"
+                 [style.background]="item.color"></div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Progression & Taux de conformité -->
+  <div class="dashboard__row dashboard__row--2-1">
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Progression des installations</h2>
+          <p class="panel__subtitle">Équipements installés cumulés — 8 dernières semaines</p>
+        </div>
+        <span class="badge badge--success">
+          <lucide-icon [img]="icons.ArrowUpRight" [size]="12"></lucide-icon>
+          +{{ progressGrowth() }}% sur la période
+        </span>
+      </div>
+
+      <div class="line-chart-wrapper">
+        <svg class="line-chart" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="progressAreaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f97316" stop-opacity="0.35"></stop>
+              <stop offset="100%" stop-color="#f97316" stop-opacity="0"></stop>
+            </linearGradient>
+          </defs>
+
+          <path class="line-chart__area" [attr.d]="progressPath().area"></path>
+          <path class="line-chart__line" [attr.d]="progressPath().line"></path>
+
+          <g *ngFor="let coord of progressPath().coords; let isLast = last"
+             class="line-point-group"
+             [class.line-point-group--active]="isLast"
+             (mouseenter)="activeProgressTooltip.set(coord)"
+             (mouseleave)="activeProgressTooltip.set(null)">
+            <circle [attr.cx]="coord.x" [attr.cy]="coord.y" r="7" class="line-point__halo"></circle>
+            <circle [attr.cx]="coord.x" [attr.cy]="coord.y" [attr.r]="isLast ? 3.4 : 2.6" class="line-point"></circle>
+          </g>
+        </svg>
+
+        <div class="value-labels">
+          <div class="value-label"
+               *ngFor="let coord of progressPath().coords; let isLast = last"
+               [class.value-label--active]="isLast"
+               [style.left.%]="coord.x"
+               [style.top.%]="coord.y">
+            {{ coord.value }}
+            <span class="value-label__tag" *ngIf="isLast">actuel</span>
+          </div>
+        </div>
+
+        <div class="line-chart__labels">
+          <span *ngFor="let point of installationProgress()"
+                (mouseenter)="activeProgressTooltip.set(point)"
+                (mouseleave)="activeProgressTooltip.set(null)">
+            {{ point.week }}
+          </span>
+        </div>
+
+        <div class="modern-tooltip" *ngIf="activeProgressTooltip() as prog">
+          <span class="tooltip-day">{{ prog.week }}</span>
+          <span class="tooltip-val text-primary">Valeur : <strong>{{ prog.value }}</strong> équipements</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-stack">
+      <div class="panel panel--compact">
+        <div class="panel__header">
+          <h2 class="panel__title">Taux de conformité</h2>
+          <lucide-icon [img]="icons.CheckCircle2" [size]="18" class="panel__title-icon"></lucide-icon>
+        </div>
+        <div class="conformity">
+          <span class="conformity__value">94.6%</span>
+          <span class="conformity__target">Objectif 92%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-bar__fill" style="width: 94.6%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activité & missions à venir -->
+  <div class="dashboard__row dashboard__row--2-1">
+    <div class="panel">
+      <div class="panel__header">
+        <h2 class="panel__title">Activité récente</h2>
+        <button class="link-btn" (click)="onViewAllActivity()">Tout voir</button>
+      </div>
+      <ul class="activity-list">
+        <li class="activity-list__item" *ngFor="let item of recentActivity()">
+          <span class="activity-list__dot" [class]="'activity-list__dot--' + item.status"></span>
+          <div class="activity-list__body">
+            <p class="activity-list__text">
+              <strong>{{ item.author }}</strong> {{ item.action }} <strong>{{ item.target }}</strong>
+            </p>
+            <span class="activity-list__time">{{ item.time }}</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel__header">
+        <h2 class="panel__title">Missions à venir</h2>
+        <span class="badge">Aujourd'hui</span>
+      </div>
+      <ul class="mission-list">
+        <li class="mission-list__item" *ngFor="let mission of upcomingMissions()">
+          <div class="mission-list__meta">
+            <span class="mission-list__code">{{ mission.code }}</span>
+            <span class="mission-list__time">
+              <lucide-icon [img]="icons.Clock" [size]="12"></lucide-icon>
+              {{ mission.time }}
+            </span>
+          </div>
+          <p class="mission-list__title">{{ mission.title }}</p>
+          <span class="mission-list__tech">
+            <lucide-icon [img]="icons.MapPin" [size]="12"></lucide-icon>
+            {{ mission.technicien }}
+          </span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- MODALE : Historique complet des activités -->
+  <div class="modal-backdrop" *ngIf="showAllActivityModal()" (click)="closeActivityModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      
+      <div class="modal-header">
+        <h3>Historique complet des activités</h3>
+        <button class="modal-close-btn" (click)="closeActivityModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="activity-item-full" *ngFor="let item of recentActivity()">
+          <div class="activity-info">
+            <p class="activity-list__text">
+              <strong>{{ item.author }}</strong> {{ item.action }} <strong>{{ item.target }}</strong>
+            </p>
+          </div>
+          <span class="activity-time">{{ item.time }}</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeActivityModal()">Fermer</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

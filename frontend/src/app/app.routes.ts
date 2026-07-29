@@ -5,7 +5,7 @@ import { authGuard } from './shared/guards/auth.guard';
 import { roleGuard } from './shared/guards/role.guard';
 
 // Imports de tes composants
-import { Dashboard } from './features/dashboard/dashboard';
+import { Dashboard } from './features/admin/dashboard';
 import { Missions } from './features/missions/missions';
 import { Etablissements } from './features/etablissements/etablissements';
 import { ChatIa } from './features/chat-ia/chat-ia';
@@ -41,7 +41,7 @@ export const routes: Routes = [
         path: 'admin/dashboard',
         canActivate: [roleGuard(['ADMINISTRATEUR'])],
         loadComponent: () =>
-          import('./features/admin/admin-dashboard').then((m) => m.AdminDashboard),
+          import('./features/admin/dashboard').then((m) => m.Dashboard),
       },
       {
         path: 'technicien/dashboard',
