@@ -45,8 +45,8 @@ export class Sidebar {
   };
 
   private readonly allNavItems: NavItem[] = [
-    { label: 'Tableau de bord', route: '/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
-    { label: 'Établissements', route: '/etablissements', icon: Building2, roles: ['ADMINISTRATEUR'] },
+    { label: 'Tableau de bord', route: '/admin/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
+    { label: 'Établissements', route: '/admin/etablissements', icon: Building2, roles: ['ADMINISTRATEUR'] },
     { label: 'Missions', route: '/missions', icon: Briefcase, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
     { label: 'Stock & Matériel', route: '/stock', icon: Package, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
     { label: 'Utilisateurs', route: '/users', icon: Users, roles: ['ADMINISTRATEUR'] },

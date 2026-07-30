@@ -4,7 +4,7 @@ import { AppShell } from './layout/app-shell/app-shell';
 import { authGuard } from './shared/guards/auth.guard';
 import { roleGuard } from './shared/guards/role.guard';
 
-// Imports de tes composants
+// Imports des composants globaux
 import { Dashboard } from './features/admin/dashboard';
 import { Missions } from './features/missions/missions';
 import { Etablissements } from './features/etablissements/etablissements';
@@ -36,12 +36,25 @@ export const routes: Routes = [
       { path: 'guides', component: Guides },
       { path: 'settings', component: Settings },
 
-      // Dashboards spécifiques par rôle
+      // Dashboards et modules spécifiques par rôle (avec Lazy Loading)
       {
         path: 'admin/dashboard',
         canActivate: [roleGuard(['ADMINISTRATEUR'])],
         loadComponent: () =>
           import('./features/admin/dashboard').then((m) => m.Dashboard),
+      },
+      {
+        path: 'admin/etablissements',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/admin/Gs-etablissement/gs-etablissement').then((m) => m.GsEtablissement),
+      },
+      {
+        path: 'admin/missions',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        // Correction ici : chargement correct de GsMission au lieu de GsEtablissement
+        loadComponent: () =>
+          import('./features/admin/missions/gs-mission/gs-mission').then((m) => m.GsMission),
       },
       {
         path: 'technicien/dashboard',
