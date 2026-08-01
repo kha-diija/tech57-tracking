@@ -11,7 +11,8 @@ import { Etablissements } from './features/etablissements/etablissements';
 import { ChatIa } from './features/chat-ia/chat-ia';
 import { Stock } from './features/stock/stock';
 import { Users } from './features/users/users';
-import { Guides } from './features/guides/guides';
+import { Ressources } from './features/admin/ressources/ressources';
+import { Interventions } from './features/admin/interventions/interventions';
 import { Settings } from './features/settings/settings';
 
 export const routes: Routes = [
@@ -33,7 +34,8 @@ export const routes: Routes = [
       { path: 'chat-ia', component: ChatIa },
       { path: 'stock', component: Stock },
       { path: 'users', component: Users },
-      { path: 'guides', component: Guides },
+      { path: 'ressources', component: Ressources },
+      { path: 'interventions', component: Interventions },
       { path: 'settings', component: Settings },
 
       // Dashboards et modules spécifiques par rôle (avec Lazy Loading)
@@ -55,6 +57,18 @@ export const routes: Routes = [
         // Correction ici : chargement correct de GsMission au lieu de GsEtablissement
         loadComponent: () =>
           import('./features/admin/missions/gs-mission/gs-mission').then((m) => m.GsMission),
+      },
+      {
+        path: 'admin/ressources',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/admin/ressources/ressources').then((m) => m.Ressources),
+      },
+      {
+        path: 'admin/interventions',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/admin/interventions/interventions').then((m) => m.Interventions),
       },
       {
         path: 'technicien/dashboard',
