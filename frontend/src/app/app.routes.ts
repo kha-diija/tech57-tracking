@@ -32,7 +32,14 @@ export const routes: Routes = [
       { path: 'etablissements', component: Etablissements },
       { path: 'chat-ia', component: ChatIa },
       { path: 'stock', component: Stock },
-      { path: 'users', component: Users },
+
+     
+      {
+        path: 'users',
+        component: Users,
+        canActivate: [roleGuard(['ADMINISTRATEUR'])]
+      },
+
       { path: 'guides', component: Guides },
       { path: 'settings', component: Settings },
 
