@@ -1,20 +1,31 @@
-export interface Mission {
+import { Etablissement } from './etablissement.model'; // Adapte le chemin selon ton projet
+
+export interface MissionInstallation {
   idMission: number;
   reference: string;
   titre: string;
-  etablissementNom: string;
-  equipeAffectee: string;
-  datePrevue: string;
-  priorite: 'BASSE' | 'NORMALE' | 'HAUTE' | 'URGENTE';
-  statut: 'BROUILLON' | 'VALIDEE' | 'EN_COURS' | 'TERMINEE';
-  budgetEstime: number;
+  statut: string;
+  dateCreation: string;
+  budgetPropose?: number;
+  
+  // Correspond aux champs aplatis du DTO de réponse back-end
+  idEtablissement: number;
+  etablissementDesignation: string;
+  etablissementReference: string;
+
+  idAdministrateur: number;
+  adminNomComplet: string;
+
+  idEquipe?: number;
+  equipeNom?: string;
 }
 
-export interface MissionKpi {
-  totalMissions: number;
-  validees: number;
-  enCours: number;
-  terminees: number;
+export interface MissionRequestDTO {
+  reference: string;
+  titre: string;
+  statut: string;
+  budgetPropose?: number | null;
+  idEtablissement: number;
+  idAdministrateur: number;
+  idEquipe?: number | null;
 }
-
-export type MissionPayload = Omit<Mission, 'idMission'>;

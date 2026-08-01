@@ -43,46 +43,25 @@
   &__brand {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    min-width: 0;
+    overflow: hidden;
   }
 
-  &__logo-badge {
+  &__logo-full {
+    height: 2.75rem;
+    width: auto;
+    max-width: 100%;
+    display: block;
+    object-fit: contain;
+  }
+
+  &__logo-icon {
     width: 2.25rem;
     height: 2.25rem;
     border-radius: 12px;
-    background: linear-gradient(135deg, #e85002 0%, #ff7328 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px var(--primary-glow);
-
-    .sidebar__logo-symbol {
-      color: #ffffff;
-      font-weight: 800;
-      font-size: 0.875rem;
-    }
-  }
-
-  &__logo-text {
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__logo-title {
-    color: var(--text-main);
-    font-weight: 700;
-    font-size: 0.95rem;
-    letter-spacing: -0.01em;
-  }
-
-  &__logo-accent {
-    color: var(--primary);
-  }
-
-  &__logo-sub {
-    font-size: 10px;
-    color: var(--text-muted);
-    font-weight: 500;
+    display: block;
+    object-fit: cover;
+    flex-shrink: 0;
   }
 
   &__toggle-btn {
@@ -97,6 +76,7 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
+    flex-shrink: 0;
 
     &:hover {
       background-color: var(--bg-surface-hover);
