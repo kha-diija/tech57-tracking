@@ -12,9 +12,9 @@ import { Stock } from './features/stock/stock';
 import { Users } from './features/users/users';
 import { ChatIa } from './features/chat-ia/chat-ia';
 import { Guides } from './features/guides/guides';
-import { Settings } from './features/settings/settings';
-import { Resources } from './features/admin/ressources/ressources';
-import { Interventions } from './features/admin/interventions/interventions';
+// import { Settings } from './features/settings/settings';
+// import { Resources } from './features/admin/ressources/ressources';
+// import { Interventions } from './features/admin/interventions/interventions';
 
 export const routes: Routes = [
   // ─────────────────────────────────────────────
