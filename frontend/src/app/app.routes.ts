@@ -9,6 +9,7 @@ import { Dashboard } from './features/admin/dashboard';
 import { Missions } from './features/missions/missions';
 import { Etablissements } from './features/etablissements/etablissements';
 import { ChatIa } from './features/chat-ia/chat-ia';
+import { Guides } from './features/guides/guides';
 import { Stock } from './features/stock/stock';
 import { Users } from './features/users/users';
 import { Ressources } from './features/admin/ressources/ressources';
@@ -31,7 +32,14 @@ export const routes: Routes = [
       { path: 'dashboard', component: Dashboard },
       { path: 'missions', component: Missions },
       { path: 'etablissements', component: Etablissements },
+      {
+        path: 'simulateur-trajet',
+        canActivate: [roleGuard(['TECHNICIEN', 'ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/simulateur-trajet/simulateur-trajet').then(m => m.SimulateurTrajet),
+      },
       { path: 'chat-ia', component: ChatIa },
+      { path: 'guides', component: Guides },
       { path: 'stock', component: Stock },
       { path: 'users', component: Users },
       { path: 'ressources', component: Ressources },
@@ -54,7 +62,6 @@ export const routes: Routes = [
       {
         path: 'admin/missions',
         canActivate: [roleGuard(['ADMINISTRATEUR'])],
-        // Correction ici : chargement correct de GsMission au lieu de GsEtablissement
         loadComponent: () =>
           import('./features/admin/missions/gs-mission/gs-mission').then((m) => m.GsMission),
       },
