@@ -13,6 +13,8 @@ import { Users } from './features/users/users';
 import { ChatIa } from './features/chat-ia/chat-ia';
 import { Guides } from './features/guides/guides';
 import { Settings } from './features/settings/settings';
+import { Resources } from './features/admin/ressources/ressources';
+import { Interventions } from './features/admin/interventions/interventions';
 
 export const routes: Routes = [
   // ─────────────────────────────────────────────
@@ -47,6 +49,18 @@ export const routes: Routes = [
       { path: 'chat-ia', component: ChatIa },
       { path: 'guides', component: Guides },
       { path: 'settings', component: Settings },
+
+      // ─── Gestion des ressources et interventions (ajout main) ───
+      {
+        path: 'ressources',
+        canActivate: [roleGuard(['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'])],
+        component: Resources,
+      },
+      {
+        path: 'interventions',
+        canActivate: [roleGuard(['ADMINISTRATEUR', 'TECHNICIEN'])],
+        component: Interventions,
+      },
 
       // ─── Dashboards spécifiques par rôle ───
       {
