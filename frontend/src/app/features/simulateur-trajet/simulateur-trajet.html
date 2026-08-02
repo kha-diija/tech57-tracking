@@ -1,0 +1,102 @@
+<div class="trajet">
+  <!-- Panneau formulaire -->
+  <aside class="trajet__panel">
+    <header class="trajet__panel-header">
+      <lucide-icon [img]="icons.Route" [size]="20"></lucide-icon>
+      <h2>Simulateur de trajet</h2>
+    </header>
+
+    <div class="trajet__field">
+      <label>Établissement de départ</label>
+      <select [ngModel]="idOrigine()" (ngModelChange)="idOrigine.set($event)">
+        <option [ngValue]="null">Sélectionner...</option>
+        @for (etab of etablissements(); track etab.idEtablissement) {
+          <option [ngValue]="etab.idEtablissement">{{ etab.designation }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="trajet__field">
+      <label>Établissement d'arrivée</label>
+      <select [ngModel]="idDestination()" (ngModelChange)="idDestination.set($event)">
+        <option [ngValue]="null">Sélectionner...</option>
+        @for (etab of etablissements(); track etab.idEtablissement) {
+          <option [ngValue]="etab.idEtablissement">{{ etab.designation }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="trajet__field">
+      <label>Type de route</label>
+      <div class="trajet__toggle">
+        <button
+          type="button"
+          [class.active]="typeRoute() === 'Autoroute'"
+          (click)="typeRoute.set('Autoroute')"
+        >Autoroute</button>
+        <button
+          type="button"
+          [class.active]="typeRoute() === 'Nationale'"
+          (click)="typeRoute.set('Nationale')"
+        >Route nationale</button>
+      </div>
+    </div>
+
+    <div class="trajet__field">
+      <label><lucide-icon [img]="icons.Fuel" [size]="14"></lucide-icon> Prix du carburant (DH/L)</label>
+      <input type="number" step="0.1" min="0" [ngModel]="prixCarburant()" (ngModelChange)="prixCarburant.set($event)" />
+    </div>
+
+    @if (erreur()) {
+      <p class="trajet__erreur">{{ erreur() }}</p>
+    }
+
+    <div class="trajet__actions">
+      <button class="btn btn--primary" [disabled]="!peutCalculer() || enChargement()" (click)="calculer()">
+        {{ enChargement() ? 'Calcul en cours...' : 'Calculer l\'itinéraire' }}
+      </button>
+      <button class="btn btn--ghost" [disabled]="!peutCalculer() || enChargement()" (click)="comparerItineraires()">
+        Comparer les 2 itinéraires
+      </button>
+    </div>
+
+    @if (resultat(); as res) {
+      <div class="trajet__resultat">
+        <div class="trajet__resultat-row">
+          <span>Distance</span><strong>{{ res.distanceKm }} km</strong>
+        </div>
+        <div class="trajet__resultat-row">
+          <span>Temps estimé</span><strong>{{ res.tempsEstime }} h</strong>
+        </div>
+        <div class="trajet__resultat-row">
+          <span>Coût gasoil</span><strong>{{ res.coutGasoil }} DH</strong>
+        </div>
+        <div class="trajet__resultat-row">
+          <span>Coût péage</span><strong>{{ res.coutPeage }} DH</strong>
+        </div>
+        <div class="trajet__resultat-row trajet__resultat-row--total">
+          <span>Coût total</span><strong>{{ res.coutTotal }} DH</strong>
+        </div>
+        <button class="btn btn--accent">
+          <lucide-icon [img]="icons.Send" [size]="14"></lucide-icon>
+          Proposer ce budget à la mission
+        </button>
+      </div>
+    }
+
+    @if (comparatif().length === 2) {
+      <div class="trajet__comparatif">
+        <h3><lucide-icon [img]="icons.TrendingUp" [size]="14"></lucide-icon> Comparaison</h3>
+        @for (item of comparatif(); track item.typeRoute) {
+          <div class="trajet__comparatif-item" [class.trajet__comparatif-item--best]="item === comparatif()[0]">
+            <span>{{ item.typeRoute }}</span>
+            <strong>{{ item.coutTotal }} DH · {{ item.tempsEstime }} h</strong>
+          </div>
+        }
+      </div>
+    }
+  </aside>
+
+  <!-- Carte -->
+  <div class="trajet__map" #mapContainer></div>
+</div>
