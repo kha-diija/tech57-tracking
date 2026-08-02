@@ -14,7 +14,8 @@ import {
   Settings,
   LogOut,
   PanelLeft,
-  Sparkles
+  Sparkles,
+   Route
 } from 'lucide-angular';
 import { UserRole } from '../../models/auth.model'; // ⚠️ adapte selon le chemin réel
 
@@ -44,16 +45,17 @@ export class Sidebar {
     Sparkles
   };
 
-  private readonly allNavItems: NavItem[] = [
-    { label: 'Tableau de bord', route: '/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
-    { label: 'Établissements', route: '/etablissements', icon: Building2, roles: ['ADMINISTRATEUR'] },
-    { label: 'Missions', route: '/missions', icon: Briefcase, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
-    { label: 'Stock & Matériel', route: '/stock', icon: Package, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
-    { label: 'Utilisateurs', route: '/users', icon: Users, roles: ['ADMINISTRATEUR'] },
-    { label: 'Assistant IA', route: '/chat-ia', icon: Bot, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
-    { label: 'Guides & Support', route: '/guides', icon: BookOpen, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
-    { label: 'Paramètres', route: '/settings', icon: Settings, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] }
-  ];
+ private readonly allNavItems: NavItem[] = [
+  { label: 'Tableau de bord', route: '/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
+  { label: 'Établissements', route: '/etablissements', icon: Building2, roles: ['ADMINISTRATEUR'] },
+  { label: 'Missions', route: '/missions', icon: Briefcase, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
+  { label: 'Simulateur de trajet', route: '/simulateur-trajet', icon: Route, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] }, // 👈 ajout
+  { label: 'Stock & Matériel', route: '/stock', icon: Package, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
+  { label: 'Utilisateurs', route: '/users', icon: Users, roles: ['ADMINISTRATEUR'] },
+  { label: 'Assistant IA', route: '/chat-ia', icon: Bot, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
+  { label: 'Guides & Support', route: '/guides', icon: BookOpen, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
+  { label: 'Paramètres', route: '/settings', icon: Settings, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] }
+];
 
   navItems = computed(() => {
     const role = this.authService.currentUser()?.role;
