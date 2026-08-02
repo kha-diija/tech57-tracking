@@ -2,13 +2,8 @@
   <!-- En-tête -->
   <div class="sidebar__header">
     <div class="sidebar__brand">
-      <div class="sidebar__logo-badge">
-        <span class="sidebar__logo-symbol">57</span>
-      </div>
-      <div class="sidebar__logo-text" *ngIf="!collapsed">
-        <span class="sidebar__logo-title">TECH<span class="sidebar__logo-accent">-57</span></span>
-        <span class="sidebar__logo-sub">Installation Tracking</span>
-      </div>
+      <img *ngIf="!collapsed" src="/tech57-logo-full-v2.png" alt="TECH-57 — Installation Tracking" class="sidebar__logo-full">
+      <img *ngIf="collapsed" src="/tech57-logo-icon.png" alt="TECH-57" class="sidebar__logo-icon">
     </div>
 
     <button class="sidebar__toggle-btn" (click)="toggle()" title="Réduire/Agrandir">
