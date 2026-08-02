@@ -4,94 +4,100 @@ import { AppShell } from './layout/app-shell/app-shell';
 import { authGuard } from './shared/guards/auth.guard';
 import { roleGuard } from './shared/guards/role.guard';
 
-// Imports des composants
-import { Dashboard } from './features/dashboard/dashboard';
-import { Etablissements } from './features/etablissements/etablissements';
+// Imports des composants globaux
+import { Dashboard } from './features/admin/dashboard';
 import { Missions } from './features/missions/missions';
-import { Stock } from './features/stock/stock';
-import { Users } from './features/users/users';
+import { Etablissements } from './features/etablissements/etablissements';
 import { ChatIa } from './features/chat-ia/chat-ia';
 import { Guides } from './features/guides/guides';
-// import { Settings } from './features/settings/settings';
-// import { Resources } from './features/admin/ressources/ressources';
-// import { Interventions } from './features/admin/interventions/interventions';
+import { Stock } from './features/stock/stock';
+import { Users } from './features/users/users';
+import { Ressources } from './features/admin/ressources/ressources';
+import { Interventions } from './features/admin/interventions/interventions';
+import { Settings } from './features/settings/settings';
 
 export const routes: Routes = [
-  // ─────────────────────────────────────────────
-  // 0. Redirection racine → login
-  // ─────────────────────────────────────────────
+  // 0. Redirection par défaut de la racine vers /login
   { path: '', pathMatch: 'full', redirectTo: 'login' },
 
-  // ─────────────────────────────────────────────
-  // 1. Route publique (sans sidebar/navbar)
-  // ─────────────────────────────────────────────
+  // 1. Route publique : Login (SANS sidebar/navbar)
   { path: 'login', component: Auth },
 
-  // ─────────────────────────────────────────────
-  // 2. Routes protégées sous AppShell (avec sidebar/navbar)
-  // ─────────────────────────────────────────────
+  // 2. Routes protégées sous AppShell (AVEC sidebar/navbar)
   {
     path: '',
     component: AppShell,
     canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: Dashboard },
-      { path: 'etablissements', component: Etablissements },
       { path: 'missions', component: Missions },
+      { path: 'etablissements', component: Etablissements },
       {
         path: 'simulateur-trajet',
         canActivate: [roleGuard(['TECHNICIEN', 'ADMINISTRATEUR'])],
         loadComponent: () =>
           import('./features/simulateur-trajet/simulateur-trajet').then(m => m.SimulateurTrajet),
       },
-      { path: 'stock', component: Stock },
-      { path: 'users', component: Users },
       { path: 'chat-ia', component: ChatIa },
       { path: 'guides', component: Guides },
+      { path: 'stock', component: Stock },
+      { path: 'users', component: Users },
+      { path: 'ressources', component: Ressources },
+      { path: 'interventions', component: Interventions },
       { path: 'settings', component: Settings },
 
-      // ─── Gestion des ressources et interventions (ajout main) ───
-      {
-        path: 'ressources',
-        canActivate: [roleGuard(['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'])],
-        component: Resources,
-      },
-      {
-        path: 'interventions',
-        canActivate: [roleGuard(['ADMINISTRATEUR', 'TECHNICIEN'])],
-        component: Interventions,
-      },
-
-      // ─── Dashboards spécifiques par rôle ───
+      // Dashboards et modules spécifiques par rôle (avec Lazy Loading)
       {
         path: 'admin/dashboard',
         canActivate: [roleGuard(['ADMINISTRATEUR'])],
         loadComponent: () =>
-          import('./features/admin/admin-dashboard').then(m => m.AdminDashboard),
+          import('./features/admin/dashboard').then((m) => m.Dashboard),
+      },
+      {
+        path: 'admin/etablissements',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/admin/Gs-etablissement/gs-etablissement').then((m) => m.GsEtablissement),
+      },
+      {
+        path: 'admin/missions',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/admin/missions/gs-mission/gs-mission').then((m) => m.GsMission),
+      },
+      {
+        path: 'admin/ressources',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/admin/ressources/ressources').then((m) => m.Ressources),
+      },
+      {
+        path: 'admin/interventions',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/admin/interventions/interventions').then((m) => m.Interventions),
       },
       {
         path: 'technicien/dashboard',
         canActivate: [roleGuard(['TECHNICIEN'])],
         loadComponent: () =>
-          import('./features/technicien/technicien-dashboard').then(m => m.TechnicienDashboard),
+          import('./features/technicien/technicien-dashboard').then((m) => m.TechnicienDashboard),
       },
       {
         path: 'client/dashboard',
         canActivate: [roleGuard(['OBSERVATEUR'])],
         loadComponent: () =>
-          import('./features/client/client-dashboard').then(m => m.ClientDashboard),
+          import('./features/client/client-dashboard').then((m) => m.ClientDashboard),
       },
       {
         path: 'gestionnaire/dashboard',
         canActivate: [roleGuard(['GESTIONNAIRE_STOCK'])],
         loadComponent: () =>
-          import('./features/gestionnaire/gestionnaire-dashboard').then(m => m.GestionnaireDashboard),
+          import('./features/gestionnaire/gestionnaire-dashboard').then((m) => m.GestionnaireDashboard),
       },
     ],
   },
 
-  // ─────────────────────────────────────────────
-  // Fallback : route inconnue → login
-  // ─────────────────────────────────────────────
+  // Redirection par défaut vers le login pour toute route inconnue
   { path: '**', redirectTo: 'login' },
 ];

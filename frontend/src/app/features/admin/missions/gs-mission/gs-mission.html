@@ -1,0 +1,256 @@
+<div class="gs-etab">
+
+  <!-- En-tête -->
+  <div class="gs-etab__header">
+    <div>
+      <span class="gs-etab__eyebrow">
+        <span class="gs-etab__eyebrow-dot"></span>
+        Suivi opérationnel
+      </span>
+      <h1 class="gs-etab__title">Gestion des Missions d'Installation</h1>
+      <p class="gs-etab__subtitle">
+        Planification, suivi des statuts, budgets et affectations aux établissements.
+      </p>
+    </div>
+
+    <div class="gs-etab__actions">
+      <button class="btn btn--ghost" (click)="onExport()">
+        <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
+        Exporter
+      </button>
+      <button class="btn btn--primary" (click)="openCreateForm()">
+        <lucide-icon [img]="icons.Plus" [size]="16"></lucide-icon>
+        Nouvelle mission
+      </button>
+    </div>
+  </div>
+
+  <!-- Barre de filtres & Recherche -->
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <lucide-icon [img]="icons.Search" [size]="16"></lucide-icon>
+      <input
+        type="text"
+        placeholder="Rechercher par titre, référence, établissement..."
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+      />
+    </div>
+
+    <select class="toolbar__select" [ngModel]="selectedStatutFilter()" (ngModelChange)="selectedStatutFilter.set($event)">
+      <option value="tous">Tous les statuts</option>
+      <option *ngFor="let s of statutOptions" [value]="s">{{ s }}</option>
+    </select>
+
+    <span class="toolbar__count">{{ filteredMissions().length }} résultat(s)</span>
+  </div>
+
+  <!-- Tableau -->
+  <div class="panel panel--table">
+    <div class="table-wrapper">
+      <table class="etab-table">
+        <thead>
+          <tr>
+            <th>Référence</th>
+            <th>Titre</th>
+            <th>Établissement</th>
+            <th>Responsable Établissement</th>
+            <th>Admin Responsable</th>
+            <th>Budget Proposé</th>
+            <th>Statut</th>
+            <th class="etab-table__actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let mission of filteredMissions()">
+            <td>
+              <span class="etab-table__ref">{{ mission.reference }}</span>
+            </td>
+            <td>
+              <span class="etab-table__name">{{ mission.titre }}</span>
+              <span class="etab-table__type">Créée le : {{ mission.dateCreation | date:'shortDate' }}</span>
+            </td>
+            <td>
+              <span class="location-chain">
+                <lucide-icon [img]="icons.Building2" [size]="12"></lucide-icon>
+                {{ mission.etablissementDesignation }}
+              </span>
+            </td>
+            <td>
+              <ng-container *ngIf="getResponsableForEtablissement(mission.idEtablissement) as resp; else noResp">
+                <span class="location-chain">
+                  <lucide-icon [img]="icons.User" [size]="12"></lucide-icon>
+                  {{ resp.prenom }} {{ resp.nom }}
+                </span>
+                <span class="etab-table__type" *ngIf="resp.fonction">{{ resp.fonction }}</span>
+              </ng-container>
+              <ng-template #noResp>
+                <span class="text-muted">-</span>
+              </ng-template>
+            </td>
+            <td>
+              <span class="location-chain">
+                <lucide-icon [img]="icons.User" [size]="12"></lucide-icon>
+                {{ mission.adminNomComplet }}
+                <span class="id-tag">#{{ mission.idAdministrateur }}</span>
+              </span>
+            </td>
+            <td>
+              <span class="text-muted" *ngIf="mission.budgetPropose !== null && mission.budgetPropose !== undefined">
+                {{ mission.budgetPropose | currency:'MAD':'symbol':'1.2-2' }}
+              </span>
+              <span class="text-muted" *ngIf="mission.budgetPropose === null || mission.budgetPropose === undefined">-</span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="{
+                'badge--success': mission.statut === 'Terminée',
+                'badge--warning': mission.statut === 'En cours',
+                'badge--info': mission.statut === 'Planifiée',
+                'badge--danger': mission.statut === 'Annulée'
+              }">
+                {{ mission.statut }}
+              </span>
+            </td>
+            <td>
+              <div class="etab-table__row-actions">
+                <button class="icon-btn" title="Modifier" (click)="openEditForm(mission)">
+                  <lucide-icon [img]="icons.Pencil" [size]="15"></lucide-icon>
+                </button>
+                <button class="icon-btn icon-btn--danger" title="Supprimer" (click)="deleteMission(mission)">
+                  <lucide-icon [img]="icons.Trash2" [size]="15"></lucide-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="!isLoading() && filteredMissions().length === 0">
+            <td colspan="8" class="etab-table__empty">
+              Aucune mission d'installation ne correspond à vos critères.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Panneau latéral : création / édition -->
+  <div class="side-panel-backdrop" *ngIf="showForm()" (click)="closeForm()"></div>
+
+  <aside class="side-panel" *ngIf="showForm()">
+    <div class="side-panel__header">
+      <h2>{{ editingId() ? "Modifier la mission" : 'Nouvelle mission' }}</h2>
+      <button class="icon-btn" (click)="closeForm()">
+        <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="side-panel__body">
+      <!-- Admin créateur de la mission : lecture seule, non modifiable -->
+      <div class="creator-banner" *ngIf="creatorDisplay() as creator">
+        <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
+        <span *ngIf="editingId() === null">Sera créée par : </span>
+        <span *ngIf="editingId() !== null">Créée par : </span>
+        <strong>{{ creator.nomComplet }}</strong>
+        <span class="id-tag">#{{ creator.id }}</span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Référence</label>
+          <input type="text" [ngModel]="formModel().reference" (ngModelChange)="updateField('reference', $event)" placeholder="MSN-001" />
+        </div>
+        <div class="form-group">
+          <label>Statut</label>
+          <select [ngModel]="formModel().statut" (ngModelChange)="updateField('statut', $event)">
+            <option *ngFor="let s of statutOptions" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Titre de la mission</label>
+        <input type="text" [ngModel]="formModel().titre" (ngModelChange)="updateField('titre', $event)" placeholder="Installation équipement réseau" />
+      </div>
+
+      <!-- Sélection de l'établissement (Remplit automatiquement l'ID de l'admin en arrière-plan) -->
+      <div class="form-group">
+        <label>Établissement cible</label>
+        <select [ngModel]="formModel().idEtablissement" (ngModelChange)="updateField('idEtablissement', +$event)">
+          <option [ngValue]="null" disabled>Sélectionner un établissement</option>
+          <option *ngFor="let etab of etablissementsList()" [ngValue]="etab.idEtablissement">
+            {{ etab.designation }} ({{ etab.reference }})
+          </option>
+        </select>
+      </div>
+
+      <!-- Responsable de l'établissement : affichage automatique en lecture seule -->
+      <div class="form-group form-group--readonly" *ngIf="formModel().idEtablissement">
+        <label>Responsable de l'établissement</label>
+        <div class="responsable-card" *ngIf="selectedResponsable() as resp; else noResponsable">
+          <div class="responsable-card__row">
+            <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
+            <span>{{ resp.prenom }} {{ resp.nom }}</span>
+            <span class="text-muted" *ngIf="resp.fonction">— {{ resp.fonction }}</span>
+          </div>
+          <div class="responsable-card__row text-muted" *ngIf="resp.telephone || resp.email">
+            <span *ngIf="resp.telephone">{{ resp.telephone }}</span>
+            <span *ngIf="resp.telephone && resp.email"> · </span>
+            <span *ngIf="resp.email">{{ resp.email }}</span>
+          </div>
+        </div>
+        <ng-template #noResponsable>
+          <span class="text-muted">Aucun responsable renseigné pour cet établissement.</span>
+        </ng-template>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Budget Proposé (MAD)</label>
+          <input type="number" step="0.01" [ngModel]="formModel().budgetPropose" (ngModelChange)="updateField('budgetPropose', $event ? +$event : null)" placeholder="0.00" />
+        </div>
+        
+        <!-- Sélection de l'équipe technique par son nom -->
+        <div class="form-group">
+          <label>Équipe Technique (Optionnel)</label>
+          <select [ngModel]="formModel().idEquipe" (ngModelChange)="updateField('idEquipe', $event ? +$event : null)">
+            <option [ngValue]="null">Aucune équipe assignée</option>
+            <option *ngFor="let eq of equipesList()" [ngValue]="eq.idEquipe">
+              {{ eq.nomEquipe }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-panel__footer">
+      <button class="btn btn--ghost" (click)="closeForm()">Annuler</button>
+      <button class="btn btn--primary" (click)="saveForm()">
+        {{ editingId() ? 'Enregistrer' : "Créer la mission" }}
+      </button>
+    </div>
+  </aside>
+
+  <!-- Modale de confirmation personnalisée -->
+  <div class="side-panel-backdrop" *ngIf="confirmModal().isOpen" (click)="closeConfirmModal()"></div>
+
+  <div class="custom-modal-container" *ngIf="confirmModal().isOpen">
+    <div class="custom-modal">
+      <div class="custom-modal__header">
+        <h3>{{ confirmModal().title }}</h3>
+        <button class="icon-btn" (click)="closeConfirmModal()">
+          <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <div class="custom-modal__body">
+        <p>{{ confirmModal().message }}</p>
+      </div>
+      <div class="custom-modal__footer">
+        <button class="btn btn--ghost" (click)="closeConfirmModal()">Annuler</button>
+        <button class="btn btn--danger" (click)="executeDelete()">
+          Confirmer
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
