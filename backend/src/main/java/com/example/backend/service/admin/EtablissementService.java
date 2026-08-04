@@ -5,8 +5,8 @@ import com.example.backend.entity.Commune;
 import com.example.backend.entity.Etablissement;
 import com.example.backend.entity.Responsable;
 import com.example.backend.repository.admin.CommuneRepository;
-import com.example.backend.repository.admin.EtablissementRepository;
-import com.example.backend.repository.admin.MissionInstallationRepository; // <-- Import du repository des missions
+import com.example.backend.repository.admin.EtablissementAdminRepository;
+import com.example.backend.repository.admin.MissionInstallationAdminRepository; // <-- Import du repository des missions
 import com.example.backend.repository.admin.ResponsableRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,24 +18,24 @@ import java.util.stream.Collectors;
 @Service
 public class EtablissementService {
 
-    private final EtablissementRepository etablissementRepository;
+    private final EtablissementAdminRepository etablissementAdminRepository;
     private final CommuneRepository communeRepository;
     private final ResponsableRepository responsableRepository;
-    private final MissionInstallationRepository missionInstallationRepository; // <-- Ajout de la dépendance
+    private final MissionInstallationAdminRepository missionInstallationAdminRepository; // <-- Ajout de la dépendance
 
-    public EtablissementService(EtablissementRepository etablissementRepository,
+    public EtablissementService(EtablissementAdminRepository etablissementAdminRepository,
                                 CommuneRepository communeRepository,
                                 ResponsableRepository responsableRepository,
-                                MissionInstallationRepository missionInstallationRepository) {
-        this.etablissementRepository = etablissementRepository;
+                                MissionInstallationAdminRepository missionInstallationAdminRepository) {
+        this.etablissementAdminRepository = etablissementAdminRepository;
         this.communeRepository = communeRepository;
         this.responsableRepository = responsableRepository;
-        this.missionInstallationRepository = missionInstallationRepository;
+        this.missionInstallationAdminRepository = missionInstallationAdminRepository;
     }
 
     @Transactional(readOnly = true)
     public List<EtablissementResponse> getAll() {
-        return etablissementRepository.findAllWithDetails()
+        return etablissementAdminRepository.findAllWithDetails()
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -43,7 +43,7 @@ public class EtablissementService {
 
     @Transactional(readOnly = true)
     public EtablissementResponse getById(Integer id) {
-        Etablissement e = etablissementRepository.findByIdWithDetails(id)
+        Etablissement e = etablissementAdminRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NoSuchElementException("Établissement introuvable : " + id));
         return toResponse(e);
     }
@@ -51,16 +51,16 @@ public class EtablissementService {
     @Transactional(readOnly = true)
     public EtablissementKpiResponse getKpis() {
         EtablissementKpiResponse kpi = new EtablissementKpiResponse();
-        List<Etablissement> all = etablissementRepository.findAllWithDetails();
+        List<Etablissement> all = etablissementAdminRepository.findAllWithDetails();
 
         kpi.setTotalEtablissements(all.size());
-        kpi.setRegionsCouvertes(etablissementRepository.countRegionsCouvertes());
+        kpi.setRegionsCouvertes(etablissementAdminRepository.countRegionsCouvertes());
         kpi.setTotalBeneficiaires(
                 all.stream()
                         .mapToLong(e -> e.getNombreBeneficiaires() == null ? 0 : e.getNombreBeneficiaires())
                         .sum()
         );
-        kpi.setSansResponsable(etablissementRepository.countSansResponsable());
+        kpi.setSansResponsable(etablissementAdminRepository.countSansResponsable());
 
         return kpi;
     }
@@ -69,17 +69,17 @@ public class EtablissementService {
     public EtablissementResponse create(EtablissementRequest request) {
         Etablissement e = new Etablissement();
         applyRequest(e, request);
-        Etablissement saved = etablissementRepository.save(e);
-        return toResponse(etablissementRepository.findByIdWithDetails(saved.getIdEtablissement()).orElseThrow());
+        Etablissement saved = etablissementAdminRepository.save(e);
+        return toResponse(etablissementAdminRepository.findByIdWithDetails(saved.getIdEtablissement()).orElseThrow());
     }
 
     @Transactional
     public EtablissementResponse update(Integer id, EtablissementRequest request) {
-        Etablissement e = etablissementRepository.findById(id)
+        Etablissement e = etablissementAdminRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Établissement introuvable : " + id));
         applyRequest(e, request);
-        Etablissement saved = etablissementRepository.save(e);
-        return toResponse(etablissementRepository.findByIdWithDetails(saved.getIdEtablissement()).orElseThrow());
+        Etablissement saved = etablissementAdminRepository.save(e);
+        return toResponse(etablissementAdminRepository.findByIdWithDetails(saved.getIdEtablissement()).orElseThrow());
     }
 
     /**
@@ -87,11 +87,11 @@ public class EtablissementService {
      */
     @Transactional
     public void delete(Integer id, boolean force) {
-        Etablissement e = etablissementRepository.findById(id)
+        Etablissement e = etablissementAdminRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Établissement introuvable : " + id));
 
-        long nbMateriels = etablissementRepository.countMaterielsByEtablissementId(id);
-        long nbMissions = missionInstallationRepository.countByEtablissementIdEtablissement(id); // Vérification des missions
+        long nbMateriels = etablissementAdminRepository.countMaterielsByEtablissementId(id);
+        long nbMissions = missionInstallationAdminRepository.countByEtablissementIdEtablissement(id); // Vérification des missions
 
         if ((nbMateriels > 0 || nbMissions > 0) && !force) {
             throw new IllegalStateException("Attention : Cet établissement contient " + nbMateriels +
@@ -100,11 +100,11 @@ public class EtablissementService {
 
         if (force) {
             // Suppression préalable des missions d'installation pour éviter les contraintes de clés étrangères
-            missionInstallationRepository.deleteByEtablissementIdEtablissement(id);
+            missionInstallationAdminRepository.deleteByEtablissementIdEtablissement(id);
         }
 
         // Suppression effective (CascadeType.ALL s'occupe du reste pour les matériels)
-        etablissementRepository.delete(e);
+        etablissementAdminRepository.delete(e);
     }
 
     // ============================================================

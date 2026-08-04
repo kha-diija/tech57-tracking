@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MissionInstallationRepository extends JpaRepository<MissionInstallation, Integer> {
+public interface MissionInstallationAdminRepository extends JpaRepository<MissionInstallation, Integer> {
 
     // Compter le nombre de missions liées à un établissement
     @Query("SELECT COUNT(m) FROM MissionInstallation m WHERE m.etablissement.idEtablissement = :idEtablissement")
