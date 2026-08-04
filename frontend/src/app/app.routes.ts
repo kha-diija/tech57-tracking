@@ -16,6 +16,7 @@ import { Ressources } from './features/admin/ressources/ressources';
 import { Interventions } from './features/admin/interventions/interventions';
 import { Settings } from './features/settings/settings';
 
+
 export const routes: Routes = [
   // 0. Redirection par défaut de la racine vers /login
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -74,6 +75,7 @@ export const routes: Routes = [
       {
         path: 'admin/interventions',
         canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        pathMatch: 'full',
         loadComponent: () =>
           import('./features/admin/interventions/interventions').then((m) => m.Interventions),
       },
