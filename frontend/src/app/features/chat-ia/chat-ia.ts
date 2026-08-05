@@ -20,8 +20,9 @@ export class ChatIa implements AfterViewChecked {
 
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
+  // Message d'accueil simple et chaleureux
   messages = signal<Message[]>([
-    { sender: 'ia', text: 'Bonjour. Je suis l\'assistant intelligent Tech57. En quoi puis-je vous aider ?' }
+    { sender: 'ia', text: 'Bonjour ! Je suis l\'assistant IA de Tech57. Comment puis-je vous aider aujourd\'hui ?' }
   ]);
   userMessage = signal<string>('');
   loading = signal<boolean>(false);
@@ -54,7 +55,8 @@ export class ChatIa implements AfterViewChecked {
           console.error('Erreur Chat IA:', err);
           this.messages.update((msgs) => [
             ...msgs,
-            { sender: 'ia', text: 'Une erreur de connexion est survenue avec le serveur IA.' }
+            // Message d'erreur simple et compréhensible
+            { sender: 'ia', text: 'Désolé, une erreur est survenue lors de l\'envoi du message. Veuillez réessayer.' }
           ]);
           this.loading.set(false);
         }
