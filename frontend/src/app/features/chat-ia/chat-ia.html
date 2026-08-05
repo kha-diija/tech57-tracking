@@ -1,1 +1,54 @@
-<p>chat-ia works!</p>
+<div class="ia-chat-wrapper">
+
+  <!-- En-tête -->
+  <div class="ia-chat-header">
+    <div class="header-title-group">
+      <div class="neon-pulse"></div>
+      <h2>TECH57 <span>COPILOT</span></h2>
+    </div>
+    <div class="status-tag">
+      NEURAL AI ONLINE
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="ia-chat-messages" #scrollContainer>
+    @for (msg of messages(); track $index) {
+      <div [class]="'message-row ' + (msg.sender === 'user' ? 'user-row' : 'ia-row')">
+        <div class="bubble">
+          {{ msg.text }}
+        </div>
+      </div>
+    }
+
+    <!-- Animation de chargement -->
+    @if (loading()) {
+      <div class="message-row ia-row">
+        <div class="bubble typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Entrée de texte -->
+  <div class="ia-chat-footer">
+    <div class="input-bar">
+      <input 
+        type="text" 
+        [(ngModel)]="userMessage" 
+        (keyup.enter)="sendMessage()" 
+        placeholder="Demandez à l'assistant d'analyser vos données..." 
+        [disabled]="loading()"
+      />
+      <button class="btn-send" (click)="sendMessage()" [disabled]="loading() || !userMessage().trim()">
+        <svg viewBox="0 0 24 24">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+</div>
