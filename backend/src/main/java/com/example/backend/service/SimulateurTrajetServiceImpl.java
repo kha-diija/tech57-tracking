@@ -1,50 +1,44 @@
 package com.example.backend.service;
 
+import com.example.backend.dto.OsrmResponse;
 import com.example.backend.dto.SimulateurTrajetDTO;
 import com.example.backend.dto.SimulateurTrajetRequest;
-import com.example.backend.entity.Administrateur;
-import com.example.backend.entity.Etablissement;
-import com.example.backend.entity.MissionInstallation;
-import com.example.backend.entity.SimulateurTrajet;
-import com.example.backend.entity.Technicien;
-import com.example.backend.repository.AdministrateurRepository;
-import com.example.backend.repository.EtablissementRepository;
-import com.example.backend.repository.MissionInstallationRepository;
+import com.example.backend.dto.SimulateurTrajetRequest.PointRequest;
+import com.example.backend.entity.*;
+import com.example.backend.exception.BusinessException;
+import com.example.backend.repository.adminEtablissementRepository;
+import com.example.backend.repository.adminMissionInstallationRepository;
 import com.example.backend.repository.SimulateurTrajetRepository;
-import com.example.backend.repository.TechnicienRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Calcule un itinéraire réel (type Waze) entre deux établissements via OSRM
- * (Open Source Routing Machine — pas de clé API requise) puis estime le coût
- * gasoil / péage à partir des tarifs configurés (application.yml).
- *
- * Pourquoi OSRM plutôt que Google Directions : gratuit, pas de quota, pas de
- * clé à gérer, largement suffisant pour un calcul routier point-à-point.
- * Le endpoint public (router.project-osrm.org) convient pour le développement ;
- * en production, préférer un conteneur OSRM auto-hébergé avec l'extrait
- * OSM du Maroc (cf. README, section "Déploiement OSRM").
+ * Calcule un itinéraire réel (type Waze) entre deux points via OSRM.
+ * Chaque point (origine/destination) peut être SOIT un établissement existant,
+ * SOIT un lieu libre choisi via la recherche d'adresse (Nominatim côté frontend) —
+ * on n'est plus limité aux établissements enregistrés en base.
  */
 @Service
 public class SimulateurTrajetServiceImpl implements SimulateurTrajetService {
 
-    private final EtablissementRepository etablissementRepository;
+    private static final Logger log = LoggerFactory.getLogger(SimulateurTrajetServiceImpl.class);
+
+    private final adminEtablissementRepository adminEtablissementRepository;
     private final SimulateurTrajetRepository simulateurTrajetRepository;
-    private final MissionInstallationRepository missionInstallationRepository;
-    private final TechnicienRepository technicienRepository;
-    private final AdministrateurRepository administrateurRepository;
+    private final adminMissionInstallationRepository adminMissionInstallationRepository;
     private final RestClient restClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${app.osrm.base-url:https://router.project-osrm.org}")
     private String osrmBaseUrl;
@@ -56,30 +50,27 @@ public class SimulateurTrajetServiceImpl implements SimulateurTrajetService {
     private double tarifPeageParKm;
 
     @Value("${app.trajet.majoration-nationale-temps:1.25}")
-    private double majorationTempsNationale; // route nationale = plus lente qu'autoroute à distance égale
+    private double majorationTempsNationale;
 
-    public SimulateurTrajetServiceImpl(EtablissementRepository etablissementRepository,
-                                        SimulateurTrajetRepository simulateurTrajetRepository,
-                                        MissionInstallationRepository missionInstallationRepository,
-                                        TechnicienRepository technicienRepository,
-                                        AdministrateurRepository administrateurRepository) {
-        this.etablissementRepository = etablissementRepository;
+    public SimulateurTrajetServiceImpl(adminEtablissementRepository adminEtablissementRepository,
+                                       SimulateurTrajetRepository simulateurTrajetRepository,
+                                       adminMissionInstallationRepository adminMissionInstallationRepository) {
+        this.adminEtablissementRepository = adminEtablissementRepository;
         this.simulateurTrajetRepository = simulateurTrajetRepository;
-        this.missionInstallationRepository = missionInstallationRepository;
-        this.technicienRepository = technicienRepository;
-        this.administrateurRepository = administrateurRepository;
+        this.adminMissionInstallationRepository = adminMissionInstallationRepository;
         this.restClient = RestClient.create();
     }
 
     @Override
     public SimulateurTrajetDTO calculer(SimulateurTrajetRequest request, Integer idUtilisateurConnecte, boolean estAdministrateur) {
-        Etablissement origine = getEtablissement(request.getIdEtablissementOrigine());
-        Etablissement destination = getEtablissement(request.getIdEtablissementDestination());
+        PointResolu origine = resoudrePoint(request.getOrigine());
+        PointResolu destination = resoudrePoint(request.getDestination());
 
-        double[] coordOrigine = parseCoordonnees(origine);
-        double[] coordDestination = parseCoordonnees(destination);
+        if (origine.lat == destination.lat && origine.lng == destination.lng) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le départ et l'arrivée sont identiques.");
+        }
 
-        RouteOsrm route = appellerOsrm(coordOrigine, coordDestination);
+        RouteOsrm route = appellerOsrm(origine, destination);
 
         boolean estAutoroute = "Autoroute".equalsIgnoreCase(request.getTypeRoute());
         double consommation = request.getConsommationL100km() != null ? request.getConsommationL100km() : consommationDefaut;
@@ -99,36 +90,50 @@ public class SimulateurTrajetServiceImpl implements SimulateurTrajetService {
         entity.setCoutPeage(coutPeage);
         entity.setTempsEstime(tempsEstime);
         entity.setCoutTotal(coutTotal);
-        entity.setEtablissementOrigine(origine);
-        entity.setEtablissementDestination(destination);
+
+        // Origine : établissement existant OU point libre (nom + coordonnées)
+        if (origine.etablissement != null) {
+            entity.setEtablissementOrigine(origine.etablissement);
+        } else {
+            entity.setNomOrigine(origine.nom);
+            entity.setLatOrigine(origine.lat);
+            entity.setLngOrigine(origine.lng);
+        }
+        if (destination.etablissement != null) {
+            entity.setEtablissementDestination(destination.etablissement);
+        } else {
+            entity.setNomDestination(destination.nom);
+            entity.setLatDestination(destination.lat);
+            entity.setLngDestination(destination.lng);
+        }
 
         if (estAdministrateur) {
-            Administrateur admin = administrateurRepository.findById(idUtilisateurConnecte)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Administrateur introuvable"));
+            Administrateur admin = new Administrateur();
+            admin.setId(idUtilisateurConnecte);
             entity.setAdministrateur(admin);
         } else {
-            Technicien technicien = technicienRepository.findById(idUtilisateurConnecte)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Technicien introuvable"));
-            entity.setTechnicien(technicien);
+            Technicien tech = new Technicien();
+            tech.setId(idUtilisateurConnecte);
+            entity.setTechnicien(tech);
         }
 
         if (request.getIdMission() != null) {
-            MissionInstallation mission = missionInstallationRepository.findById(request.getIdMission())
+            MissionInstallation mission = adminMissionInstallationRepository.findById(request.getIdMission())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable"));
             entity.setMission(mission);
         }
 
         entity = simulateurTrajetRepository.save(entity);
 
-        return toDto(entity, origine, destination, coordOrigine, coordDestination, route.geometrie);
+        return toDto(entity, origine, destination, route.geometrie);
     }
 
     @Override
     public List<SimulateurTrajetDTO> comparerItineraires(SimulateurTrajetRequest request, Integer idUtilisateurConnecte, boolean estAdministrateur) {
         List<SimulateurTrajetDTO> resultats = new ArrayList<>();
         for (String type : List.of("Autoroute", "Nationale")) {
-            SimulateurTrajetRequest variante = copierAvecType(request, type);
-            resultats.add(calculer(variante, idUtilisateurConnecte, estAdministrateur));
+            request.setTypeRoute(type);
+            resultats.add(calculer(request, idUtilisateurConnecte, estAdministrateur));
         }
         resultats.sort(Comparator.comparing(SimulateurTrajetDTO::getCoutTotal));
         return resultats;
@@ -138,26 +143,23 @@ public class SimulateurTrajetServiceImpl implements SimulateurTrajetService {
     public SimulateurTrajetDTO proposerBudgetMission(Integer idSimulation, Integer idMission) {
         SimulateurTrajet simulation = simulateurTrajetRepository.findById(idSimulation)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Simulation introuvable"));
-        MissionInstallation mission = missionInstallationRepository.findById(idMission)
+        MissionInstallation mission = adminMissionInstallationRepository.findById(idMission)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable"));
 
-        mission.setBudgetPropose(simulation.getCoutTotal()); // Double -> Double, direct
-        missionInstallationRepository.save(mission);
+        mission.setBudgetPropose(simulation.getCoutTotal());
+        adminMissionInstallationRepository.save(mission);
 
         simulation.setMission(mission);
         simulation = simulateurTrajetRepository.save(simulation);
 
-        Etablissement origine = simulation.getEtablissementOrigine();
-        Etablissement destination = simulation.getEtablissementDestination();
-        return toDto(simulation, origine, destination, parseCoordonnees(origine), parseCoordonnees(destination), null);
+        return toDto(simulation, versPointResolu(simulation, true), versPointResolu(simulation, false), null);
     }
 
     @Override
     public List<SimulateurTrajetDTO> historiqueParTechnicien(Integer idTechnicien) {
         return simulateurTrajetRepository.findByTechnicien_IdOrderByIdSimulationDesc(idTechnicien)
                 .stream()
-                .map(s -> toDto(s, s.getEtablissementOrigine(), s.getEtablissementDestination(),
-                        parseCoordonnees(s.getEtablissementOrigine()), parseCoordonnees(s.getEtablissementDestination()), null))
+                .map(s -> toDto(s, versPointResolu(s, true), versPointResolu(s, false), null))
                 .toList();
     }
 
@@ -165,16 +167,41 @@ public class SimulateurTrajetServiceImpl implements SimulateurTrajetService {
     // Helpers privés
     // ------------------------------------------------------------------
 
-    private double arrondir(double valeur) {
-        return Math.round(valeur * 100.0) / 100.0;
+    private PointResolu resoudrePoint(PointRequest point) {
+        if (!point.estLibre()) {
+            Etablissement etab = adminEtablissementRepository.findById(point.getIdEtablissement())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Établissement introuvable : " + point.getIdEtablissement()));
+            double[] coords = parseCoordonnees(etab);
+            return new PointResolu(etab, etab.getDesignation(), coords[0], coords[1]);
+        }
+        if (point.getLat() == null || point.getLng() == null || point.getNom() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Un point libre doit fournir nom, lat et lng (résultat de la recherche d'adresse).");
+        }
+        return new PointResolu(null, point.getNom(), point.getLat(), point.getLng());
     }
 
-    private Etablissement getEtablissement(Integer id) {
-        return etablissementRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Établissement introuvable : " + id));
+    private PointResolu versPointResolu(SimulateurTrajet s, boolean estOrigine) {
+        if (estOrigine) {
+            if (s.getEtablissementOrigine() != null) {
+                Etablissement e = s.getEtablissementOrigine();
+                double[] coords = parseCoordonnees(e);
+                return new PointResolu(e, e.getDesignation(), coords[0], coords[1]);
+            } else {
+                return new PointResolu(null, s.getNomOrigine(), s.getLatOrigine(), s.getLngOrigine());
+            }
+        } else {
+            if (s.getEtablissementDestination() != null) {
+                Etablissement e = s.getEtablissementDestination();
+                double[] coords = parseCoordonnees(e);
+                return new PointResolu(e, e.getDesignation(), coords[0], coords[1]);
+            } else {
+                return new PointResolu(null, s.getNomDestination(), s.getLatDestination(), s.getLngDestination());
+            }
+        }
     }
 
-    /** localisation_gps est stocké au format "lat,lng" (ex: "33.5731,-7.5898"). */
     private double[] parseCoordonnees(Etablissement etablissement) {
         String gps = etablissement.getLocalisationGps();
         if (gps == null || !gps.contains(",")) {
@@ -182,56 +209,95 @@ public class SimulateurTrajetServiceImpl implements SimulateurTrajetService {
                     "Coordonnées GPS manquantes pour l'établissement " + etablissement.getReference());
         }
         String[] parts = gps.split(",");
-        return new double[] { Double.parseDouble(parts[0].trim()), Double.parseDouble(parts[1].trim()) };
+        return new double[]{Double.parseDouble(parts[0].trim()), Double.parseDouble(parts[1].trim())};
     }
 
-    private RouteOsrm appellerOsrm(double[] origine, double[] destination) {
-        // OSRM attend lng,lat (et non lat,lng)
-        String url = String.format("%s/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=geojson",
-                osrmBaseUrl, origine[1], origine[0], destination[1], destination[0]);
-        try {
-            String body = restClient.get().uri(url).retrieve().body(String.class);
-            JsonNode root = objectMapper.readTree(body);
-            JsonNode route0 = root.path("routes").get(0);
-            double distanceMetres = route0.path("distance").asDouble();
-            double dureeSecondes = route0.path("duration").asDouble();
+    // ------------------------------------------------------------------
+    // Appel OSRM avec validation et mapping
+    // ------------------------------------------------------------------
 
-            List<double[]> points = new ArrayList<>();
-            JsonNode coords = route0.path("geometry").path("coordinates");
-            for (JsonNode c : coords) {
-                // GeoJSON = [lng, lat] -> on repasse en [lat, lng] pour Leaflet
-                points.add(new double[] { c.get(1).asDouble(), c.get(0).asDouble() });
+    private RouteOsrm appellerOsrm(PointResolu origine, PointResolu destination) {
+        try {
+            // OSRM requiert le format : /route/v1/driving/{lon1},{lat1};{lon2},{lat2}
+            // Force le formatage US pour éviter les virgules comme séparateurs décimaux (ex: 33,88 -> 33.88)
+            String coordinates = String.format(java.util.Locale.US, "%.6f,%.6f;%.6f,%.6f",
+                    origine.lng, origine.lat,
+                    destination.lng, destination.lat);
+
+            String url = UriComponentsBuilder.fromHttpUrl(osrmBaseUrl)
+                    .path("/route/v1/driving/")
+                    .path(coordinates)
+                    .queryParam("overview", "false")
+                    .toUriString();
+
+            log.info("Appel OSRM URL: {}", url);
+
+            OsrmResponse response = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(OsrmResponse.class);
+
+            if (response == null || response.getRoutes() == null || response.getRoutes().isEmpty()) {
+                throw new BusinessException("Aucun itinéraire trouvé par OSRM.");
             }
-            return new RouteOsrm(distanceMetres, dureeSecondes, points);
+
+            OsrmResponse.Route route = response.getRoutes().get(0);
+
+            List<double[]> routeCoordinates = null;
+            if (route.getGeometry() != null && route.getGeometry().getCoordinates() != null) {
+                routeCoordinates = route.getGeometry().getCoordinates().stream()
+                        .map(point -> new double[]{ point.get(1), point.get(0) }) // [lat, lng]
+                        .toList();
+            }
+
+            return new RouteOsrm(route.getDistance(), route.getDuration(), routeCoordinates);
+
+        } catch (HttpClientErrorException e) {
+            log.error("Erreur OSRM (HTTP {}): {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new BusinessException("Le service de routage est temporairement indisponible ou la requête est invalide. Vérifiez les coordonnées.");
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                    "Impossible de calculer l'itinéraire (service de routage indisponible)", e);
+            log.error("Erreur lors de l'appel OSRM", e);
+            throw new BusinessException("Impossible de calculer l'itinéraire.");
         }
     }
 
-    private SimulateurTrajetRequest copierAvecType(SimulateurTrajetRequest source, String type) {
-        SimulateurTrajetRequest copie = new SimulateurTrajetRequest();
-        copie.setIdEtablissementOrigine(source.getIdEtablissementOrigine());
-        copie.setIdEtablissementDestination(source.getIdEtablissementDestination());
-        copie.setPrixCarburantLitre(source.getPrixCarburantLitre());
-        copie.setConsommationL100km(source.getConsommationL100km());
-        copie.setIdMission(source.getIdMission());
-        copie.setTypeRoute(type);
-        return copie;
+    /**
+     * Convertit la réponse OSRM en objet métier RouteOsrm.
+     * Inverse les coordonnées GeoJSON ([lng, lat]) → [lat, lng] pour Leaflet.
+     */
+    private RouteOsrm mapperOsrm(OsrmResponse response) {
+        OsrmResponse.Route route = response.getRoutes().get(0);
+        List<double[]> points = route.getGeometry().getCoordinates().stream()
+                .map(coord -> new double[]{coord.get(1), coord.get(0)}) // inversion
+                .collect(Collectors.toList());
+
+        return new RouteOsrm(route.getDistance(), route.getDuration(), points);
     }
 
-    private SimulateurTrajetDTO toDto(SimulateurTrajet entity, Etablissement origine, Etablissement destination,
-                                       double[] coordOrigine, double[] coordDestination, List<double[]> geometrie) {
+    private void validerCoordonnees(double lat, double lng, String nomPoint) {
+        if (Double.isNaN(lat) || Double.isInfinite(lat) || Double.isNaN(lng) || Double.isInfinite(lng)) {
+            throw new BusinessException("Coordonnées invalides (NaN ou Infini) pour " + nomPoint);
+        }
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            throw new BusinessException("Coordonnées hors plage pour " + nomPoint + " : lat=" + lat + ", lng=" + lng);
+        }
+    }
+
+    private double arrondir(double valeur) {
+        return Math.round(valeur * 100.0) / 100.0;
+    }
+
+    private SimulateurTrajetDTO toDto(SimulateurTrajet entity, PointResolu origine, PointResolu destination, List<double[]> geometrie) {
         SimulateurTrajetDTO dto = new SimulateurTrajetDTO();
         dto.setIdSimulation(entity.getIdSimulation());
-        dto.setReferenceOrigine(origine.getReference());
-        dto.setDesignationOrigine(origine.getDesignation());
-        dto.setLatOrigine(coordOrigine[0]);
-        dto.setLngOrigine(coordOrigine[1]);
-        dto.setReferenceDestination(destination.getReference());
-        dto.setDesignationDestination(destination.getDesignation());
-        dto.setLatDestination(coordDestination[0]);
-        dto.setLngDestination(coordDestination[1]);
+        dto.setReferenceOrigine(origine.etablissement != null ? origine.etablissement.getReference() : null);
+        dto.setDesignationOrigine(origine.nom);
+        dto.setLatOrigine(origine.lat);
+        dto.setLngOrigine(origine.lng);
+        dto.setReferenceDestination(destination.etablissement != null ? destination.etablissement.getReference() : null);
+        dto.setDesignationDestination(destination.nom);
+        dto.setLatDestination(destination.lat);
+        dto.setLngDestination(destination.lng);
         dto.setTypeRoute(entity.getTypeRoute());
         dto.setDistanceKm(entity.getDistanceKm());
         dto.setTempsEstime(entity.getTempsEstime());
@@ -242,6 +308,12 @@ public class SimulateurTrajetServiceImpl implements SimulateurTrajetService {
         dto.setPointsRoute(geometrie);
         return dto;
     }
+
+    // ------------------------------------------------------------------
+    // Records internes
+    // ------------------------------------------------------------------
+
+    private record PointResolu(Etablissement etablissement, String nom, double lat, double lng) {}
 
     private record RouteOsrm(double distanceMetres, double dureeSecondes, List<double[]> geometrie) {}
 }

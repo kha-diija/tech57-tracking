@@ -34,7 +34,7 @@ export const routes: Routes = [
       { path: 'missions', component: Missions },
       { path: 'etablissements', component: Etablissements },
       {
-        path: 'simulateur-trajet',
+        path: 'admin/simulateur-trajet',
         canActivate: [roleGuard(['TECHNICIEN', 'ADMINISTRATEUR'])],
         loadComponent: () =>
           import('./features/simulateur-trajet/simulateur-trajet').then(m => m.SimulateurTrajet),
