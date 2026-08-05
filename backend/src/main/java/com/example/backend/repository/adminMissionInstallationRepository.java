@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MissionInstallationRepository extends JpaRepository<MissionInstallation, Integer> {
+public interface adminMissionInstallationRepository extends JpaRepository<MissionInstallation, Integer> {
 
     List<MissionInstallation> findByEtablissement_IdEtablissement(Integer idEtablissement);
 

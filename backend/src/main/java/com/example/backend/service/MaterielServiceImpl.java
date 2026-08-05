@@ -34,9 +34,9 @@ public class MaterielServiceImpl implements MaterielService {
 
     private static final Set<String> ETATS_VALIDES = Set.of("Neuf", "En service", "En panne", "Retiré");
 
-    private final MaterielRepository materielRepository;
+    private final adminMaterielRepository adminMaterielRepository;
     private final CategorieMaterielRepository categorieMaterielRepository;
-    private final EtablissementRepository etablissementRepository;
+    private final adminEtablissementRepository adminEtablissementRepository;
     private final MaintenanceRepository maintenanceRepository;
 
     // ---------------------------------------------------------------
@@ -49,7 +49,7 @@ public class MaterielServiceImpl implements MaterielService {
                                          Integer idEtablissement, boolean topLevelOnly, Pageable pageable) {
         Specification<Materiel> spec = MaterielSpecification.combine(
                 texte, etat, idCategorie, idEtablissement, topLevelOnly);
-        return materielRepository.findAll(spec, pageable)
+        return adminMaterielRepository.findAll(spec, pageable)
                 .map(m -> toDto(m, false));
     }
 
@@ -85,7 +85,7 @@ public class MaterielServiceImpl implements MaterielService {
                 ? request.getCodeQr()
                 : genererCodeQr(request.getReference()));
 
-        return toDto(materielRepository.save(m), false);
+        return toDto(adminMaterielRepository.save(m), false);
     }
 
     // ---------------------------------------------------------------
@@ -135,7 +135,7 @@ public class MaterielServiceImpl implements MaterielService {
         }
         kit.setComposants(composants);
 
-        Materiel saved = materielRepository.save(kit); // cascade = ALL persiste aussi les composants
+        Materiel saved = adminMaterielRepository.save(kit); // cascade = ALL persiste aussi les composants
         return toDto(saved, true);
     }
 
@@ -162,14 +162,14 @@ public class MaterielServiceImpl implements MaterielService {
             m.setCodeQr(request.getCodeQr());
         }
 
-        return toDto(materielRepository.save(m), true);
+        return toDto(adminMaterielRepository.save(m), true);
     }
 
     @Override
     public void supprimer(Integer id) {
         Materiel m = findMaterielOrThrow(id);
         // La suppression d'un kit supprime ses composants (cascade ALL côté entité)
-        materielRepository.delete(m);
+        adminMaterielRepository.delete(m);
     }
 
     // ---------------------------------------------------------------
@@ -180,7 +180,7 @@ public class MaterielServiceImpl implements MaterielService {
     public MaterielDTO changerEtat(Integer id, String nouvelEtat) {
         Materiel m = findMaterielOrThrow(id);
         m.setEtat(validerEtat(nouvelEtat));
-        return toDto(materielRepository.save(m), false);
+        return toDto(adminMaterielRepository.save(m), false);
     }
 
     @Override
@@ -217,7 +217,7 @@ public class MaterielServiceImpl implements MaterielService {
                 ? request.getCodeQr()
                 : kit.getCodeQr());
 
-        materielRepository.save(composant);
+        adminMaterielRepository.save(composant);
         return toDto(findMaterielOrThrow(idKit), true);
     }
 
@@ -227,7 +227,7 @@ public class MaterielServiceImpl implements MaterielService {
         if (composant.getMaterielParent() == null) {
             throw new IllegalArgumentException("Ce matériel n'est pas un composant de kit");
         }
-        materielRepository.delete(composant);
+        adminMaterielRepository.delete(composant);
     }
 
     // ---------------------------------------------------------------
@@ -239,7 +239,7 @@ public class MaterielServiceImpl implements MaterielService {
         Materiel m = findMaterielOrThrow(id);
         String nouveauCode = genererCodeQr(m.getReference());
         m.setCodeQr(nouveauCode);
-        materielRepository.save(m);
+        adminMaterielRepository.save(m);
         return nouveauCode;
     }
 
@@ -248,7 +248,7 @@ public class MaterielServiceImpl implements MaterielService {
     // ---------------------------------------------------------------
 
     private Materiel findMaterielOrThrow(Integer id) {
-        return materielRepository.findById(id)
+        return adminMaterielRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Matériel introuvable, id=" + id));
     }
 
@@ -259,12 +259,12 @@ public class MaterielServiceImpl implements MaterielService {
 
     private Etablissement resoudreEtablissement(Integer idEtablissement) {
         if (idEtablissement == null) return null;
-        return etablissementRepository.findById(idEtablissement)
+        return adminEtablissementRepository.findById(idEtablissement)
                 .orElseThrow(() -> new ResourceNotFoundException("Établissement introuvable, id=" + idEtablissement));
     }
 
     private void verifierReferenceUnique(String reference, Integer idAExclure) {
-        materielRepository.findByReference(reference).ifPresent(existant -> {
+        adminMaterielRepository.findByReference(reference).ifPresent(existant -> {
             if (idAExclure == null || !existant.getIdMateriel().equals(idAExclure)) {
                 throw new IllegalArgumentException("La référence '" + reference + "' est déjà utilisée");
             }
