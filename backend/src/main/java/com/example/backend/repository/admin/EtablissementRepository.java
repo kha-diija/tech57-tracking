@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface EtablissementAdminRepository extends JpaRepository<Etablissement, Integer> {
+public interface EtablissementRepository extends JpaRepository<Etablissement, Integer> {
 
     @Query("SELECT e FROM Etablissement e " +
             "LEFT JOIN FETCH e.commune c " +
