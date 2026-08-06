@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface ChangePasswordRequest {
   ancienMotDePasse: string;
@@ -9,7 +10,7 @@ export interface ChangePasswordRequest {
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
-  private apiUrl = '/api/user/settings';
+  private apiUrl = `${environment.apiUrl}/user/settings`;
 
   constructor(private http: HttpClient) {}
 

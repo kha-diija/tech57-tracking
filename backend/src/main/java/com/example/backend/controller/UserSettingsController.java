@@ -1,11 +1,10 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.settings.ChangePasswordRequest;
-import com.example.backend.security.UserPrincipal;
 import com.example.backend.service.SettingsService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -22,10 +21,14 @@ public class UserSettingsController {
 
     @PutMapping("/change-password")
     public ResponseEntity<Map<String, String>> changePassword(
-            @AuthenticationPrincipal UserPrincipal currentUser,
+            Authentication authentication, // Injecte l'utilisateur connecté sans problème de type
             @Valid @RequestBody ChangePasswordRequest request) {
 
-        settingsService.changePassword(currentUser.getId(), request);
+        // authentication.getName() contient le username / email extrait du Token JWT
+        String email = authentication.getName();
+
+        settingsService.changePasswordByEmail(email, request);
+
         return ResponseEntity.ok(Map.of("message", "Votre mot de passe a été modifié avec succès"));
     }
 }
