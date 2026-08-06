@@ -63,6 +63,12 @@ public class InterventionService {
         return convertToResponse(intervention);
     }
 
+    // --- MÉTHODE AJOUTÉE : Récupère l'entité brute pour le RapportPdfService ---
+    public Intervention getInterventionEntity(Integer id) {
+        return interventionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+    }
+
     public InterventionResponse create(CreateInterventionRequest request) {
         MissionInstallation mission = missionRepository.findById(request.getMissionId())
                 .orElseThrow(() -> new EntityNotFoundException("Mission introuvable."));
@@ -127,6 +133,14 @@ public class InterventionService {
         if (intervention.getMission() != null) {
             response.setMissionId(intervention.getMission().getIdMission());
             response.setMissionReference(intervention.getMission().getReference());
+
+            // ==========================================================
+            // --- AJOUT : Récupération du nom de l'établissement ---
+            // ==========================================================
+            if (intervention.getMission().getEtablissement() != null) {
+                response.setEtablissementDesignation(intervention.getMission().getEtablissement().getDesignation());
+            }
+            // ==========================================================
         }
 
         if (intervention.getTechnicien() != null) {
@@ -223,5 +237,19 @@ public class InterventionService {
         }
 
         return response;
+    }
+
+    // ==============================================================
+    // --- NOUVELLE MÉTHODE : FORCER LA CLÔTURE PAR L'ADMIN ---
+    // ==============================================================
+    public InterventionResponse forceCompleteByAdmin(Integer id) {
+        Intervention intervention = interventionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+
+        intervention.setStatut("Clôturée");
+        intervention.setTauxAvancement(100.0);
+
+        Intervention updated = interventionRepository.save(intervention);
+        return convertToResponse(updated);
     }
 }

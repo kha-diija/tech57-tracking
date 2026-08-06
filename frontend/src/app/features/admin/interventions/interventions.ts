@@ -4,8 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { InterventionService } from '../../../shared/services/intervention.service';
 import { Intervention, InterventionRequest } from '../../../shared/models/intervention.model';
-// IMPORT DE PACKAGE AJOUTÉ ICI
-import { LucideAngularModule, MapPin, CheckCircle, Clock, Calendar, Trash2, Plus, Download, Search, Edit, Eye, Activity, Map, Image as LucideImage, FileText, Package } from 'lucide-angular';
+import { LucideAngularModule, MapPin, CheckCircle, Clock, Calendar, Trash2, Plus, Download, Search, Edit, Eye, Activity, Map, Image as LucideImage, FileText, Package, AlertCircle } from 'lucide-angular';
 
 @Component({
   selector: 'app-interventions',
@@ -15,10 +14,9 @@ import { LucideAngularModule, MapPin, CheckCircle, Clock, Calendar, Trash2, Plus
   styleUrl: './interventions.scss'
 })
 export class Interventions implements OnInit {
-  // AJOUT DE Package DANS L'OBJET ICONS
   readonly icons = { 
     MapPin, CheckCircle, Clock, Calendar, Trash2, Plus, Download, Search, Edit, Eye, Activity, Map,
-    Image: LucideImage, FileText, Package
+    Image: LucideImage, FileText, Package, AlertCircle
   };
   
   private interventionService = inject(InterventionService);
@@ -40,6 +38,10 @@ export class Interventions implements OnInit {
 
   showDeleteModal = false;
   deleteTargetId: number | null = null;
+  
+  // --- NOUVELLE VARIABLE POUR LA MODALE DE CONFIRMATION ---
+  showConfirmCloseModal = false;
+  confirmCloseId: number | null = null;
 
   kpis = {
     total: 0,
@@ -53,8 +55,9 @@ export class Interventions implements OnInit {
     this.loadMissionsAndTechniciens();
   }
 
+  // --- MÉTHODE CHARGEMENT (Anti-cache) ---
   loadInterventions() {
-    this.interventionService.getInterventions().subscribe({
+    this.interventionService.getInterventionsNoCache().subscribe({
       next: (data) => {
         this.interventions = data || [];
         this.calculerKPIs();
@@ -116,7 +119,6 @@ export class Interventions implements OnInit {
       alert("Aucune donnée à exporter.");
       return;
     }
-
     const headers = ['"ID"', '"Mission"', '"Technicien"', '"Date Debut"', '"Visites"', '"Avancement"', '"Statut"'];
     const rows = this.interventions.map(i => [
       `"${i.id}"`,
@@ -232,11 +234,61 @@ export class Interventions implements OnInit {
     this.currentDetail = null;
   }
 
+  // --- MÉTHODE : Générer le rapport PDF ---
+  genererRapport(id: number) {
+    const url = `http://localhost:8080/api/admin/interventions/${id}/rapport/download`;
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: (blob: Blob) => {
+        const fileUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = `rapport_intervention_${id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(fileUrl);
+      },
+      error: (err) => {
+        console.error("Erreur lors de la génération du rapport:", err);
+        alert("Impossible de générer le rapport.");
+      }
+    });
+  }
+
+  // --- NOUVELLES MÉTHODES POUR LA MODALE DE CONFIRMATION ---
+  ouvrirConfirmationCloture(id: number) {
+    this.confirmCloseId = id;
+    this.showConfirmCloseModal = true;
+  }
+
+  annulerCloture() {
+    this.showConfirmCloseModal = false;
+    this.confirmCloseId = null;
+  }
+
+  confirmerCloture() {
+    if (this.confirmCloseId === null) return;
+
+    this.interventionService.forceCompleteIntervention(this.confirmCloseId).subscribe({
+      next: () => {
+        this.fermerDetailModal();
+        this.showConfirmCloseModal = false;
+        this.confirmCloseId = null;
+        // Petit délai pour laisser le temps au Backend de finir l'écriture, puis on recharge
+        setTimeout(() => {
+          this.loadInterventions();
+        }, 300);
+      },
+      error: (err) => {
+        console.error("Erreur lors de la clôture:", err);
+        alert("Erreur lors de la clôture de l'intervention.");
+      }
+    });
+  }
+
   downloadAttestation(id: number) {
     const url = `http://localhost:8080/api/admin/interventions/${id}/attestation/download`;
-    this.http.get(url, {
-      responseType: 'blob'
-    }).subscribe({
+    this.http.get(url, { responseType: 'blob' }).subscribe({
       next: (blob: Blob) => {
         const fileUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
