@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.List;
 import java.util.Optional;
 
-public interface MaterielRepository extends JpaRepository<Materiel, Integer>,
+public interface adminMaterielRepository extends JpaRepository<Materiel, Integer>,
         JpaSpecificationExecutor<Materiel> {
 
     Optional<Materiel> findByReference(String reference);

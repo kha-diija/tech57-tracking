@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface MissionInstallationRepository extends JpaRepository<MissionInstallation, Integer> {
+public interface adminMissionInstallationRepository extends JpaRepository<MissionInstallation, Integer> {
 
     List<MissionInstallation> findByEtablissement_IdEtablissement(Integer idEtablissement);
 

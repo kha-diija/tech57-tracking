@@ -34,9 +34,9 @@ public class MaterielServiceImpl implements MaterielService {
 
     private static final Set<String> ETATS_VALIDES = Set.of("Neuf", "En service", "En panne", "Retiré");
 
-    private final MaterielRepository materielRepository;
+    private final adminMaterielRepository materielRepository;
     private final CategorieMaterielRepository categorieMaterielRepository;
-    private final EtablissementRepository etablissementRepository;
+    private final adminEtablissementRepository etablissementRepository;
     private final MaintenanceRepository maintenanceRepository;
 
     // ---------------------------------------------------------------

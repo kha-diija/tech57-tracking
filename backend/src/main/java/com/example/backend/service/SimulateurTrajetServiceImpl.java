@@ -8,10 +8,10 @@ import com.example.backend.entity.MissionInstallation;
 import com.example.backend.entity.SimulateurTrajet;
 import com.example.backend.entity.Technicien;
 import com.example.backend.repository.AdministrateurRepository;
-import com.example.backend.repository.EtablissementRepository;
-import com.example.backend.repository.MissionInstallationRepository;
+import com.example.backend.repository.adminEtablissementRepository;
+import com.example.backend.repository.adminMissionInstallationRepository;
 import com.example.backend.repository.SimulateurTrajetRepository;
-import com.example.backend.repository.TechnicienRepository;
+import com.example.backend.repository.adminTechnicienRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,10 +38,10 @@ import java.util.List;
 @Service
 public class SimulateurTrajetServiceImpl implements SimulateurTrajetService {
 
-    private final EtablissementRepository etablissementRepository;
+    private final adminEtablissementRepository etablissementRepository;
     private final SimulateurTrajetRepository simulateurTrajetRepository;
-    private final MissionInstallationRepository missionInstallationRepository;
-    private final TechnicienRepository technicienRepository;
+    private final adminMissionInstallationRepository missionInstallationRepository;
+    private final adminTechnicienRepository technicienRepository;
     private final AdministrateurRepository administrateurRepository;
     private final RestClient restClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -58,11 +58,11 @@ public class SimulateurTrajetServiceImpl implements SimulateurTrajetService {
     @Value("${app.trajet.majoration-nationale-temps:1.25}")
     private double majorationTempsNationale; // route nationale = plus lente qu'autoroute à distance égale
 
-    public SimulateurTrajetServiceImpl(EtablissementRepository etablissementRepository,
-                                        SimulateurTrajetRepository simulateurTrajetRepository,
-                                        MissionInstallationRepository missionInstallationRepository,
-                                        TechnicienRepository technicienRepository,
-                                        AdministrateurRepository administrateurRepository) {
+    public SimulateurTrajetServiceImpl(adminEtablissementRepository etablissementRepository,
+                                       SimulateurTrajetRepository simulateurTrajetRepository,
+                                       adminMissionInstallationRepository missionInstallationRepository,
+                                       adminTechnicienRepository technicienRepository,
+                                       AdministrateurRepository administrateurRepository) {
         this.etablissementRepository = etablissementRepository;
         this.simulateurTrajetRepository = simulateurTrajetRepository;
         this.missionInstallationRepository = missionInstallationRepository;

@@ -1,0 +1,148 @@
+package com.example.backend.service.gestionnairestock;
+
+import com.example.backend.dto.gestionnairestock.*;
+import com.example.backend.entity.*;
+import com.example.backend.repository.UtilisateurRepository;
+import com.example.backend.repository.NotificationRepository; // ⚠️ à confirmer/ajuster
+import com.example.backend.repository.admin.SortieMaterielRepository;
+import com.example.backend.repository.gestionnairestock.GsStockMaterielRepository;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class SortieMaterielGestionService {
+
+    private final SortieMaterielRepository sortieMaterielRepository;
+    private final GsStockMaterielRepository stockMaterielRepository;
+    private final NotificationRepository notificationRepository;
+    private final UtilisateurRepository utilisateurRepository;
+
+    public SortieMaterielGestionService(
+            SortieMaterielRepository sortieMaterielRepository,
+            GsStockMaterielRepository stockMaterielRepository,
+            NotificationRepository notificationRepository,
+            UtilisateurRepository utilisateurRepository) {
+        this.sortieMaterielRepository = sortieMaterielRepository;
+        this.stockMaterielRepository = stockMaterielRepository;
+        this.notificationRepository = notificationRepository;
+        this.utilisateurRepository = utilisateurRepository;
+    }
+
+    public List<SortieMaterielDto> listerParStatut(String statut) {
+        return sortieMaterielRepository.findByStatut(statut)
+                .stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    private SortieMaterielDto toDto(SortieMateriel s) {
+        SortieMaterielDto dto = new SortieMaterielDto();
+        dto.setIdSortie(s.getIdSortie());
+        dto.setDateSortie(s.getDateSortie());
+        dto.setLieuIntervention(s.getLieuIntervention());
+        dto.setStatut(s.getStatut());
+        dto.setMotifRejet(s.getMotif());
+
+        if (s.getTechnicien() != null) {
+            dto.setTechnicienId(s.getTechnicien().getId());
+            dto.setTechnicienNom(s.getTechnicien().getNom() + " " + s.getTechnicien().getPrenom());
+        }
+
+        if (s.getIntervention() != null) {
+            dto.setInterventionId(s.getIntervention().getIdIntervention());
+            if (s.getIntervention().getMission() != null) {
+                dto.setMissionReference(s.getIntervention().getMission().getReference());
+            }
+        }
+
+        List<SortieMaterielDetailDto> detailDtos = s.getDetails().stream().map(d -> {
+            SortieMaterielDetailDto dd = new SortieMaterielDetailDto();
+            dd.setIdDetail(d.getIdDetailSortie());
+            dd.setIdMateriel(d.getMateriel().getIdMateriel());
+            dd.setMaterielReference(d.getMateriel().getReference());
+            dd.setMaterielNom(d.getMateriel().getNom());
+            dd.setQuantiteDemandee(d.getQuantite());
+
+            stockMaterielRepository.findById(d.getMateriel().getIdMateriel())
+                    .ifPresent(stock -> dd.setStockDisponible(stock.getQuantiteDisponible()));
+
+            return dd;
+        }).collect(Collectors.toList());
+
+        dto.setDetails(detailDtos);
+        return dto;
+    }
+
+    @Transactional
+    public SortieMaterielDto approuver(Integer idSortie, Integer idValidateur) {
+        SortieMateriel sortie = sortieMaterielRepository.findById(idSortie)
+                .orElseThrow(() -> new EntityNotFoundException("Sortie introuvable."));
+
+        if (!"En attente".equals(sortie.getStatut())) {
+            throw new IllegalStateException("Cette demande a déjà été traitée.");
+        }
+
+        for (DetailSortieMateriel detail : sortie.getDetails()) {
+            StockMateriel stock = stockMaterielRepository.findById(detail.getMateriel().getIdMateriel())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Aucune fiche de stock pour le matériel " + detail.getMateriel().getReference()));
+
+            if (stock.getQuantiteDisponible() < detail.getQuantite()) {
+                throw new IllegalStateException(
+                        "Stock insuffisant pour " + detail.getMateriel().getReference()
+                                + " (disponible: " + stock.getQuantiteDisponible()
+                                + ", demandé: " + detail.getQuantite() + ")");
+            }
+        }
+
+        for (DetailSortieMateriel detail : sortie.getDetails()) {
+            StockMateriel stock = stockMaterielRepository.findById(detail.getMateriel().getIdMateriel()).get();
+            stock.setQuantiteDisponible(stock.getQuantiteDisponible() - detail.getQuantite());
+            stock.setQuantiteReservee(stock.getQuantiteReservee() + detail.getQuantite());
+            stockMaterielRepository.save(stock);
+        }
+
+        Utilisateur validateur = utilisateurRepository.findById(idValidateur)
+                .orElseThrow(() -> new EntityNotFoundException("Validateur introuvable."));
+
+        sortie.setStatut("Validée");
+        sortie.setValidateur(validateur);
+
+        return toDto(sortieMaterielRepository.save(sortie));
+    }
+
+    @Transactional
+    public SortieMaterielDto rejeter(Integer idSortie, Integer idValidateur, RejeterSortieRequest request) {
+        SortieMateriel sortie = sortieMaterielRepository.findById(idSortie)
+                .orElseThrow(() -> new EntityNotFoundException("Sortie introuvable."));
+
+        if (!"En attente".equals(sortie.getStatut())) {
+            throw new IllegalStateException("Cette demande a déjà été traitée.");
+        }
+
+        Utilisateur validateur = utilisateurRepository.findById(idValidateur)
+                .orElseThrow(() -> new EntityNotFoundException("Validateur introuvable."));
+
+        sortie.setStatut("Rejetée");
+        sortie.setMotif(request.getMotifRejet());
+        sortie.setValidateur(validateur);
+
+        SortieMateriel saved = sortieMaterielRepository.save(sortie);
+
+        if (sortie.getTechnicien() != null) {
+            Notification notif = new Notification();
+            notif.setExpediteur(validateur);
+            notif.setDestinataire(sortie.getTechnicien());
+            String refMission = sortie.getIntervention() != null && sortie.getIntervention().getMission() != null
+                    ? sortie.getIntervention().getMission().getReference() : "N/A";
+            notif.setMessage("Votre demande de matériel pour la mission " + refMission
+                    + " a été rejetée. Motif : " + request.getMotifRejet());
+            notif.setType("DEMANDE_REJETEE");
+            notificationRepository.save(notif);
+        }
+
+        return toDto(saved);
+    }
+}

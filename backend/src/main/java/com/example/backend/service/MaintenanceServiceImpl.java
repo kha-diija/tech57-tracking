@@ -6,7 +6,7 @@ import com.example.backend.entity.Maintenance;
 import com.example.backend.entity.Materiel;
 import com.example.backend.exception.ResourceNotFoundException;
 import com.example.backend.repository.MaintenanceRepository;
-import com.example.backend.repository.MaterielRepository;
+import com.example.backend.repository.adminMaterielRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class MaintenanceServiceImpl implements MaintenanceService {
 
     private final MaintenanceRepository maintenanceRepository;
-    private final MaterielRepository materielRepository;
+    private final adminMaterielRepository materielRepository;
 
     @Override
     @Transactional(readOnly = true)
