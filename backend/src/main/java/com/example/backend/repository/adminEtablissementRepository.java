@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.List;
 import java.util.Optional;
 
-public interface EtablissementRepository extends JpaRepository<Etablissement, Integer>,
+public interface adminEtablissementRepository extends JpaRepository<Etablissement, Integer>,
         JpaSpecificationExecutor<Etablissement> {
 
     Optional<Etablissement> findByReference(String reference);

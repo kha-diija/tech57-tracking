@@ -1,6 +1,10 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../shared/services/auth.service'; // ⚠️ ajuste le chemin exact selon ton arborescence
+import { AchatMaterielService } from './services/achat-materiel.service';
+import { CreerAchatRequest } from './models/achat.model';
+import { ShoppingCart } from 'lucide-angular'; // nouvelle icône
 import {
   LucideAngularModule,
   Search,
@@ -54,12 +58,15 @@ type ModeCreation = 'simple' | 'kit';
 })
 export class Stock implements OnInit {
   private materielService = inject(MaterielService);
+  private authService = inject(AuthService);
+private achatMaterielService = inject(AchatMaterielService);
 
   readonly icons = {
-    Search, SlidersHorizontal, Plus, QrCode, Laptop, Projector, Cable, Router,
-    Boxes, Package, Wrench, History, Trash2, Pencil, X, ChevronRight, ChevronDown,
-    AlertTriangle, CheckCircle2, PackagePlus, RefreshCw, Building2, Info,
-  };
+  Search, SlidersHorizontal, Plus, QrCode, Laptop, Projector, Cable, Router,
+  Boxes, Package, Wrench, History, Trash2, Pencil, X, ChevronRight, ChevronDown,
+  AlertTriangle, CheckCircle2, PackagePlus, RefreshCw, Building2, Info,
+  ShoppingCart,
+};
 
   readonly etats = ETATS;
 
@@ -110,6 +117,56 @@ export class Stock implements OnInit {
     this.materielService.getCategories().subscribe((cats) => this.categories.set(cats));
     this.rechercher();
   }
+
+// --- Achat de stock ---
+showAchatModal = signal(false);
+achatMateriels = signal<MaterielDTO[]>([]); // liste complète pour le select
+achatForm: CreerAchatRequest = this.emptyAchatRequest();
+achatSaving = signal(false);
+achatError = signal<string | null>(null);
+
+peutAcheter(): boolean {
+  return this.authService.hasRole('ADMINISTRATEUR', 'GESTIONNAIRE_STOCK');
+}
+
+ouvrirAchat(): void {
+  this.achatError.set(null);
+  this.achatForm = this.emptyAchatRequest();
+  // Charge une liste complète (sans pagination) pour le select du modal
+  this.materielService.rechercher({ topLevelOnly: true, size: 500, page: 0 }).subscribe((res) => {
+    this.achatMateriels.set(res.content);
+  });
+  this.showAchatModal.set(true);
+}
+
+fermerAchat(): void {
+  this.showAchatModal.set(false);
+  this.achatError.set(null);
+}
+
+soumettreAchat(): void {
+  this.achatError.set(null);
+  if (!this.achatForm.idMateriel || !this.achatForm.quantite || this.achatForm.quantite < 1) {
+    this.achatError.set('Matériel et quantité (> 0) sont obligatoires');
+    return;
+  }
+  this.achatSaving.set(true);
+  this.achatMaterielService.creer(this.achatForm).subscribe({
+    next: () => {
+      this.achatSaving.set(false);
+      this.fermerAchat();
+      this.rechercher(0); // rafraîchit la liste (les quantités affichées, si tu les ajoutes plus tard, seront à jour)
+    },
+    error: (err) => {
+      this.achatError.set(err?.error?.message ?? "Erreur lors de l'enregistrement de l'achat");
+      this.achatSaving.set(false);
+    },
+  });
+}
+
+private emptyAchatRequest(): CreerAchatRequest {
+  return { idMateriel: 0, quantite: 1, fournisseur: '', numeroFacture: '', prixUnitaireHt: null };
+}
 
   // =================================================================
   // Recherche / filtres

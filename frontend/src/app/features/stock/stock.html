@@ -18,6 +18,14 @@
         <lucide-icon [img]="icons.Plus" [size]="18"></lucide-icon>
         <span>Nouveau matériel</span>
       </button>
+      <button class="btn btn-primary" (click)="ouvrirCreation('simple')">
+  <lucide-icon [img]="icons.Plus" [size]="18"></lucide-icon>
+  <span>Nouveau matériel</span>
+</button>
+<button class="btn btn-primary" *ngIf="peutAcheter()" (click)="ouvrirAchat()">
+  <lucide-icon [img]="icons.ShoppingCart" [size]="18"></lucide-icon>
+  <span>Nouvel achat</span>
+</button>
     </div>
   </header>
 
@@ -509,4 +517,53 @@
       </div>
     </form>
   </div>
+  <!-- ============================= MODAL ACHAT ============================= -->
+<div class="modal-backdrop" *ngIf="showAchatModal()" (click)="fermerAchat()"></div>
+
+<div class="create-modal" *ngIf="showAchatModal()">
+  <header class="modal-header">
+    <h2>Nouvel achat</h2>
+    <button type="button" class="icon-btn" (click)="fermerAchat()">
+      <lucide-icon [img]="icons.X" [size]="20"></lucide-icon>
+    </button>
+  </header>
+
+  <div class="modal-body">
+    <div class="error-banner" *ngIf="achatError()">
+      <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+      {{ achatError() }}
+    </div>
+
+    <form class="edit-form" (ngSubmit)="soumettreAchat()">
+      <label>Matériel *
+        <select [(ngModel)]="achatForm.idMateriel" name="achatMateriel" required>
+          <option [ngValue]="0" disabled>Choisir un matériel</option>
+          <option *ngFor="let m of achatMateriels()" [ngValue]="m.idMateriel">
+            {{ m.nom }} ({{ m.reference }})
+          </option>
+        </select>
+      </label>
+      <label>Quantité achetée *
+        <input type="number" min="1" [(ngModel)]="achatForm.quantite" name="achatQuantite" required />
+      </label>
+      <label>Fournisseur
+        <input type="text" [(ngModel)]="achatForm.fournisseur" name="achatFournisseur" />
+      </label>
+      <label>N° facture
+        <input type="text" [(ngModel)]="achatForm.numeroFacture" name="achatFacture" />
+      </label>
+      <label>Prix unitaire HT (DH)
+        <input type="number" min="0" step="0.01" [(ngModel)]="achatForm.prixUnitaireHt" name="achatPrix" />
+      </label>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" (click)="fermerAchat()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="achatSaving()">
+          <lucide-icon *ngIf="achatSaving()" [img]="icons.RefreshCw" [size]="14" class="spin"></lucide-icon>
+          Enregistrer l'achat
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 </div>

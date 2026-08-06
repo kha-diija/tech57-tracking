@@ -35,5 +35,9 @@ public class AchatMateriel {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_administrateur")
-    private Administrateur acheteur;
+    private Administrateur acheteurAdmin;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_gestionnaire")
+    private GestionnaireStock acheteurGestionnaire;
 }
