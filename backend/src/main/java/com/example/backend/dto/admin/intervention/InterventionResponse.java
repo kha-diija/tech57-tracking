@@ -14,6 +14,10 @@ public class InterventionResponse {
     private String localisationGps;
     private Integer missionId;
     private String missionReference;
+
+    // --- NOUVEAU CHAMP AJOUTÉ ---
+    private String etablissementDesignation;
+
     private Integer technicienId;
     private String technicienNom;
 
@@ -46,6 +50,11 @@ public class InterventionResponse {
     public void setMissionId(Integer missionId) { this.missionId = missionId; }
     public String getMissionReference() { return missionReference; }
     public void setMissionReference(String missionReference) { this.missionReference = missionReference; }
+
+    // --- NOUVEAU GETTER ET SETTER ---
+    public String getEtablissementDesignation() { return etablissementDesignation; }
+    public void setEtablissementDesignation(String etablissementDesignation) { this.etablissementDesignation = etablissementDesignation; }
+
     public Integer getTechnicienId() { return technicienId; }
     public void setTechnicienId(Integer technicienId) { this.technicienId = technicienId; }
     public String getTechnicienNom() { return technicienNom; }
@@ -56,7 +65,7 @@ public class InterventionResponse {
     public AttestationDto getAttestation() { return attestation; }
     public void setAttestation(AttestationDto attestation) { this.attestation = attestation; }
 
-    // --- Nouveaux Getters et Setters pour le Stock ---
+    // --- Getters et Setters pour le Stock ---
     public List<SortieMaterielDto> getSortiesMateriel() { return sortiesMateriel; }
     public void setSortiesMateriel(List<SortieMaterielDto> sortiesMateriel) { this.sortiesMateriel = sortiesMateriel; }
 
