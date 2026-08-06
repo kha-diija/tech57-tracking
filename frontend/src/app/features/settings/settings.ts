@@ -1,15 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { SettingsService } from '../../shared/services/settings.service';
 
 interface PasswordStrength {
-  score: number;   // 0 à 4
+  score: number;
   label: string;
   color: string;
 }
 
-// Doit rester synchronisé avec le pattern du backend (@Pattern dans ChangePasswordRequest)
 function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
   const value = control.value as string;
   if (!value) return null;
@@ -40,7 +39,8 @@ export class Settings {
 
   constructor(
     private fb: FormBuilder,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private cdr: ChangeDetectorRef // Injecter le ChangeDetectorRef
   ) {
     this.passwordForm = this.fb.group(
       {
@@ -53,6 +53,7 @@ export class Settings {
 
     this.passwordForm.get('nouveauMotDePasse')?.valueChanges.subscribe((value: string) => {
       this.strength = this.calculatePasswordStrength(value);
+      this.cdr.markForCheck();
     });
   }
 
@@ -62,7 +63,6 @@ export class Settings {
     return nouveau === confirmer ? null : { mismatch: true };
   }
 
-  // Score simple 0-4 basé sur longueur / diversité de caractères
   calculatePasswordStrength(password: string): PasswordStrength {
     if (!password) return { score: 0, label: '', color: '' };
 
@@ -109,10 +109,12 @@ export class Settings {
         this.successMessage = res.message || 'Mot de passe modifié avec succès.';
         this.passwordForm.reset();
         this.strength = { score: 0, label: '', color: '' };
+        this.cdr.markForCheck(); // Rafraîchir la vue immédiatement
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Erreur lors du changement de mot de passe.';
+        this.errorMessage = err.error?.message || 'L\'ancien mot de passe est incorrect.';
+        this.cdr.markForCheck(); // Rafraîchir la vue immédiatement à l'erreur
       },
     });
   }
