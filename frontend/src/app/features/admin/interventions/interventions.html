@@ -110,13 +110,15 @@
                 </div>
               </td>
               <td>
+                <!-- CORRECTION DU STATUT DANS LE TABLEAU -->
                 <span class="badge" 
                       [ngClass]="{
-                        'badge-success': item.numeroVisite >= 2 || item.statut === 'Exécutée', 
+                        'badge-success': item.statut === 'Exécutée',
+                        'badge-blue': item.statut === 'En cours',
                         'badge-warning': item.statut === 'Planifiée',
-                        'badge-blue': item.statut === 'En cours'
+                        'badge-gray': item.statut === 'Clôturée'
                       }">
-                  {{ item.numeroVisite >= 2 ? 'Exécutée' : item.statut }}
+                  {{ item.statut }}
                 </span>
               </td>
               <td>
@@ -240,12 +242,14 @@
             <div class="info-item full-width">
               <span class="label">Statut</span>
               <span class="value">
+                <!-- CORRECTION DU STATUT DANS LA MODALE -->
                 <span class="badge" [ngClass]="{
-                  'badge-success': currentDetail?.numeroVisite! >= 2 || currentDetail?.statut === 'Exécutée',
+                  'badge-success': currentDetail?.statut === 'Exécutée',
+                  'badge-blue': currentDetail?.statut === 'En cours',
                   'badge-warning': currentDetail?.statut === 'Planifiée',
-                  'badge-blue': currentDetail?.statut === 'En cours'
+                  'badge-gray': currentDetail?.statut === 'Clôturée'
                 }">
-                  {{ currentDetail?.numeroVisite! >= 2 ? 'Exécutée' : currentDetail?.statut }}
+                  {{ currentDetail?.statut }}
                 </span>
               </span>
             </div>
@@ -458,10 +462,25 @@
 
     </div> <!-- Fin detail-modal-body -->
 
-    <!-- Pied de page de la modale -->
+    <!-- ========================================================== -->
+    <!-- PIED DE PAGE DE LA MODALE (AVEC BOUTONS RAPPORT & CLÔTURE) -->
+    <!-- ========================================================== -->
     <div class="detail-modal-footer">
-      <button class="btn btn-secondary" (click)="fermerDetailModal()">Fermer</button>
+      
+      <!-- Actions conditionnelles (Uniquement si le statut est 'Exécutée' ET que la modale est ouverte) -->
+      <div class="footer-actions" *ngIf="showDetailModal && currentDetail?.statut === 'Exécutée'">
+        <button class="btn btn-secondary" (click)="genererRapport(currentDetail?.id!)">
+          <lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon> Générer le rapport
+        </button>
+        <button class="btn btn-primary" (click)="ouvrirConfirmationCloture(currentDetail?.id!)">
+          <lucide-icon [img]="icons.CheckCircle" [size]="16"></lucide-icon> Valider et Clôturer
+        </button>
+      </div>
+
+      <!-- Toujours visible : bouton Fermer -->
+      <button class="btn btn-secondary" style="margin-left: auto;" (click)="fermerDetailModal()">Fermer</button>
     </div>
+
   </div>
 </div>
 
@@ -486,5 +505,27 @@
       <button class="btn btn-danger" (click)="confirmerSuppression()">Supprimer</button>
     </div>
 
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODALE : CONFIRMATION DE CLÔTURE (NOUVEAU DESIGN) -->
+<!-- ============================================ -->
+<div class="modal-backdrop" *ngIf="showConfirmCloseModal">
+  <div class="modal-content confirm-modal">
+    <div class="confirm-icon-wrapper">
+      <lucide-icon [img]="icons.AlertCircle" [size]="48" class="confirm-icon"></lucide-icon>
+    </div>
+
+    <h2>Confirmer la clôture</h2>
+    <p class="confirm-description">
+      Êtes-vous sûr de vouloir valider et clôturer cette intervention ?<br>
+      <span class="text-muted">Cette action est irréversible.</span>
+    </p>
+
+    <div class="modal-actions confirm-actions">
+      <button class="btn btn-secondary" (click)="annulerCloture()">Annuler</button>
+      <button class="btn btn-primary" (click)="confirmerCloture()">Confirmer</button>
+    </div>
   </div>
 </div>

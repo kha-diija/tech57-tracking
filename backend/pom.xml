@@ -48,6 +48,13 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Génération de rapports PDF -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itextpdf</artifactId>
+            <version>5.5.13.3</version>
+        </dependency>
+
         <!-- JWT (authentification stateless) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

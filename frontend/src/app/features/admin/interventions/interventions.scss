@@ -203,6 +203,7 @@
   &-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
   &-success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
   &-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+  &-gray { background: rgba(100, 100, 100, 0.2); color: #a0aec0; border: 1px solid rgba(100, 100, 100, 0.3); }
 }
 
 .actions-cell {
@@ -376,11 +377,25 @@
     }
   }
 
+  /* ================================================= */
+  /* PIED DE PAGE DE LA MODALE DE DÉTAILS AVEC BOUTONS */
+  /* ================================================= */
   .detail-modal-footer {
     padding: 1.25rem 2rem;
     border-top: 1px solid var(--border-color, #2d313a);
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
+
+    .footer-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    /* On s'assure que le bouton Fermer reste bien à droite */
+    .btn-secondary {
+      margin-left: auto !important;
+    }
   }
 }
 
@@ -606,3 +621,50 @@
   border: 1px solid rgba(255, 255, 255, 0.15) !important; padding: 0.6rem 1.5rem !important;
 }
 .delete-actions .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.15) !important; }
+
+/* --- NOUVEAUX STYLES : MODALE DE CONFIRMATION CLÔTURE --- */
+.confirm-modal {
+  max-width: 420px;
+  text-align: center;
+  padding: 2.5rem 2rem 2rem 2rem !important;
+}
+
+.confirm-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.confirm-icon {
+  color: #f97316; /* Orange TECH-57 */
+  background: rgba(249, 115, 22, 0.1);
+  padding: 16px;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+}
+
+.confirm-modal h2 {
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.confirm-description {
+  color: #a0aec0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 2rem;
+}
+
+.confirm-description strong {
+  color: #e2e8f0;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center !important;
+  gap: 1rem !important;
+  margin-top: 0 !important;
+}
