@@ -1,0 +1,531 @@
+<div class="interventions-container">
+
+  <!-- En-tête de page -->
+  <div class="page-header d-flex justify-between align-center">
+    <div>
+      <h1 class="page-title">Gestion et Suivi des Interventions</h1>
+      <p class="page-subtitle">
+        Supervisez, planifiez et exportez les interventions terrains (Check-in/Check-out).
+      </p>
+    </div>
+    <div class="d-flex gap-3">
+      <button class="btn btn-secondary" (click)="exporterCSV()">
+        <lucide-icon [img]="icons.Download" [size]="18"></lucide-icon> Exporter CSV
+      </button>
+      <button class="btn btn-primary" (click)="ouvrirModalCreation()">
+        <lucide-icon [img]="icons.Plus" [size]="18"></lucide-icon> Nouvelle Intervention
+      </button>
+    </div>
+  </div>
+
+  <!-- Section KPI -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper blue"><lucide-icon [img]="icons.Activity" [size]="24"></lucide-icon></div>
+      <div class="kpi-content">
+        <span class="kpi-label">Total Interventions</span>
+        <span class="kpi-value">{{ kpis.total }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper orange"><lucide-icon [img]="icons.Clock" [size]="24"></lucide-icon></div>
+      <div class="kpi-content">
+        <span class="kpi-label">Interventions En Cours</span>
+        <span class="kpi-value">{{ kpis.enCours }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper green"><lucide-icon [img]="icons.CheckCircle" [size]="24"></lucide-icon></div>
+      <div class="kpi-content">
+        <span class="kpi-label">Interventions Exécutées (≥ 2 visites)</span>
+        <span class="kpi-value">{{ kpis.executees }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper purple"><lucide-icon [img]="icons.MapPin" [size]="24"></lucide-icon></div>
+      <div class="kpi-content">
+        <span class="kpi-label">Taux d'Avancement Moyen</span>
+        <span class="kpi-value">{{ kpis.tauxMoyen }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tableau -->
+  <div class="card mt-4">
+    <div class="toolbar d-flex justify-between align-center">
+      <div class="search-box">
+        <lucide-icon [img]="icons.Search" [size]="18" class="text-muted"></lucide-icon>
+        <input type="text" placeholder="Rechercher par mission ou technicien..." [(ngModel)]="searchTerm">
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Mission</th>
+            <th>Technicien & GPS</th>
+            <th>Check-in / Check-out</th>
+            <th>Validation (Règle 2 visites)</th>
+            <th>Avancement</th>
+            <th>Statut</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngIf="filteredInterventions.length > 0; else noData">
+            <tr *ngFor="let item of filteredInterventions">
+              <td class="fw-bold text-muted">#{{ item.id }}</td>
+              <td><span class="mission-badge">{{ item.missionReference }}</span></td>
+              <td>
+                <div class="fw-bold">{{ item.technicienNom }}</div>
+                <div class="text-xs text-muted d-flex align-center gap-1 mt-1">
+                  <lucide-icon [img]="icons.Map" [size]="12"></lucide-icon> {{ item.localisationGps || 'GPS Actif' }}
+                </div>
+              </td>
+              <td class="text-muted text-sm">
+                <div class="d-flex align-center gap-1">
+                  <lucide-icon [img]="icons.Clock" [size]="12"></lucide-icon> In: {{ item.dateDebut | date:'dd/MM HH:mm' }}
+                </div>
+                <div class="d-flex align-center gap-1 mt-1" *ngIf="item.dateFin">
+                  <lucide-icon [img]="icons.CheckCircle" [size]="12"></lucide-icon> Out: {{ item.dateFin | date:'dd/MM HH:mm' }}
+                </div>
+                <div class="text-xs text-orange mt-1" *ngIf="!item.dateFin">En cours...</div>
+              </td>
+              <td>
+                <span class="visit-badge" [ngClass]="{'valid': item.numeroVisite >= 2}">
+                  Visite n°{{ item.numeroVisite }}
+                </span>
+                <div class="text-xs text-muted mt-1" *ngIf="item.numeroVisite < 2">
+                  (Min. 2 visites requises)
+                </div>
+              </td>
+              <td>
+                <div class="d-flex align-center gap-2">
+                  <div class="progress-container">
+                    <div class="progress-bar" [style.width.%]="item.tauxAvancement"></div>
+                  </div>
+                  <span class="fw-bold">{{ item.tauxAvancement }}%</span>
+                </div>
+              </td>
+              <td>
+                <!-- CORRECTION DU STATUT DANS LE TABLEAU -->
+                <span class="badge" 
+                      [ngClass]="{
+                        'badge-success': item.statut === 'Exécutée',
+                        'badge-blue': item.statut === 'En cours',
+                        'badge-warning': item.statut === 'Planifiée',
+                        'badge-gray': item.statut === 'Clôturée'
+                      }">
+                  {{ item.statut }}
+                </span>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="action-btn" title="Détails & Check-in" (click)="voirDetails(item.id)">
+                    <lucide-icon [img]="icons.Eye" [size]="16"></lucide-icon>
+                  </button>
+                  <button class="action-btn" title="Modifier" (click)="modifier(item.id)">
+                    <lucide-icon [img]="icons.Edit" [size]="16"></lucide-icon>
+                  </button>
+                  <button class="action-btn delete-btn" title="Supprimer" (click)="ouvrirModalSuppression(item.id)">
+                    <lucide-icon [img]="icons.Trash2" [size]="16"></lucide-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+
+          <ng-template #noData>
+            <tr>
+              <td colspan="8" class="text-muted" style="text-align: center; padding: 3rem;">
+                Aucune intervention trouvée.
+              </td>
+            </tr>
+          </ng-template>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODALE FORMULAIRE (CRÉATION / MODIFICATION) -->
+<div class="modal-backdrop" *ngIf="showModal">
+  <div class="modal-content form-modal-content">
+    <h2>{{ isEditMode ? 'Modifier l\'intervention' : 'Nouvelle Intervention' }}</h2>
+    
+    <div class="form-group mt-3">
+      <label>Mission d'Installation</label>
+      <select [(ngModel)]="selectedIntervention.missionId" class="form-select">
+        <option [ngValue]="undefined" disabled>Sélectionner une mission</option>
+        <option *ngFor="let m of missionsList" [value]="m.idMission">
+          {{ m.reference || ('Mission #' + m.idMission) }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group mt-3">
+      <label>Technicien Assigné</label>
+      <select [(ngModel)]="selectedIntervention.technicienId" class="form-select">
+        <option [ngValue]="undefined" disabled>Sélectionner un technicien</option>
+        <option *ngFor="let t of techniciensList" [value]="t.id">
+          {{ t.nom }} {{ t.prenom }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group mt-3">
+      <label>Date et Heure de Début</label>
+      <input type="datetime-local" [(ngModel)]="selectedIntervention.dateDebut">
+    </div>
+
+    <div class="form-group mt-3">
+      <label>Numéro de Visite (Initialisé à 0)</label>
+      <input type="number" [(ngModel)]="selectedIntervention.numeroVisite" min="0" max="5">
+    </div>
+
+    <div class="form-group mt-3">
+      <label>Taux d'avancement (%)</label>
+      <input type="number" [(ngModel)]="selectedIntervention.tauxAvancement" min="0" max="100">
+    </div>
+
+    <div class="form-group mt-3">
+      <label>Statut</label>
+      <select [(ngModel)]="selectedIntervention.statut" class="form-select">
+        <option value="Planifiée">Planifiée</option>
+        <option value="En cours">En cours</option>
+        <option value="Exécutée">Exécutée</option>
+      </select>
+    </div>
+
+    <div class="modal-actions mt-4">
+      <button class="btn btn-secondary" (click)="fermerModal()">Annuler</button>
+      <button class="btn btn-primary" (click)="sauvegarderIntervention()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- MODALE DETAILS & CHECK-IN (MISE À JOUR COMPLÈTE) -->
+<!-- =========================================================== -->
+<div class="modal-backdrop detail-modal-backdrop" *ngIf="showDetailModal">
+  <div class="detail-modal-wrapper" (click)="$event.stopPropagation()">
+    
+    <!-- En-tête de la modale -->
+    <div class="detail-modal-header">
+      <div>
+        <h2>Détails de l'Intervention <span class="text-muted">#{{ currentDetail?.id }}</span></h2>
+        <p class="text-muted text-sm">Informations complètes, photos et attestation de l'intervention terrain.</p>
+      </div>
+      <button class="close-btn-detail" (click)="fermerDetailModal()">
+        <lucide-icon [img]="icons.Trash2" [size]="0"></lucide-icon> ✕
+      </button>
+    </div>
+
+    <div class="detail-modal-body">
+      
+      <!-- COLONNE DE GAUCHE : Informations & GPS -->
+      <div class="detail-left-col">
+        
+        <div class="info-card">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Mission</span>
+              <span class="value"><span class="mission-badge">{{ currentDetail?.missionReference }}</span></span>
+            </div>
+            <div class="info-item">
+              <span class="label">Technicien</span>
+              <span class="value fw-bold">{{ currentDetail?.technicienNom }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="label">Statut</span>
+              <span class="value">
+                <!-- CORRECTION DU STATUT DANS LA MODALE -->
+                <span class="badge" [ngClass]="{
+                  'badge-success': currentDetail?.statut === 'Exécutée',
+                  'badge-blue': currentDetail?.statut === 'En cours',
+                  'badge-warning': currentDetail?.statut === 'Planifiée',
+                  'badge-gray': currentDetail?.statut === 'Clôturée'
+                }">
+                  {{ currentDetail?.statut }}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-grid">
+            <div class="info-item half">
+              <span class="label">Check-in (Début)</span>
+              <span class="value">{{ currentDetail?.dateDebut | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="info-item half" *ngIf="currentDetail?.dateFin">
+              <span class="label">Check-out (Fin)</span>
+              <span class="value">{{ currentDetail?.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="info-item half" *ngIf="!currentDetail?.dateFin">
+              <span class="label text-orange">En cours...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-grid">
+            <div class="info-item full-width">
+              <span class="label">📍 Localisation</span>
+              <div class="value location-box">
+                <div class="gps-coord">
+                  <lucide-icon [img]="icons.MapPin" [size]="14"></lucide-icon> 
+                  <span class="text-muted">{{ currentDetail?.localisationGps || 'Non renseignée' }}</span>
+                </div>
+                <div class="city-name">
+                  <lucide-icon [img]="icons.Map" [size]="14"></lucide-icon>
+                  <span>{{ getCityFromGps(currentDetail?.localisationGps) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-grid">
+            <div class="info-item full-width">
+              <span class="label">👁️ Visites</span>
+              <span class="value">
+                <span class="visit-badge" [ngClass]="{'valid': currentDetail?.numeroVisite! >= 2}">
+                  Visite n°{{ currentDetail?.numeroVisite }} / 2 requis
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- COLONNE DE DROITE : Photos, Attestation & STOCK -->
+      <div class="detail-right-col">
+        
+        <!-- SECTION PHOTOS -->
+        <div class="media-card">
+          <div class="media-header">
+            <h3 class="section-title"><lucide-icon [img]="icons.Image" [size]="16"></lucide-icon> Photos</h3>
+          </div>
+          
+          <div class="photo-grid-container" *ngIf="currentDetail?.photos && currentDetail?.photos!.length > 0; else noPhotos">
+            <div class="photo-item" *ngFor="let photo of currentDetail?.photos">
+              <div class="photo-type" [ngClass]="photo.typePhoto.toLowerCase()">{{ photo.typePhoto }}</div>
+              <div class="photo-img-wrapper">
+                <img [src]="photo.cheminFichier" (error)="onImageError($event)" alt="Photo {{ photo.typePhoto }}">
+                <!-- Bouton Télécharger l'image -->
+                <a [href]="photo.cheminFichier" download class="photo-download-btn" title="Télécharger cette photo">
+                  <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon>
+                </a>
+              </div>
+            </div>
+          </div>
+          <ng-template #noPhotos>
+            <div class="empty-media text-muted text-sm">
+              <lucide-icon [img]="icons.Image" [size]="24"></lucide-icon>
+              <span>Aucune photo disponible.</span>
+            </div>
+          </ng-template>
+        </div>
+
+        <!-- SECTION ATTESTATION -->
+        <div class="media-card">
+          <div class="media-header">
+            <h3 class="section-title"><lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon> Attestation</h3>
+          </div>
+          
+          <div *ngIf="currentDetail?.attestation as att; else noAttestation" class="attestation-body">
+            <div class="att-row">
+              <span class="label">Signataire</span>
+              <span class="value">{{ att.nomSignataire || 'Non signé' }}</span>
+            </div>
+            <div class="att-row">
+              <span class="label">Date de signature</span>
+              <span class="value">{{ att.dateSignature ? (att.dateSignature | date:'dd/MM/yyyy HH:mm') : 'En attente' }}</span>
+            </div>
+            <div class="att-row">
+              <span class="label">Validité</span>
+              <span class="value">
+                <span class="badge" [ngClass]="att.valide ? 'badge-success' : 'badge-warning'">
+                  {{ att.valide ? '✅ Validée' : '⏳ En attente' }}
+                </span>
+              </span>
+            </div>
+            
+            <!-- Bouton Télécharger l'attestation -->
+            <div class="att-actions">
+              <button class="btn btn-primary btn-sm" (click)="downloadAttestation(currentDetail?.id!)">
+                <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon> Télécharger le PDF
+              </button>
+            </div>
+          </div>
+          <ng-template #noAttestation>
+            <div class="empty-media text-muted text-sm">
+              <lucide-icon [img]="icons.FileText" [size]="24"></lucide-icon>
+              <span>Aucune attestation générée.</span>
+            </div>
+          </ng-template>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- NOUVELLE SECTION : SUIVI DU MATÉRIEL (STOCK & CHECKLIST) -->
+        <!-- ========================================================== -->
+        <div class="media-card" *ngIf="currentDetail?.sortiesMateriel?.length || currentDetail?.retoursMateriel?.length || currentDetail?.checklistItems?.length">
+          <div class="media-header">
+            <h3 class="section-title"><lucide-icon [img]="icons.Package" [size]="16"></lucide-icon> Suivi du Matériel</h3>
+          </div>
+
+          <!-- Sorties de matériel -->
+          <div *ngIf="currentDetail?.sortiesMateriel?.length" class="stock-section">
+            <h4 class="sub-title text-orange">📤 Sorties de stock</h4>
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th>Réf. Matériel</th>
+                  <th>Qté</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of currentDetail?.sortiesMateriel">
+                  <td><strong>{{ s.materielReference }}</strong></td>
+                  <td>{{ s.quantite }}</td>
+                  <td class="text-muted text-xs">{{ s.dateSortie | date:'dd/MM HH:mm' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Retours de matériel -->
+          <div *ngIf="currentDetail?.retoursMateriel?.length" class="stock-section mt-2">
+            <h4 class="sub-title text-orange">📥 Retours de stock</h4>
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th>Réf. Matériel</th>
+                  <th>Qté</th>
+                  <th>État</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of currentDetail?.retoursMateriel">
+                  <td><strong>{{ r.materielReference }}</strong></td>
+                  <td>{{ r.quantite }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="{
+                      'badge-success': r.etatMateriel === 'Bon état',
+                      'badge-warning': r.etatMateriel !== 'Bon état'
+                    }">{{ r.etatMateriel }}</span>
+                  </td>
+                  <td class="text-muted text-xs">{{ r.dateRetour | date:'dd/MM HH:mm' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Checklist -->
+          <div *ngIf="currentDetail?.checklistItems?.length" class="stock-section mt-2">
+            <h4 class="sub-title text-orange">📋 Checklist d'installation</h4>
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th>Réf. Matériel</th>
+                  <th>Qté</th>
+                  <th>État constaté</th>
+                  <th>Conforme</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of currentDetail?.checklistItems">
+                  <td><strong>{{ c.materielReference }}</strong></td>
+                  <td>{{ c.quantite }}</td>
+                  <td class="text-sm">{{ c.etatConstate }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="c.conforme ? 'badge-success' : 'badge-warning'">
+                      {{ c.conforme ? '✅ Oui' : '❌ Non' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div> <!-- Fin detail-right-col -->
+
+    </div> <!-- Fin detail-modal-body -->
+
+    <!-- ========================================================== -->
+    <!-- PIED DE PAGE DE LA MODALE (AVEC BOUTONS RAPPORT & CLÔTURE) -->
+    <!-- ========================================================== -->
+    <div class="detail-modal-footer">
+      
+      <!-- Actions conditionnelles (Uniquement si le statut est 'Exécutée' ET que la modale est ouverte) -->
+      <div class="footer-actions" *ngIf="showDetailModal && currentDetail?.statut === 'Exécutée'">
+        <button class="btn btn-secondary" (click)="genererRapport(currentDetail?.id!)">
+          <lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon> Générer le rapport
+        </button>
+        <button class="btn btn-primary" (click)="ouvrirConfirmationCloture(currentDetail?.id!)">
+          <lucide-icon [img]="icons.CheckCircle" [size]="16"></lucide-icon> Valider et Clôturer
+        </button>
+      </div>
+
+      <!-- Toujours visible : bouton Fermer -->
+      <button class="btn btn-secondary" style="margin-left: auto;" (click)="fermerDetailModal()">Fermer</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODALE : CONFIRMATION DE SUPPRESSION -->
+<!-- ============================================ -->
+<div class="modal-backdrop" *ngIf="showDeleteModal">
+  <div class="modal-content delete-modal">
+    
+    <div class="delete-icon-wrapper">
+      <lucide-icon [img]="icons.Trash2" [size]="48" class="delete-icon"></lucide-icon>
+    </div>
+
+    <h2>Confirmer la suppression</h2>
+    <p class="delete-description">
+      Êtes-vous sûr de vouloir supprimer l'intervention <strong>#{{ deleteTargetId }}</strong> ?<br>
+      <span class="text-muted">Cette action est irréversible.</span>
+    </p>
+
+    <div class="modal-actions delete-actions">
+      <button class="btn btn-secondary" (click)="fermerModalSuppression()">Annuler</button>
+      <button class="btn btn-danger" (click)="confirmerSuppression()">Supprimer</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODALE : CONFIRMATION DE CLÔTURE (NOUVEAU DESIGN) -->
+<!-- ============================================ -->
+<div class="modal-backdrop" *ngIf="showConfirmCloseModal">
+  <div class="modal-content confirm-modal">
+    <div class="confirm-icon-wrapper">
+      <lucide-icon [img]="icons.AlertCircle" [size]="48" class="confirm-icon"></lucide-icon>
+    </div>
+
+    <h2>Confirmer la clôture</h2>
+    <p class="confirm-description">
+      Êtes-vous sûr de vouloir valider et clôturer cette intervention ?<br>
+      <span class="text-muted">Cette action est irréversible.</span>
+    </p>
+
+    <div class="modal-actions confirm-actions">
+      <button class="btn btn-secondary" (click)="annulerCloture()">Annuler</button>
+      <button class="btn btn-primary" (click)="confirmerCloture()">Confirmer</button>
+    </div>
+  </div>
+</div>

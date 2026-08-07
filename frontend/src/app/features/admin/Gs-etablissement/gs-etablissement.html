@@ -1,0 +1,306 @@
+<div class="gs-etab">
+
+  <!-- En-tête -->
+  <div class="gs-etab__header">
+    <div>
+      <span class="gs-etab__eyebrow">
+        <span class="gs-etab__eyebrow-dot"></span>
+        Gestion des établissements
+      </span>
+      <h1 class="gs-etab__title">Établissements</h1>
+      <p class="gs-etab__subtitle">
+        Régions, provinces, communes et responsables — vue complète du réseau.
+      </p>
+    </div>
+
+    <div class="gs-etab__actions">
+      <button class="btn btn--ghost" (click)="onExport()">
+        <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
+        Exporter
+      </button>
+      <button class="btn btn--primary" (click)="openCreateForm()">
+        <lucide-icon [img]="icons.Plus" [size]="16"></lucide-icon>
+        Nouvel établissement
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid" *ngIf="kpis() as k">
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Établissements suivis</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.Building2" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ k.totalEtablissements }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Régions couvertes</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.MapPin" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ k.regionsCouvertes }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Bénéficiaires totaux</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.Users" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ k.totalBeneficiaires | number }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Sans responsable</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.UserX" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ k.sansResponsable }}</div>
+    </div>
+  </div>
+
+  <!-- Barre de filtres -->
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <lucide-icon [img]="icons.Search" [size]="16"></lucide-icon>
+      <input
+        type="text"
+        placeholder="Rechercher par nom, référence, commune, responsable..."
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+      />
+    </div>
+
+    <select class="toolbar__select" [ngModel]="selectedRegionFilter()" (ngModelChange)="selectedRegionFilter.set($event)">
+      <option value="toutes">Toutes les régions</option>
+      <option *ngFor="let r of regionsFilterList()" [value]="r.nom">{{ r.nom }}</option>
+    </select>
+
+    <span class="toolbar__count">{{ filteredEtablissements().length }} résultat(s)</span>
+  </div>
+
+  <!-- Tableau -->
+  <div class="panel panel--table">
+    <div class="table-wrapper">
+      <table class="etab-table">
+        <thead>
+          <tr>
+            <th>Référence</th>
+            <th>Désignation</th>
+            <th>Localisation</th>
+            <th>Bénéficiaires</th>
+            <th>Responsable</th>
+            <th>Contact</th>
+            <th class="etab-table__actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let etab of filteredEtablissements()">
+            <td>
+              <span class="etab-table__ref">{{ etab.reference }}</span>
+            </td>
+            <td>
+              <span class="etab-table__name">{{ etab.designation }}</span>
+              <span class="etab-table__type">{{ etab.type }}</span>
+            </td>
+            <td>
+              <div class="etab-table__location">
+                <span class="location-chain">{{ etab.regionNom }} › {{ etab.provinceNom }} › {{ etab.communeNom }}</span>
+                <button class="location-link" *ngIf="etab.localisationGps" (click)="openOnMap(etab)">
+                  <lucide-icon [img]="icons.Navigation" [size]="12"></lucide-icon>
+                  Voir sur la carte
+                </button>
+              </div>
+            </td>
+            <td>
+              <span class="badge">
+                <lucide-icon [img]="icons.Users" [size]="12"></lucide-icon>
+                {{ etab.nombreBeneficiaires ?? 0 | number }}
+              </span>
+            </td>
+            <td>
+              <span *ngIf="etab.responsable as resp; else noResp">
+                {{ resp.prenom }} {{ resp.nom }}
+              </span>
+              <ng-template #noResp>
+                <span class="text-muted">Non assigné</span>
+              </ng-template>
+            </td>
+            <td>
+              <div class="etab-table__contact" *ngIf="etab.responsable as resp">
+                <a class="contact-link" *ngIf="resp.telephone" [href]="'tel:' + resp.telephone">
+                  <lucide-icon [img]="icons.Phone" [size]="12"></lucide-icon>
+                  {{ resp.telephone }}
+                </a>
+                <a class="contact-link" *ngIf="resp.email" [href]="'mailto:' + resp.email">
+                  <lucide-icon [img]="icons.Mail" [size]="12"></lucide-icon>
+                  {{ resp.email }}
+                </a>
+              </div>
+            </td>
+            <td>
+              <div class="etab-table__row-actions">
+                <button class="icon-btn" title="Modifier" (click)="openEditForm(etab)">
+                  <lucide-icon [img]="icons.Pencil" [size]="15"></lucide-icon>
+                </button>
+                <button class="icon-btn icon-btn--danger" title="Supprimer" (click)="deleteEtablissement(etab)">
+                  <lucide-icon [img]="icons.Trash2" [size]="15"></lucide-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="!isLoading() && filteredEtablissements().length === 0">
+            <td colspan="7" class="etab-table__empty">
+              Aucun établissement ne correspond à ta recherche.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Panneau latéral : création / édition -->
+  <div class="side-panel-backdrop" *ngIf="showForm()" (click)="closeForm()"></div>
+
+  <aside class="side-panel" *ngIf="showForm()">
+    <div class="side-panel__header">
+      <h2>{{ editingId() ? "Modifier l'établissement" : 'Nouvel établissement' }}</h2>
+      <button class="icon-btn" (click)="closeForm()">
+        <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="side-panel__body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Référence</label>
+          <input type="text" [ngModel]="formModel().reference" (ngModelChange)="updateField('reference', $event)" placeholder="ETB-0147" />
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select [ngModel]="formModel().type" (ngModelChange)="updateField('type', $event)">
+            <option value="" disabled>Choisir un type</option>
+            <option *ngFor="let t of typeOptions" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Désignation</label>
+        <input type="text" [ngModel]="formModel().designation" (ngModelChange)="updateField('designation', $event)" placeholder="Nom de l'établissement" />
+      </div>
+
+      <div class="form-divider">Localisation administrative</div>
+
+      <div class="form-group">
+        <label>Région</label>
+        <select [ngModel]="formModel().idRegion" (ngModelChange)="onFormRegionChange($event)">
+          <option [ngValue]="null" disabled>Choisir une région</option>
+          <option *ngFor="let r of formRegions()" [ngValue]="r.idRegion">{{ r.nom }}</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Province</label>
+          <select [ngModel]="formModel().idProvince" (ngModelChange)="onFormProvinceChange($event)" [disabled]="!formModel().idRegion">
+            <option [ngValue]="null" disabled>Choisir une province</option>
+            <option *ngFor="let p of formProvinces()" [ngValue]="p.idProvince">{{ p.nom }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Commune</label>
+          <select [ngModel]="formModel().idCommune" (ngModelChange)="onFormCommuneChange($event)" [disabled]="!formModel().idProvince">
+            <option [ngValue]="null" disabled>Choisir une commune</option>
+            <option *ngFor="let c of formCommunes()" [ngValue]="c.idCommune">{{ c.nom }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Coordonnées GPS</label>
+        <input type="text" [ngModel]="formModel().localisationGps" (ngModelChange)="updateField('localisationGps', $event)" placeholder="33.5951, -7.5898" />
+      </div>
+
+      <div class="form-group">
+        <label>Bénéficiaires</label>
+        <input type="number" [ngModel]="formModel().nombreBeneficiaires" (ngModelChange)="updateField('nombreBeneficiaires', +$event)" />
+      </div>
+
+      <div class="form-divider">Contact de l'établissement</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" [ngModel]="formModel().telephoneContact" (ngModelChange)="updateField('telephoneContact', $event)" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" [ngModel]="formModel().emailContact" (ngModelChange)="updateField('emailContact', $event)" />
+        </div>
+      </div>
+
+      <div class="form-divider">Responsable (optionnel)</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Prénom</label>
+          <input type="text" [ngModel]="formModel().responsablePrenom" (ngModelChange)="updateField('responsablePrenom', $event)" />
+        </div>
+        <div class="form-group">
+          <label>Nom</label>
+          <input type="text" [ngModel]="formModel().responsableNom" (ngModelChange)="updateField('responsableNom', $event)" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Fonction</label>
+        <input type="text" [ngModel]="formModel().responsableFonction" (ngModelChange)="updateField('responsableFonction', $event)" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" [ngModel]="formModel().responsableTelephone" (ngModelChange)="updateField('responsableTelephone', $event)" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" [ngModel]="formModel().responsableEmail" (ngModelChange)="updateField('responsableEmail', $event)" />
+        </div>
+      </div>
+    </div>
+
+    <div class="side-panel__footer">
+      <button class="btn btn--ghost" (click)="closeForm()">Annuler</button>
+      <button class="btn btn--primary" (click)="saveForm()">
+        {{ editingId() ? 'Enregistrer les modifications' : "Créer l'établissement" }}
+      </button>
+    </div>
+  </aside>
+
+  <!-- Modale de confirmation personnalisée -->
+  <div class="side-panel-backdrop" *ngIf="confirmModal().isOpen" (click)="closeConfirmModal()"></div>
+
+  <div class="custom-modal-container" *ngIf="confirmModal().isOpen">
+    <div class="custom-modal">
+      <div class="custom-modal__header">
+        <h3>{{ confirmModal().title }}</h3>
+        <button class="icon-btn" (click)="closeConfirmModal()">
+          <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <div class="custom-modal__body">
+        <p>{{ confirmModal().message }}</p>
+      </div>
+      <div class="custom-modal__footer">
+        <button class="btn btn--ghost" (click)="closeConfirmModal()">Annuler</button>
+        <button class="btn" [ngClass]="confirmModal().force ? 'btn--danger' : 'btn--primary'" (click)="executeDelete()">
+          Confirmer
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
