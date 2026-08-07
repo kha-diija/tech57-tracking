@@ -34,7 +34,7 @@ export const routes: Routes = [
       { path: 'missions', component: Missions },
       { path: 'etablissements', component: Etablissements },
       {
-        path: 'simulateur-trajet',
+        path: 'admin/simulateur-trajet',
         canActivate: [roleGuard(['TECHNICIEN', 'ADMINISTRATEUR'])],
         loadComponent: () =>
           import('./features/simulateur-trajet/simulateur-trajet').then(m => m.SimulateurTrajet),
@@ -42,7 +42,14 @@ export const routes: Routes = [
       { path: 'chat-ia', component: ChatIa },
       { path: 'guides', component: Guides },
       { path: 'stock', component: Stock },
-      { path: 'users', component: Users },
+
+     
+      {
+        path: 'users',
+        component: Users,
+        canActivate: [roleGuard(['ADMINISTRATEUR'])]
+      },
+      { path: 'guides', component: Guides },
       { path: 'ressources', component: Ressources },
       { path: 'interventions', component: Interventions },
       { path: 'settings', component: Settings },
