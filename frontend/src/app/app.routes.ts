@@ -4,15 +4,18 @@ import { AppShell } from './layout/app-shell/app-shell';
 import { authGuard } from './shared/guards/auth.guard';
 import { roleGuard } from './shared/guards/role.guard';
 
-// Imports de tes composants
-import { Dashboard } from './features/dashboard/dashboard';
+// Imports des composants globaux
+import { Dashboard } from './features/admin/dashboard';
 import { Missions } from './features/missions/missions';
 import { Etablissements } from './features/etablissements/etablissements';
 import { ChatIa } from './features/chat-ia/chat-ia';
+import { Guides } from './features/guides/guides';
 import { Stock } from './features/stock/stock';
 import { Users } from './features/users/users';
-import { Guides } from './features/guides/guides';
+import { Ressources } from './features/admin/ressources/ressources';
+import { Interventions } from './features/admin/interventions/interventions';
 import { Settings } from './features/settings/settings';
+
 
 export const routes: Routes = [
   // 0. Redirection par défaut de la racine vers /login
@@ -30,7 +33,14 @@ export const routes: Routes = [
       { path: 'dashboard', component: Dashboard },
       { path: 'missions', component: Missions },
       { path: 'etablissements', component: Etablissements },
+      {
+        path: 'admin/simulateur-trajet',
+        canActivate: [roleGuard(['TECHNICIEN', 'ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/simulateur-trajet/simulateur-trajet').then(m => m.SimulateurTrajet),
+      },
       { path: 'chat-ia', component: ChatIa },
+      { path: 'guides', component: Guides },
       { path: 'stock', component: Stock },
 
      
@@ -39,16 +49,42 @@ export const routes: Routes = [
         component: Users,
         canActivate: [roleGuard(['ADMINISTRATEUR'])]
       },
-
       { path: 'guides', component: Guides },
+      { path: 'ressources', component: Ressources },
+      { path: 'interventions', component: Interventions },
       { path: 'settings', component: Settings },
 
-      // Dashboards spécifiques par rôle
+      // Dashboards et modules spécifiques par rôle (avec Lazy Loading)
       {
         path: 'admin/dashboard',
         canActivate: [roleGuard(['ADMINISTRATEUR'])],
         loadComponent: () =>
-          import('./features/admin/admin-dashboard').then((m) => m.AdminDashboard),
+          import('./features/admin/dashboard').then((m) => m.Dashboard),
+      },
+      {
+        path: 'admin/etablissements',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/admin/Gs-etablissement/gs-etablissement').then((m) => m.GsEtablissement),
+      },
+      {
+        path: 'admin/missions',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/admin/missions/gs-mission/gs-mission').then((m) => m.GsMission),
+      },
+      {
+        path: 'admin/ressources',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/admin/ressources/ressources').then((m) => m.Ressources),
+      },
+      {
+        path: 'admin/interventions',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./features/admin/interventions/interventions').then((m) => m.Interventions),
       },
       {
         path: 'technicien/dashboard',
