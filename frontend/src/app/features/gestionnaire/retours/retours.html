@@ -1,0 +1,95 @@
+<div class="stock-page">
+  <header class="stock-header">
+    <div class="header-titles">
+      <p class="eyebrow">Gestion du stock</p>
+      <h1>Retours &amp; inspection</h1>
+      <p class="subtitle">{{ sorties().length }} intervention{{ sorties().length > 1 ? 's' : '' }} à régulariser</p>
+    </div>
+    <button type="button" class="icon-btn" title="Rafraîchir" (click)="charger()">
+      <lucide-icon [img]="icons.RefreshCw" [size]="16" [class.spin]="loading()"></lucide-icon>
+    </button>
+  </header>
+
+  <div class="error-banner" *ngIf="errorMessage()">
+    <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+    {{ errorMessage() }}
+  </div>
+
+  <div class="sortie-list" [class.is-loading]="loading()">
+    <div class="sortie-card" *ngFor="let s of sorties(); trackBy: trackBySortie">
+      <div class="sortie-card-head">
+        <span class="sortie-id">Sortie #{{ s.idSortie }}</span>
+        <span class="sortie-date">{{ s.dateSortie | date: 'dd/MM/yyyy' }}</span>
+      </div>
+
+      <div class="sortie-meta">
+        <span class="meta-item">
+          <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
+          {{ s.technicienNom || '—' }}
+        </span>
+        <span class="meta-item" *ngIf="s.missionReference">Mission {{ s.missionReference }}</span>
+      </div>
+
+      <ul class="detail-list">
+        <li *ngFor="let l of s.lignes">
+          <span class="detail-nom">{{ l.materielNom }} ({{ l.materielReference }})</span>
+          <span class="detail-qty">{{ l.quantiteSortie }} pris au départ</span>
+        </li>
+      </ul>
+
+      <div class="sortie-actions">
+        <button type="button" class="btn btn-primary sm" (click)="ouvrirVentilation(s)">
+          <lucide-icon [img]="icons.ClipboardCheck" [size]="14"></lucide-icon>
+          Inspecter &amp; clôturer le retour
+        </button>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading() && sorties().length === 0">
+      <lucide-icon [img]="icons.PackageOpen" [size]="40"></lucide-icon>
+      <h3>Aucun retour à traiter</h3>
+      <p>Les sorties validées d'interventions terminées apparaîtront ici automatiquement.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="showModal()" (click)="fermerModal()"></div>
+
+<div class="create-modal" *ngIf="showModal()">
+  <header class="modal-header">
+    <h2>Régularisation — Sortie #{{ sortieEnCours?.idSortie }}</h2>
+    <button type="button" class="icon-btn" (click)="fermerModal()">
+      <lucide-icon [img]="icons.X" [size]="20"></lucide-icon>
+    </button>
+  </header>
+
+  <div class="modal-body">
+    <div class="error-banner" *ngIf="modalError()">
+      <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+      {{ modalError() }}
+    </div>
+
+    <div class="ventilation-line" *ngFor="let l of lignesVentilation" [class.invalid]="!ligneValide(l)">
+      <div class="ventilation-head">
+        <span class="ventilation-nom">{{ l.materielNom }} ({{ l.materielReference }})</span>
+        <span class="ventilation-total">{{ totalLigne(l) }} / {{ l.quantiteSortie }}</span>
+      </div>
+      <div class="ventilation-fields">
+        <label>Bon état
+          <input type="number" min="0" [(ngModel)]="l.quantiteBonEtat" [name]="'bon-' + l.idMateriel" />
+        </label>
+        <label>En panne / défectueux
+          <input type="number" min="0" [(ngModel)]="l.quantiteEnPanne" [name]="'panne-' + l.idMateriel" />
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" (click)="fermerModal()">Annuler</button>
+      <button type="button" class="btn btn-primary" [disabled]="saving() || !toutValide()" (click)="confirmerVentilation()">
+        <lucide-icon *ngIf="saving()" [img]="icons.RefreshCw" [size]="14" class="spin"></lucide-icon>
+        Valider le retour
+      </button>
+    </div>
+  </div>
+</div>

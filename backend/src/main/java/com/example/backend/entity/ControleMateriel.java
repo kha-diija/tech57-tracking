@@ -17,6 +17,23 @@ public class ControleMateriel {
     @Column(name = "date_controle", nullable = false)
     private LocalDateTime dateControle = LocalDateTime.now();
 
+    // --- Rapprochement stock (sortie / installée / rendue) ---
+    @Column(name = "quantite_sortie")
+    private Integer quantiteSortie;
+
+    @Column(name = "quantite_installee")
+    private Integer quantiteInstallee;
+
+    @Column(name = "quantite_rendue")
+    private Integer quantiteRendue;
+
+    @Column(name = "ecart_constate")
+    private Integer ecartConstate;
+
+    @Column(nullable = false)
+    private Boolean conforme = true;
+
+    // --- Contrôle qualité ---
     @Column(nullable = false, length = 30)
     private String resultat = "Conforme"; // Conforme, Anomalie, À réparer
 
@@ -26,6 +43,10 @@ public class ControleMateriel {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_materiel", nullable = false)
     private Materiel materiel;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_gestionnaire", nullable = false)
+    private GestionnaireStock gestionnaire;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_controleur", nullable = false)

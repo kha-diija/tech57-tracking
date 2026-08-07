@@ -1,0 +1,125 @@
+<div class="stock-page">
+  <header class="stock-header">
+    <div class="header-titles">
+      <p class="eyebrow">Gestion du stock</p>
+      <h1>Sorties de matériel</h1>
+      <p class="subtitle">{{ sorties().length }} demande{{ sorties().length > 1 ? 's' : '' }}</p>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="etat-pills">
+      <button
+        *ngFor="let s of statuts"
+        type="button"
+        class="etat-pill"
+        [class.active]="statutFiltre() === s"
+        (click)="setStatutFiltre(s)"
+      >
+        {{ s }}
+      </button>
+    </div>
+    <button type="button" class="icon-btn" title="Rafraîchir" (click)="charger()">
+      <lucide-icon [img]="icons.RefreshCw" [size]="16" [class.spin]="loading()"></lucide-icon>
+    </button>
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage()">
+    <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+    {{ errorMessage() }}
+  </div>
+
+  <div class="sortie-list" [class.is-loading]="loading()">
+    <div class="sortie-card" *ngFor="let s of sorties(); trackBy: trackBySortie">
+      <div class="sortie-card-head">
+        <div class="sortie-info">
+          <span class="sortie-id">#{{ s.idSortie }}</span>
+          <span class="statut-badge" [ngClass]="classeStatut(s.statut)">{{ s.statut }}</span>
+        </div>
+        <span class="sortie-date">
+          <lucide-icon [img]="icons.Clock" [size]="13"></lucide-icon>
+          {{ s.dateSortie | date: 'dd/MM/yyyy HH:mm' }}
+        </span>
+      </div>
+
+      <div class="sortie-meta">
+        <span class="meta-item">
+          <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
+          {{ s.technicienNom || '—' }}
+        </span>
+        <span class="meta-item" *ngIf="s.lieuIntervention">
+          <lucide-icon [img]="icons.MapPin" [size]="14"></lucide-icon>
+          {{ s.lieuIntervention }}
+        </span>
+        <span class="meta-item" *ngIf="s.missionReference">Mission {{ s.missionReference }}</span>
+      </div>
+
+      <ul class="detail-list">
+        <li *ngFor="let d of s.details" [class.insuffisant]="stockInsuffisant(d)">
+          <span class="detail-nom">{{ d.materielNom }} ({{ d.materielReference }})</span>
+          <span class="detail-qty">
+            {{ d.quantiteDemandee }} demandé{{ d.quantiteDemandee > 1 ? 's' : '' }}
+            <span class="stock-badge" *ngIf="d.stockDisponible !== null" [class.low]="stockInsuffisant(d)">
+              Stock&nbsp;{{ d.stockDisponible }}
+            </span>
+          </span>
+        </li>
+        <li class="tree-empty" *ngIf="s.details.length === 0">Aucun détail enregistré.</li>
+      </ul>
+
+      <p class="motif-rejet" *ngIf="s.statut === 'Rejetée' && s.motifRejet">
+        Motif : {{ s.motifRejet }}
+      </p>
+
+      <div class="sortie-actions" *ngIf="s.statut === 'En attente'">
+        <button type="button" class="btn btn-ghost danger sm" [disabled]="actionLoading() === s.idSortie" (click)="ouvrirRejet(s)">
+          <lucide-icon [img]="icons.XCircle" [size]="14"></lucide-icon>
+          Rejeter
+        </button>
+        <button type="button" class="btn btn-primary sm" [disabled]="actionLoading() === s.idSortie" (click)="approuver(s)">
+          <lucide-icon *ngIf="actionLoading() === s.idSortie" [img]="icons.RefreshCw" [size]="14" class="spin"></lucide-icon>
+          <lucide-icon *ngIf="actionLoading() !== s.idSortie" [img]="icons.CheckCircle2" [size]="14"></lucide-icon>
+          Approuver
+        </button>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading() && sorties().length === 0">
+      <lucide-icon [img]="icons.PackageCheck" [size]="40"></lucide-icon>
+      <h3>Aucune demande dans ce statut</h3>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="showRejetModal()" (click)="fermerRejet()"></div>
+
+<div class="create-modal" *ngIf="showRejetModal()">
+  <header class="modal-header">
+    <h2>Rejeter la demande #{{ sortieARejeter?.idSortie }}</h2>
+    <button type="button" class="icon-btn" (click)="fermerRejet()">
+      <lucide-icon [img]="icons.X" [size]="20"></lucide-icon>
+    </button>
+  </header>
+
+  <div class="modal-body">
+    <div class="error-banner" *ngIf="errorMessage()">
+      <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+      {{ errorMessage() }}
+    </div>
+
+    <form class="edit-form" (ngSubmit)="confirmerRejet()">
+      <label>Motif du rejet *
+        <textarea rows="4" [(ngModel)]="motifRejet" name="motifRejet" required
+          placeholder="Ex : Matériel défectueux en contrôle, demande non justifiée..."></textarea>
+      </label>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" (click)="fermerRejet()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="actionLoading() !== null">
+          <lucide-icon *ngIf="actionLoading() !== null" [img]="icons.RefreshCw" [size]="14" class="spin"></lucide-icon>
+          Confirmer le rejet
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

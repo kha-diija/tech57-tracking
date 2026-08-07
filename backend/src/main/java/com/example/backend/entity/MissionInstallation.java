@@ -3,8 +3,6 @@ package com.example.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "mission_installation")
@@ -43,11 +41,9 @@ public class MissionInstallation {
     @JoinColumn(name = "id_equipe")
     private EquipeTechnique equipe;
 
-    // --- NOUVELLES RELATIONS v3.0 ---
-
-    @OneToMany(mappedBy = "missionInstallation", cascade = CascadeType.ALL)
-    private List<SortieMateriel> sortiesMateriel = new ArrayList<>();
-
-    @OneToMany(mappedBy = "missionInstallation", cascade = CascadeType.ALL)
-    private List<RetourMateriel> retoursMateriel = new ArrayList<>();
+    // sortiesMateriel / retoursMateriel supprimés : pas de colonne
+    // id_mission dans sortie_materiel / retour_materiel. Le lien passe
+    // uniquement par intervention -> sortiesMateriel / retoursMateriel
+    // (voir SortieMaterielRepository.findByIntervention, utilisé dans
+    // InterventionService.convertToResponse)
 }
