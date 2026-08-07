@@ -44,13 +44,19 @@ public class GlobalExceptionHandler {
     }
 
     // --- Sécurité ---
+    // ⚠️ MODIFIÉ : le message était figé sur "Email ou mot de passe incorrect", ce qui est faux
+    // pour le changement de mot de passe (settings). On utilise maintenant ex.getMessage()
+    // avec ce texte comme valeur par défaut si jamais le message est vide.
     @ExceptionHandler({InvalidCredentialsException.class, BadCredentialsException.class})
     public ResponseEntity<ApiErrorResponse> handleBadCredentials(RuntimeException ex,
                                                                  HttpServletRequest request) {
+        String message = (ex.getMessage() != null && !ex.getMessage().isBlank())
+                ? ex.getMessage()
+                : "Email ou mot de passe incorrect";
         ApiErrorResponse error = new ApiErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
-                "Email ou mot de passe incorrect",
+                message,
                 request.getRequestURI());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
@@ -99,6 +105,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
+    // --- AJOUT : accès refusé (rôle insuffisant) ---
+    // Utile car SecurityConfig utilise hasRole/hasAnyRole sur plusieurs routes ;
+    // sans ce handler, un 403 Spring Security par défaut (HTML) est renvoyé au lieu du JSON attendu par Angular.
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex,
+                                                               HttpServletRequest request) {
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                "Access Denied",
+                "Vous n'avez pas les droits nécessaires pour accéder à cette ressource",
+                request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
 
     // --- Exceptions techniques courantes ---
     @ExceptionHandler(IllegalArgumentException.class)
@@ -147,6 +166,7 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.internalServerError().body(error);
     }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiErrorResponse> handleBusinessException(BusinessException ex,
                                                                     HttpServletRequest request) {
