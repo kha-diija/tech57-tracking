@@ -12,9 +12,21 @@ export interface EtablissementOption {
 
 export type TypeRoute = 'Autoroute' | 'Nationale';
 
+/**
+ * Un point de trajet (origine ou destination), qui peut provenir soit
+ * d'un établissement existant (idEtablissement renseigné), soit d'une
+ * adresse libre trouvée via la recherche (idEtablissement = null).
+ */
+export interface PointTrajet {
+  idEtablissement: number | null;
+  nom: string;
+  lat: number;
+  lng: number;
+}
+
 export interface SimulateurTrajetRequest {
-  idEtablissementOrigine: number;
-  idEtablissementDestination: number;
+  origine: PointTrajet;
+  destination: PointTrajet;
   typeRoute: TypeRoute;
   prixCarburantLitre: number;
   consommationL100km?: number;

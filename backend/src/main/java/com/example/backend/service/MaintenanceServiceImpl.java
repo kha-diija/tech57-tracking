@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class MaintenanceServiceImpl implements MaintenanceService {
 
     private final MaintenanceRepository maintenanceRepository;
-    private final adminMaterielRepository materielRepository;
+    private final adminMaterielRepository adminMaterielRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -37,7 +37,7 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
     @Override
     public MaintenanceDTO creer(MaintenanceRequest request) {
-        Materiel materiel = materielRepository.findById(request.getIdMateriel())
+        Materiel materiel = adminMaterielRepository.findById(request.getIdMateriel())
                 .orElseThrow(() -> new ResourceNotFoundException("Matériel introuvable, id=" + request.getIdMateriel()));
 
         Maintenance maintenance = new Maintenance();
@@ -52,7 +52,7 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         // Ouvrir une maintenance "indisponible" bascule automatiquement l'état du matériel
         if (!Boolean.TRUE.equals(request.getDisponible())) {
             materiel.setEtat("En panne");
-            materielRepository.save(materiel);
+            adminMaterielRepository.save(materiel);
         }
 
         return toDto(saved);
@@ -81,7 +81,7 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
         Materiel materiel = maintenance.getMateriel();
         materiel.setEtat("En service");
-        materielRepository.save(materiel);
+        adminMaterielRepository.save(materiel);
 
         return toDto(maintenance);
     }

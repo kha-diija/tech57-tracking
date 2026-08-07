@@ -10,11 +10,18 @@ export class InterventionService {
   private http = inject(HttpClient);
   private apiUrl = 'http://localhost:8080/api/admin/interventions';
 
+  // --- MÉTHODE STANDARD (Peut être mise en cache par le navigateur) ---
   getInterventions(): Observable<Intervention[]> {
     return this.http.get<Intervention[]>(this.apiUrl);
   }
 
-  // AJOUT DE CETTE MÉTHODE POUR RÉCUPÉRER LES DÉTAILS COMPLETS (PHOTOS, ATTESTATION)
+  // --- MÉTHODE ANTI-CACHE (Utilisée par loadInterventions) ---
+  // Le paramètre '_t' avec un timestamp différent à chaque appel 
+  // oblige le navigateur à ignorer le cache et à demander les vraies données fraîches au Backend.
+  getInterventionsNoCache(): Observable<Intervention[]> {
+    return this.http.get<Intervention[]>(`${this.apiUrl}?_t=${new Date().getTime()}`);
+  }
+
   getInterventionById(id: number): Observable<Intervention> {
     return this.http.get<Intervention>(`${this.apiUrl}/${id}`);
   }
@@ -29,5 +36,9 @@ export class InterventionService {
 
   deleteIntervention(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  forceCompleteIntervention(id: number): Observable<Intervention> {
+    return this.http.patch<Intervention>(`${this.apiUrl}/${id}/force-complete`, {});
   }
 }

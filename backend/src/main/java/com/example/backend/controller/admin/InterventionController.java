@@ -6,6 +6,7 @@ import com.example.backend.dto.admin.intervention.UpdateInterventionRequest;
 import com.example.backend.dto.admin.intervention.TechnicienDropdownDto;
 import com.example.backend.repository.admin.TechnicienRepository;
 import com.example.backend.service.admin.InterventionService;
+import com.example.backend.service.admin.RapportPdfService; // <-- NOUVEL IMPORT
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -26,10 +27,15 @@ public class InterventionController {
 
     private final InterventionService interventionService;
     private final TechnicienRepository technicienRepository;
+    private final RapportPdfService rapportPdfService; // <-- NOUVEAU SERVICE
 
-    public InterventionController(InterventionService interventionService, TechnicienRepository technicienRepository) {
+    // CONSTRUCTEUR MIS À JOUR
+    public InterventionController(InterventionService interventionService,
+                                  TechnicienRepository technicienRepository,
+                                  RapportPdfService rapportPdfService) {
         this.interventionService = interventionService;
         this.technicienRepository = technicienRepository;
+        this.rapportPdfService = rapportPdfService; // <-- INJECTION
     }
 
     @GetMapping
@@ -78,12 +84,10 @@ public class InterventionController {
     }
 
     // ======================================================
-    // NOUVEL ENDPOINT : TÉLÉCHARGEMENT DE L'ATTESTATION PDF
+    // NOUVEL ENDPOINT : TÉLÉCHARGEMENT DE L'ATTESTATION PDF (EXISTANT)
     // ======================================================
     @GetMapping("/{id}/attestation/download")
     public ResponseEntity<byte[]> downloadAttestation(@PathVariable Integer id) {
-        // 1. Logique pour récupérer les données de l'attestation depuis la base
-        // Pour l'instant, on simule un contenu texte basé sur l'ID de l'intervention.
         String attestationContent = "ATTESTATION DE RÉALISATION\n";
         attestationContent += "--------------------------------\n";
         attestationContent += "Intervention N° : " + id + "\n";
@@ -94,10 +98,35 @@ public class InterventionController {
 
         byte[] contentBytes = attestationContent.getBytes();
 
-        // 2. Construction de la réponse HTTP pour forcer le téléchargement
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attestation_intervention_" + id + ".txt\"")
-                .contentType(MediaType.TEXT_PLAIN) // Pour l'instant on renvoie un fichier .txt
+                .contentType(MediaType.TEXT_PLAIN)
                 .body(contentBytes);
+    }
+
+    // ======================================================
+    // NOUVEL ENDPOINT : GÉNÉRATION DU RAPPORT PDF (NOUVEAU)
+    // ======================================================
+    @GetMapping("/{id}/rapport/download")
+    public ResponseEntity<byte[]> downloadRapport(@PathVariable Integer id) {
+        try {
+            byte[] pdfContent = rapportPdfService.genererRapportPdf(id);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"rapport_intervention_" + id + ".pdf\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdfContent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    // ======================================================
+    // ENDPOINT : FORCER LA CLÔTURE (ADMIN)
+    // ======================================================
+    @PatchMapping("/{id}/force-complete")
+    public ResponseEntity<InterventionResponse> forceCompleteIntervention(@PathVariable Integer id) {
+        InterventionResponse updated = interventionService.forceCompleteByAdmin(id);
+        return ResponseEntity.ok(updated);
     }
 }
