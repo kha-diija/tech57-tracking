@@ -97,6 +97,19 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/gestionnaire/gestionnaire-dashboard').then((m) => m.GestionnaireDashboard),
       },
+      {
+        path: 'sorties',
+        canActivate: [roleGuard(['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'])],
+        loadComponent: () =>
+          import('./features/gestionnaire/sorties/sorties').then((m) => m.SortiesStock),
+      },
+      {
+        path: 'retours',
+        canActivate: [roleGuard(['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'])],
+        loadComponent: () =>
+          import('./features/gestionnaire/retours/retours').then((m) => m.RetoursStock),
+      },
+
     ],
   },
 
