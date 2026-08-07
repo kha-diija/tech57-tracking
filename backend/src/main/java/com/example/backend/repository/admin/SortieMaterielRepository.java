@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface SortieMaterielRepository extends JpaRepository<SortieMateriel, Integer> {
     List<SortieMateriel> findByIntervention(Intervention intervention);
+    List<SortieMateriel> findByStatut(String statut);
 }
