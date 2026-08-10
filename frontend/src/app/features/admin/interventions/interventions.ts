@@ -26,6 +26,10 @@ export class Interventions implements OnInit {
   interventions: Intervention[] = [];
   searchTerm: string = '';
 
+  // --- AJOUT : filtre par statut ---
+  selectedStatutFilter: string = 'tous';
+  readonly statutOptions = ['Planifiée', 'En cours', 'Exécutée', 'Clôturée'];
+
   missionsList: any[] = [];
   techniciensList: any[] = [];
 
@@ -93,16 +97,24 @@ export class Interventions implements OnInit {
     });
   }
 
+  // --- MODIFIÉ : le filtre gère maintenant le statut ET la recherche texte ---
   get filteredInterventions(): Intervention[] {
-    if (!this.searchTerm.trim()) {
-      return this.interventions;
+    let result = this.interventions;
+
+    if (this.selectedStatutFilter !== 'tous') {
+      result = result.filter(item => item.statut === this.selectedStatutFilter);
     }
-    const term = this.searchTerm.toLowerCase();
-    return this.interventions.filter(item => 
-      (item.missionReference && item.missionReference.toLowerCase().includes(term)) ||
-      (item.technicienNom && item.technicienNom.toLowerCase().includes(term)) ||
-      (item.statut && item.statut.toLowerCase().includes(term))
-    );
+
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      result = result.filter(item =>
+        (item.missionReference && item.missionReference.toLowerCase().includes(term)) ||
+        (item.technicienNom && item.technicienNom.toLowerCase().includes(term)) ||
+        (item.statut && item.statut.toLowerCase().includes(term))
+      );
+    }
+
+    return result;
   }
 
   calculerKPIs() {
@@ -286,6 +298,7 @@ export class Interventions implements OnInit {
     });
   }
 
+  // --- MODIFIÉ : extension .pdf au lieu de .txt ---
   downloadAttestation(id: number) {
     const url = `http://localhost:8080/api/admin/interventions/${id}/attestation/download`;
     this.http.get(url, { responseType: 'blob' }).subscribe({
@@ -293,7 +306,7 @@ export class Interventions implements OnInit {
         const fileUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = fileUrl;
-        link.download = `attestation_intervention_${id}.txt`;
+        link.download = `attestation_intervention_${id}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

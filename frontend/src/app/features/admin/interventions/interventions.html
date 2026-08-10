@@ -57,6 +57,10 @@
         <lucide-icon [img]="icons.Search" [size]="18" class="text-muted"></lucide-icon>
         <input type="text" placeholder="Rechercher par mission ou technicien..." [(ngModel)]="searchTerm">
       </div>
+      <select [(ngModel)]="selectedStatutFilter" class="form-select" style="max-width: 220px;">
+        <option value="tous">Tous les statuts</option>
+        <option *ngFor="let s of statutOptions" [value]="s">{{ s }}</option>
+      </select>
     </div>
 
     <div class="table-responsive">

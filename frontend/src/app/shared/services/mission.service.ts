@@ -26,7 +26,9 @@ export class MissionService {
     return this.http.put<MissionInstallation>(`${this.apiUrl}/${id}`, payload);
   }
 
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  delete(id: number, force: boolean = false): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, {
+      params: { force: force.toString() }
+    });
   }
 }

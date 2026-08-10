@@ -13,4 +13,4 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([jwtInterceptor])),
     importProvidersFrom(LucideAngularModule.pick(icons)),
   ]
-};
+}; 

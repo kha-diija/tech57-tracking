@@ -88,20 +88,17 @@ public class InterventionController {
     // ======================================================
     @GetMapping("/{id}/attestation/download")
     public ResponseEntity<byte[]> downloadAttestation(@PathVariable Integer id) {
-        String attestationContent = "ATTESTATION DE RÉALISATION\n";
-        attestationContent += "--------------------------------\n";
-        attestationContent += "Intervention N° : " + id + "\n";
-        attestationContent += "Date de génération : " + java.time.LocalDateTime.now().toString() + "\n";
-        attestationContent += "--------------------------------\n";
-        attestationContent += "Ce document atteste de la bonne réalisation de l'intervention.\n";
-        attestationContent += "Signé électroniquement par le système.\n";
+        try {
+            byte[] pdfContent = rapportPdfService.genererAttestationPdf(id);
 
-        byte[] contentBytes = attestationContent.getBytes();
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attestation_intervention_" + id + ".txt\"")
-                .contentType(MediaType.TEXT_PLAIN)
-                .body(contentBytes);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attestation_intervention_" + id + ".pdf\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdfContent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     // ======================================================

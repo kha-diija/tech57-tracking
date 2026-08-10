@@ -1,4 +1,4 @@
-package com.example.backend.controller.admin; // Adapter selon ton package réel (ex: com.example.backend.controller ou sous-package admin)
+package com.example.backend.controller.admin;
 
 import com.example.backend.dto.admin.Mission.MissionRequestDTO;
 import com.example.backend.dto.admin.Mission.MissionResponseDTO;
@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/missions")
@@ -46,8 +47,17 @@ public class MissionInstallationController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMission(@PathVariable Integer id) {
-        missionService.deleteMission(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteMission(@PathVariable Integer id,
+                                           @RequestParam(required = false, defaultValue = "false") boolean force) {
+        try {
+            missionService.deleteMission(id, force);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException ex) {
+            // 409 Conflict : la mission a des dépendances, message renvoyé au front pour confirmation
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+        } catch (RuntimeException ex) {
+            // Mission introuvable
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+        }
     }
 }

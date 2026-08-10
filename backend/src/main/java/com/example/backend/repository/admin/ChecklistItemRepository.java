@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface ChecklistItemRepository extends JpaRepository<ChecklistItem, Integer> {
     List<ChecklistItem> findByChecklist(ChecklistEquipement checklistEquipement);
+    void deleteByChecklist(ChecklistEquipement checklistEquipement);
 }

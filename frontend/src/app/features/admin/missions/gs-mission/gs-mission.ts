@@ -74,12 +74,16 @@ export class GsMission {
     isOpen: boolean;
     title: string;
     message: string;
+    isError?: boolean;
     item: MissionInstallation | null;
+    force: boolean;
   }>({
     isOpen: false,
     title: '',
     message: '',
-    item: null
+    isError: false,
+    item: null,
+    force: false
   });
 
   // Filtrage dynamique
@@ -237,12 +241,45 @@ export class GsMission {
     });
   }
 
-  deleteMission(item: MissionInstallation): void {
-    this.confirmModal.set({
-      isOpen: true,
-      title: "Confirmer la suppression",
-      message: `Voulez-vous vraiment supprimer la mission "${item.titre}" (${item.reference}) ?`,
-      item: item
+  deleteMission(item: MissionInstallation, force: boolean = false): void {
+    if (!force) {
+      this.confirmModal.set({
+        isOpen: true,
+        title: "Confirmer la suppression",
+        message: `Voulez-vous vraiment supprimer la mission "${item.titre}" (${item.reference}) ?`,
+        isError: false,
+        item: item,
+        force: false
+      });
+      return;
+    }
+
+    this.missionService.delete(item.idMission, force).subscribe({
+      next: () => {
+        this.closeConfirmModal();
+        this.loadData();
+      },
+      error: (err) => {
+        if (err.status === 409 && err.error?.message) {
+          this.confirmModal.set({
+            isOpen: true,
+            title: "Suppression impossible (Dépendances)",
+            message: `${err.error.message}\n\nVoulez-vous vraiment tout supprimer ?`,
+            isError: true,
+            item: item,
+            force: true
+          });
+        } else {
+          this.confirmModal.set({
+            isOpen: true,
+            title: "Erreur",
+            message: "Une erreur est survenue lors de la suppression.",
+            isError: true,
+            item: null,
+            force: false
+          });
+        }
+      }
     });
   }
 
@@ -253,17 +290,33 @@ export class GsMission {
       return;
     }
 
-    this.missionService.delete(modal.item.idMission).subscribe({
+    const item = modal.item;
+    const force = modal.force;
+
+    this.missionService.delete(item.idMission, force).subscribe({
       next: () => {
         this.closeConfirmModal();
         this.loadData();
       },
-      error: () => this.closeConfirmModal()
+      error: (err) => {
+        if (err.status === 409 && err.error?.message) {
+          this.confirmModal.set({
+            isOpen: true,
+            title: "Suppression impossible (Dépendances)",
+            message: `${err.error.message}\n\nVoulez-vous vraiment tout supprimer ?`,
+            isError: true,
+            item: item,
+            force: true
+          });
+        } else {
+          this.closeConfirmModal();
+        }
+      }
     });
   }
 
   closeConfirmModal(): void {
-    this.confirmModal.set({ isOpen: false, title: '', message: '', item: null });
+    this.confirmModal.set({ isOpen: false, title: '', message: '', isError: false, item: null, force: false });
   }
 
   onExport(): void {
