@@ -16,15 +16,59 @@
       <lucide-icon [img]="icons.HelpCircle" [size]="18"></lucide-icon>
     </button>
 
-    <button class="navbar__icon-btn" title="Notifications">
-      <lucide-icon [img]="icons.Bell" [size]="18"></lucide-icon>
-      <span class="navbar__dot"></span>
-    </button>
+    <!-- Notifications -->
+    <div class="navbar__notif-wrapper">
+      <button class="navbar__icon-btn" title="Notifications" (click)="toggleNotifPanel()">
+        <lucide-icon [img]="icons.Bell" [size]="18"></lucide-icon>
+        <span class="navbar__dot" *ngIf="notificationService.nonLuesCount() > 0"></span>
+      </button>
+
+      <div class="navbar__notif-panel" *ngIf="showNotifPanel">
+        <div class="navbar__notif-header">
+          <span>Notifications</span>
+          <button
+            type="button"
+            class="navbar__notif-mark-all"
+            *ngIf="notificationService.nonLuesCount() > 0"
+            (click)="marquerToutesLues()"
+          >
+            <lucide-icon [img]="icons.CheckCheck" [size]="13"></lucide-icon>
+            Tout marquer lu
+          </button>
+        </div>
+
+        <div class="navbar__notif-list">
+          <div
+            class="navbar__notif-item"
+            *ngFor="let n of notificationService.notifications()"
+            [class.unread]="!n.lu"
+          >
+            <div class="navbar__notif-content">
+              <span class="navbar__notif-type">{{ n.type }}</span>
+              <p class="navbar__notif-message">{{ n.message }}</p>
+              <span class="navbar__notif-date">{{ n.dateEnvoi | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <button
+              type="button"
+              class="navbar__notif-check"
+              *ngIf="!n.lu"
+              title="Marquer comme lue"
+              (click)="marquerLue(n.idNotification, $event)"
+            >
+              <lucide-icon [img]="icons.Check" [size]="14"></lucide-icon>
+            </button>
+          </div>
+
+          <div class="navbar__notif-empty" *ngIf="notificationService.notifications().length === 0">
+            Aucune notification
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Profil Utilisateur & Déconnexion dans la Navbar -->
     <div class="navbar__user-wrapper">
       <button class="navbar__user-btn" (click)="toggleUserMenu()">
-        <!-- Initiales dynamiques générées depuis le TypeScript -->
         <div class="navbar__avatar">{{ userInitials }}</div>
         
         <div class="navbar__user-info">
@@ -35,7 +79,6 @@
         <lucide-icon [img]="icons.ChevronDown" [size]="14" class="navbar__chevron"></lucide-icon>
       </button>
 
-      <!-- Menu Déroulant Profil & Déconnexion -->
       <div class="navbar__dropdown" *ngIf="showUserMenu">
         <a routerLink="/settings" class="navbar__dropdown-item" (click)="showUserMenu = false">
           <lucide-icon [img]="icons.User" [size]="16"></lucide-icon>

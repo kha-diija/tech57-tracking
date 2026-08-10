@@ -2,7 +2,9 @@ package com.example.backend.service.admin;
 
 import com.example.backend.dto.admin.intervention.*;
 import com.example.backend.entity.*;
+import com.example.backend.repository.UtilisateurRepository;
 import com.example.backend.repository.admin.*;
+import com.example.backend.service.NotificationHelperService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -20,14 +22,15 @@ public class InterventionService {
     private final PhotoRepository photoRepository;
     private final AttestationRepository attestationRepository;
 
-    // --- NOUVEAUX REPOSITORIES INJECTÉS ---
     private final SortieMaterielRepository sortieMaterielRepository;
     private final RetourMaterielRepository retourMaterielRepository;
     private final ChecklistEquipementRepository checklistEquipementRepository;
     private final ChecklistItemRepository checklistItemRepository;
 
-    // --- AJOUT : service pour recalculer le statut de la Mission ---
     private final MissionInstallationService missionInstallationService;
+
+    private final UtilisateurRepository utilisateurRepository;
+    private final NotificationHelperService notificationHelperService;
 
     public InterventionService(
             InterventionRepository interventionRepository,
@@ -39,7 +42,9 @@ public class InterventionService {
             RetourMaterielRepository retourMaterielRepository,
             ChecklistEquipementRepository checklistEquipementRepository,
             ChecklistItemRepository checklistItemRepository,
-            MissionInstallationService missionInstallationService) { // <-- AJOUT
+            MissionInstallationService missionInstallationService,
+            UtilisateurRepository utilisateurRepository,
+            NotificationHelperService notificationHelperService) {
 
         this.interventionRepository = interventionRepository;
         this.missionRepository = missionRepository;
@@ -50,7 +55,9 @@ public class InterventionService {
         this.retourMaterielRepository = retourMaterielRepository;
         this.checklistEquipementRepository = checklistEquipementRepository;
         this.checklistItemRepository = checklistItemRepository;
-        this.missionInstallationService = missionInstallationService; // <-- AJOUT
+        this.missionInstallationService = missionInstallationService;
+        this.utilisateurRepository = utilisateurRepository;
+        this.notificationHelperService = notificationHelperService;
     }
 
     public List<InterventionResponse> getAll() {
@@ -92,13 +99,17 @@ public class InterventionService {
 
         Intervention saved = interventionRepository.save(intervention);
 
-        // --- AJOUT : recalcul du statut de la Mission après création ---
         missionInstallationService.recalculerStatut(mission.getIdMission());
 
         return convertToResponse(saved);
     }
 
-    public InterventionResponse update(Integer id, UpdateInterventionRequest request) {
+    /**
+     * @param idAuteur id de l'utilisateur connecté qui effectue la mise à jour,
+     *                 utilisé comme expéditeur si une notification de clôture
+     *                 est déclenchée. Peut être null.
+     */
+    public InterventionResponse update(Integer id, UpdateInterventionRequest request, Integer idAuteur) {
         Intervention intervention = interventionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
 
@@ -107,6 +118,8 @@ public class InterventionService {
 
         Technicien technicien = technicienRepository.findById(request.getTechnicienId())
                 .orElseThrow(() -> new EntityNotFoundException("Technicien introuvable."));
+
+        String ancienStatut = intervention.getStatut();
 
         intervention.setDateDebut(request.getDateDebut());
         intervention.setDateFin(request.getDateFin());
@@ -119,21 +132,28 @@ public class InterventionService {
 
         Intervention updated = interventionRepository.save(intervention);
 
-        // --- AJOUT : recalcul du statut de la Mission après mise à jour ---
         missionInstallationService.recalculerStatut(mission.getIdMission());
+
+        boolean vientDePasserATerminee = !"Exécutée".equals(ancienStatut) && "Exécutée".equals(updated.getStatut());
+        if (vientDePasserATerminee && idAuteur != null) {
+            utilisateurRepository.findById(idAuteur).ifPresent(auteur -> {
+                String refMission = updated.getMission() != null ? updated.getMission().getReference() : "N/A";
+                String message = "L'intervention " + refMission + " est passée au statut Terminée. "
+                        + "Le matériel sorti doit être régularisé au stock.";
+                notificationHelperService.notifierTousLesAdmins(auteur, message, "INTERVENTION_TERMINEE");
+            });
+        }
 
         return convertToResponse(updated);
     }
 
     public void delete(Integer id) {
-        // --- MODIFIÉ : on récupère l'entité (et pas juste existsById) pour connaître sa mission ---
         Intervention intervention = interventionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
         Integer idMission = intervention.getMission().getIdMission();
 
         interventionRepository.deleteById(id);
 
-        // --- AJOUT : recalcul du statut de la Mission après suppression ---
         missionInstallationService.recalculerStatut(idMission);
     }
 
@@ -249,7 +269,6 @@ public class InterventionService {
 
         Intervention updated = interventionRepository.save(intervention);
 
-        // --- AJOUT : recalcul du statut de la Mission après clôture forcée ---
         missionInstallationService.recalculerStatut(intervention.getMission().getIdMission());
 
         return convertToResponse(updated);
