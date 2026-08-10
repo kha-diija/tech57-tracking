@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Integer> {
     List<Notification> findByDestinataireOrderByDateEnvoiDesc(Utilisateur destinataire);
+    long countByDestinataireAndLuFalse(Utilisateur destinataire);
 }
