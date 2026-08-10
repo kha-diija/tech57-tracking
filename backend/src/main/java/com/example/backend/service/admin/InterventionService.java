@@ -26,6 +26,9 @@ public class InterventionService {
     private final ChecklistEquipementRepository checklistEquipementRepository;
     private final ChecklistItemRepository checklistItemRepository;
 
+    // --- AJOUT : service pour recalculer le statut de la Mission ---
+    private final MissionInstallationService missionInstallationService;
+
     public InterventionService(
             InterventionRepository interventionRepository,
             MissionInstallationRepository missionRepository,
@@ -35,7 +38,8 @@ public class InterventionService {
             SortieMaterielRepository sortieMaterielRepository,
             RetourMaterielRepository retourMaterielRepository,
             ChecklistEquipementRepository checklistEquipementRepository,
-            ChecklistItemRepository checklistItemRepository) {
+            ChecklistItemRepository checklistItemRepository,
+            MissionInstallationService missionInstallationService) { // <-- AJOUT
 
         this.interventionRepository = interventionRepository;
         this.missionRepository = missionRepository;
@@ -46,6 +50,7 @@ public class InterventionService {
         this.retourMaterielRepository = retourMaterielRepository;
         this.checklistEquipementRepository = checklistEquipementRepository;
         this.checklistItemRepository = checklistItemRepository;
+        this.missionInstallationService = missionInstallationService; // <-- AJOUT
     }
 
     public List<InterventionResponse> getAll() {
@@ -63,7 +68,6 @@ public class InterventionService {
         return convertToResponse(intervention);
     }
 
-    // --- MÉTHODE AJOUTÉE : Récupère l'entité brute pour le RapportPdfService ---
     public Intervention getInterventionEntity(Integer id) {
         return interventionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
@@ -87,6 +91,10 @@ public class InterventionService {
         intervention.setTechnicien(technicien);
 
         Intervention saved = interventionRepository.save(intervention);
+
+        // --- AJOUT : recalcul du statut de la Mission après création ---
+        missionInstallationService.recalculerStatut(mission.getIdMission());
+
         return convertToResponse(saved);
     }
 
@@ -110,14 +118,23 @@ public class InterventionService {
         intervention.setTechnicien(technicien);
 
         Intervention updated = interventionRepository.save(intervention);
+
+        // --- AJOUT : recalcul du statut de la Mission après mise à jour ---
+        missionInstallationService.recalculerStatut(mission.getIdMission());
+
         return convertToResponse(updated);
     }
 
     public void delete(Integer id) {
-        if (!interventionRepository.existsById(id)) {
-            throw new EntityNotFoundException("Intervention introuvable.");
-        }
+        // --- MODIFIÉ : on récupère l'entité (et pas juste existsById) pour connaître sa mission ---
+        Intervention intervention = interventionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+        Integer idMission = intervention.getMission().getIdMission();
+
         interventionRepository.deleteById(id);
+
+        // --- AJOUT : recalcul du statut de la Mission après suppression ---
+        missionInstallationService.recalculerStatut(idMission);
     }
 
     private InterventionResponse convertToResponse(Intervention intervention) {
@@ -134,13 +151,9 @@ public class InterventionService {
             response.setMissionId(intervention.getMission().getIdMission());
             response.setMissionReference(intervention.getMission().getReference());
 
-            // ==========================================================
-            // --- AJOUT : Récupération du nom de l'établissement ---
-            // ==========================================================
             if (intervention.getMission().getEtablissement() != null) {
                 response.setEtablissementDesignation(intervention.getMission().getEtablissement().getDesignation());
             }
-            // ==========================================================
         }
 
         if (intervention.getTechnicien() != null) {
@@ -150,7 +163,6 @@ public class InterventionService {
             );
         }
 
-        // --- Mappage des Photos ---
         List<Photo> photos = photoRepository.findByIntervention(intervention);
         if (photos != null && !photos.isEmpty()) {
             List<PhotoDto> photoDtos = photos.stream().map(p -> {
@@ -163,7 +175,6 @@ public class InterventionService {
             response.setPhotos(photoDtos);
         }
 
-        // --- Mappage de l'Attestation ---
         Optional<Attestation> attestationOpt = attestationRepository.findByIntervention(intervention);
         if (attestationOpt.isPresent()) {
             Attestation attestation = attestationOpt.get();
@@ -176,9 +187,6 @@ public class InterventionService {
             response.setAttestation(attDto);
         }
 
-        // ==============================================================
-        // --- NOUVEAU : Mappage des Sorties de Matériel ---
-        // ==============================================================
         List<SortieMateriel> sorties = sortieMaterielRepository.findByIntervention(intervention);
         if (sorties != null && !sorties.isEmpty()) {
             List<SortieMaterielDto> sortieDtos = sorties.stream().map(s -> {
@@ -186,7 +194,6 @@ public class InterventionService {
                 dto.setIdSortie(s.getIdSortie());
                 dto.setDateSortie(s.getDateSortie());
 
-                // Récupération de la référence et de la quantité depuis DetailSortieMateriel
                 if (s.getDetails() != null && !s.getDetails().isEmpty()) {
                     DetailSortieMateriel detail = s.getDetails().get(0);
                     dto.setMaterielReference(detail.getMateriel().getReference());
@@ -197,9 +204,6 @@ public class InterventionService {
             response.setSortiesMateriel(sortieDtos);
         }
 
-        // ==============================================================
-        // --- NOUVEAU : Mappage des Retours de Matériel ---
-        // ==============================================================
         List<RetourMateriel> retours = retourMaterielRepository.findByIntervention(intervention);
         if (retours != null && !retours.isEmpty()) {
             List<RetourMaterielDto> retourDtos = retours.stream().map(r -> {
@@ -214,9 +218,6 @@ public class InterventionService {
             response.setRetoursMateriel(retourDtos);
         }
 
-        // ==============================================================
-        // --- NOUVEAU : Mappage de la Checklist des équipements ---
-        // ==============================================================
         Optional<ChecklistEquipement> checklistOpt = checklistEquipementRepository.findByIntervention(intervention);
         if (checklistOpt.isPresent()) {
             ChecklistEquipement checklist = checklistOpt.get();
@@ -239,9 +240,6 @@ public class InterventionService {
         return response;
     }
 
-    // ==============================================================
-    // --- NOUVELLE MÉTHODE : FORCER LA CLÔTURE PAR L'ADMIN ---
-    // ==============================================================
     public InterventionResponse forceCompleteByAdmin(Integer id) {
         Intervention intervention = interventionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
@@ -250,6 +248,10 @@ public class InterventionService {
         intervention.setTauxAvancement(100.0);
 
         Intervention updated = interventionRepository.save(intervention);
+
+        // --- AJOUT : recalcul du statut de la Mission après clôture forcée ---
+        missionInstallationService.recalculerStatut(intervention.getMission().getIdMission());
+
         return convertToResponse(updated);
     }
 }

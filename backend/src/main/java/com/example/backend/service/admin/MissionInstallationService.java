@@ -5,11 +5,17 @@ import com.example.backend.dto.admin.Mission.MissionResponseDTO;
 import com.example.backend.entity.Administrateur;
 import com.example.backend.entity.Etablissement;
 import com.example.backend.entity.EquipeTechnique;
+import com.example.backend.entity.Intervention;
 import com.example.backend.entity.MissionInstallation;
 import com.example.backend.entity.Utilisateur;
 import com.example.backend.repository.admin.EtablissementRepository;
+import com.example.backend.repository.admin.InterventionRepository;
 import com.example.backend.repository.admin.MissionInstallationRepository;
 import com.example.backend.repository.admin.EquipeTechniqueRepository;
+import com.example.backend.repository.admin.RapportRepository;
+import com.example.backend.repository.admin.PhotoRepository;
+import com.example.backend.repository.admin.AttestationRepository;
+import com.example.backend.repository.admin.ChecklistEquipementRepository;
 import com.example.backend.repository.UtilisateurRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +38,21 @@ public class MissionInstallationService {
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
+
+    @Autowired
+    private InterventionRepository interventionRepository; // <-- pour recalculerStatut() et deleteMission()
+
+    @Autowired
+    private RapportRepository rapportRepository;
+
+    @Autowired
+    private PhotoRepository photoRepository;
+
+    @Autowired
+    private AttestationRepository attestationRepository;
+
+    @Autowired
+    private ChecklistEquipementRepository checklistEquipementRepository;
 
     @Transactional
     public List<MissionResponseDTO> getAllMissions() {
@@ -71,12 +92,66 @@ public class MissionInstallationService {
         return new MissionResponseDTO(updated);
     }
 
+    /**
+     * Suppression sécurisée avec gestion de la cascade et avertissement préalable.
+     */
     @Transactional
-    public void deleteMission(Integer id) {
-        if (!missionRepository.existsById(id)) {
-            throw new RuntimeException("Impossible de supprimer, mission introuvable ID : " + id);
+    public void deleteMission(Integer id, boolean force) {
+        MissionInstallation mission = missionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Impossible de supprimer, mission introuvable ID : " + id));
+
+        List<Intervention> interventions = interventionRepository.findByMissionIdMission(id);
+        long nbInterventions = interventions.size();
+
+        if (nbInterventions > 0 && !force) {
+            throw new IllegalStateException(
+                    "Cette mission est liée à " + nbInterventions + " intervention(s). " +
+                            "Toutes les données associées (interventions, rapports, photos, matériel...) seront définitivement supprimées si vous continuez."
+            );
         }
+
+        if (force) {
+            for (Intervention intervention : interventions) {
+                rapportRepository.deleteByIntervention(intervention);
+                photoRepository.deleteByIntervention(intervention);
+                attestationRepository.deleteByIntervention(intervention);
+                checklistEquipementRepository.deleteByIntervention(intervention);
+            }
+            rapportRepository.deleteByMission(mission);
+            interventionRepository.deleteAll(interventions);
+        }
+
         missionRepository.deleteById(id);
+    }
+
+    // ==============================================================
+    // --- Recalcul automatique du statut de la Mission ---
+    // en fonction des statuts de ses Interventions liées
+    // ==============================================================
+    @Transactional
+    public void recalculerStatut(Integer idMission) {
+        MissionInstallation mission = missionRepository.findById(idMission)
+                .orElseThrow(() -> new RuntimeException("Mission introuvable avec l'ID : " + idMission));
+
+        List<Intervention> interventions = interventionRepository.findByMissionIdMission(idMission);
+
+        if (interventions.isEmpty()) {
+            return; // Aucune intervention -> la mission reste "Planifiée"
+        }
+
+        boolean toutesCloturees = interventions.stream()
+                .allMatch(i -> "Clôturée".equals(i.getStatut()));
+
+        boolean auMoinsUneEnCours = interventions.stream()
+                .anyMatch(i -> "En cours".equals(i.getStatut()));
+
+        if (toutesCloturees) {
+            mission.setStatut("Exécutée");
+        } else if (auMoinsUneEnCours) {
+            mission.setStatut("En cours");
+        }
+
+        missionRepository.save(mission);
     }
 
     // Méthode utilitaire interne pour lier les entités relationnelles

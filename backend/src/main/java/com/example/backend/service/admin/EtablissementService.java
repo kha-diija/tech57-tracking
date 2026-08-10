@@ -6,7 +6,15 @@ import com.example.backend.entity.Etablissement;
 import com.example.backend.entity.Responsable;
 import com.example.backend.repository.admin.CommuneRepository;
 import com.example.backend.repository.admin.EtablissementRepository;
-import com.example.backend.repository.admin.MissionInstallationRepository; // <-- Import du repository des missions
+import com.example.backend.entity.Intervention;
+import com.example.backend.entity.MissionInstallation;
+import com.example.backend.repository.admin.MissionInstallationRepository;
+import com.example.backend.repository.admin.InterventionRepository;
+import com.example.backend.repository.admin.RapportRepository;
+import com.example.backend.repository.admin.PhotoRepository;
+import com.example.backend.repository.admin.AttestationRepository;
+import com.example.backend.repository.admin.ChecklistEquipementRepository;
+import com.example.backend.repository.admin.ChecklistItemRepository; // <-- Import du repository des missions
 import com.example.backend.repository.admin.ResponsableRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,16 +29,34 @@ public class EtablissementService {
     private final EtablissementRepository etablissementRepository;
     private final CommuneRepository communeRepository;
     private final ResponsableRepository responsableRepository;
-    private final MissionInstallationRepository missionInstallationRepository; // <-- Ajout de la dépendance
+    private final MissionInstallationRepository missionInstallationRepository;
+    private final InterventionRepository interventionRepository;
+    private final RapportRepository rapportRepository;
+    private final PhotoRepository photoRepository;
+    private final AttestationRepository attestationRepository;
+    private final ChecklistEquipementRepository checklistEquipementRepository;
+    private final ChecklistItemRepository checklistItemRepository;// <-- Ajout de la dépendance
 
     public EtablissementService(EtablissementRepository etablissementRepository,
                                 CommuneRepository communeRepository,
                                 ResponsableRepository responsableRepository,
-                                MissionInstallationRepository missionInstallationRepository) {
+                                MissionInstallationRepository missionInstallationRepository,
+                                InterventionRepository interventionRepository,
+                                RapportRepository rapportRepository,
+                                PhotoRepository photoRepository,
+                                AttestationRepository attestationRepository,
+                                ChecklistEquipementRepository checklistEquipementRepository,
+                                ChecklistItemRepository checklistItemRepository) {
         this.etablissementRepository = etablissementRepository;
         this.communeRepository = communeRepository;
         this.responsableRepository = responsableRepository;
         this.missionInstallationRepository = missionInstallationRepository;
+        this.interventionRepository = interventionRepository;
+        this.rapportRepository = rapportRepository;
+        this.photoRepository = photoRepository;
+        this.attestationRepository = attestationRepository;
+        this.checklistEquipementRepository = checklistEquipementRepository;
+        this.checklistItemRepository = checklistItemRepository;
     }
 
     @Transactional(readOnly = true)
@@ -82,6 +108,7 @@ public class EtablissementService {
         return toResponse(etablissementRepository.findByIdWithDetails(saved.getIdEtablissement()).orElseThrow());
     }
 
+
     /**
      * Suppression sécurisée avec gestion de la cascade et avertissement préalable.
      */
@@ -90,20 +117,38 @@ public class EtablissementService {
         Etablissement e = etablissementRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Établissement introuvable : " + id));
 
-        long nbMateriels = etablissementRepository.countMaterielsByEtablissementId(id);
-        long nbMissions = missionInstallationRepository.countByEtablissementIdEtablissement(id); // Vérification des missions
+        List<MissionInstallation> missions = missionInstallationRepository.findByEtablissementIdEtablissement(id);
 
-        if ((nbMateriels > 0 || nbMissions > 0) && !force) {
+        List<Intervention> interventions = missions.stream()
+                .flatMap(m -> interventionRepository.findByMissionIdMission(m.getIdMission()).stream())
+                .collect(Collectors.toList());
+
+        long nbMateriels = etablissementRepository.countMaterielsByEtablissementId(id);
+        long nbMissions = missions.size();
+        long nbInterventions = interventions.size();
+
+        if ((nbMateriels > 0 || nbMissions > 0 || nbInterventions > 0) && !force) {
             throw new IllegalStateException("Attention : Cet établissement contient " + nbMateriels +
-                    " matériel(s) et " + nbMissions + " mission(s) d'installation associée(s). Tout ce qui est lié à cet établissement va être supprimé.");
+                    " matériel(s), " + nbMissions + " mission(s) d'installation et " + nbInterventions +
+                    " intervention(s) associée(s). Tout ce qui est lié à cet établissement va être supprimé.");
         }
 
         if (force) {
-            // Suppression préalable des missions d'installation pour éviter les contraintes de clés étrangères
-            missionInstallationRepository.deleteByEtablissementIdEtablissement(id);
+            for (Intervention intervention : interventions) {
+                rapportRepository.deleteByIntervention(intervention);
+                photoRepository.deleteByIntervention(intervention);
+                attestationRepository.deleteByIntervention(intervention);
+                checklistEquipementRepository.deleteByIntervention(intervention);
+            }
+
+            for (MissionInstallation mission : missions) {
+                rapportRepository.deleteByMission(mission);
+            }
+
+            interventionRepository.deleteAll(interventions);
+            missionInstallationRepository.deleteAll(missions);
         }
 
-        // Suppression effective (CascadeType.ALL s'occupe du reste pour les matériels)
         etablissementRepository.delete(e);
     }
 

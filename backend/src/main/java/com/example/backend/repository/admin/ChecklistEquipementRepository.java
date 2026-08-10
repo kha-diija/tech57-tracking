@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface ChecklistEquipementRepository extends JpaRepository<ChecklistEquipement, Integer> {
     Optional<ChecklistEquipement> findByIntervention(Intervention intervention);
+    void deleteByIntervention(Intervention intervention);
 }

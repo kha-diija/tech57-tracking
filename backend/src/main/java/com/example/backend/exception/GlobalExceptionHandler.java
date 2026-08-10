@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.dao.DataIntegrityViolationException; // AJOUT
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -45,9 +46,6 @@ public class GlobalExceptionHandler {
     }
 
     // --- Sécurité ---
-    // ⚠️ MODIFIÉ : le message était figé sur "Email ou mot de passe incorrect", ce qui est faux
-    // pour le changement de mot de passe (settings). On utilise maintenant ex.getMessage()
-    // avec ce texte comme valeur par défaut si jamais le message est vide.
     @ExceptionHandler({InvalidCredentialsException.class, BadCredentialsException.class})
     public ResponseEntity<ApiErrorResponse> handleBadCredentials(RuntimeException ex,
                                                                  HttpServletRequest request) {
@@ -106,9 +104,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
-    // --- AJOUT : accès refusé (rôle insuffisant) ---
-    // Utile car SecurityConfig utilise hasRole/hasAnyRole sur plusieurs routes ;
-    // sans ce handler, un 403 Spring Security par défaut (HTML) est renvoyé au lieu du JSON attendu par Angular.
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex,
                                                                HttpServletRequest request) {
@@ -147,17 +142,27 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
+    // AJOUT : gestion des violations de contrainte d'intégrité (clé étrangère, unicité...)
+    // Sert de filet de sécurité pour les suppressions en cascade (ex: Etablissement -> Mission -> Intervention)
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex,
+                                                                HttpServletRequest request) {
+        log.error("Contrainte d'intégrité violée : {}", ex.getMessage(), ex);
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                "Suppression impossible : cet élément est encore référencé par d'autres données.",
+                request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     // --- Gestion générique (capture tout le reste) ---
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneric(Exception ex,
                                                           HttpServletRequest request) {
-        // Log complet avec stacktrace
         log.error("Exception non capturée : ", ex);
 
-        // En développement, tu peux renvoyer le message de l'exception pour déboguer
         String message = "Une erreur inattendue est survenue";
-        // Décommente la ligne ci-dessous en environnement de DEV pour voir la cause
-        // message = ex.getClass().getSimpleName() + " : " + ex.getMessage();
 
         ApiErrorResponse error = new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -180,6 +185,7 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.badRequest().body(error);
     }
+
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleEntityNotFound(EntityNotFoundException ex,
                                                                  HttpServletRequest request) {

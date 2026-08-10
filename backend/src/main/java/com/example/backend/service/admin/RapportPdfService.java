@@ -171,6 +171,58 @@ public class RapportPdfService {
         return pdfBytes;
     }
 
+    // ==============================================================
+    // --- NOUVELLE MÉTHODE : Génération de l'attestation en PDF ---
+    // ==============================================================
+    public byte[] genererAttestationPdf(Integer interventionId) throws DocumentException, IOException {
+        InterventionResponse intervention = interventionService.getById(interventionId);
+
+        Document document = new Document(PageSize.A4);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter.getInstance(document, baos);
+        document.open();
+
+        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, BaseColor.ORANGE);
+        Paragraph title = new Paragraph("ATTESTATION DE RÉALISATION", titleFont);
+        title.setAlignment(Element.ALIGN_CENTER);
+        document.add(title);
+        document.add(new Paragraph("\n"));
+
+        Font subtitleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.DARK_GRAY);
+        Paragraph subtitle = new Paragraph("TECH-57 - Système de Suivi Logistique", subtitleFont);
+        subtitle.setAlignment(Element.ALIGN_CENTER);
+        document.add(subtitle);
+        document.add(new Paragraph("\n"));
+        document.add(new Paragraph("-------------------------------------------------------------------", FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.LIGHT_GRAY)));
+        document.add(new Paragraph("\n"));
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        document.add(new Paragraph("Intervention N° : " + intervention.getId()));
+        document.add(new Paragraph("Mission : " + intervention.getMissionReference()));
+        document.add(new Paragraph("Établissement : " + (intervention.getEtablissementDesignation() != null ? intervention.getEtablissementDesignation() : "Non renseigné")));
+        document.add(new Paragraph("Technicien : " + intervention.getTechnicienNom()));
+        document.add(new Paragraph("\n"));
+
+        if (intervention.getAttestation() != null) {
+            document.add(new Paragraph("Signataire : " + intervention.getAttestation().getNomSignataire()));
+            document.add(new Paragraph("Date de signature : " +
+                    (intervention.getAttestation().getDateSignature() != null
+                            ? intervention.getAttestation().getDateSignature().format(dtf)
+                            : "Non signé")));
+            document.add(new Paragraph("Validité : " + (intervention.getAttestation().getValide() ? "Validée" : "En attente")));
+        } else {
+            document.add(new Paragraph("Aucune attestation enregistrée pour cette intervention."));
+        }
+
+        document.add(new Paragraph("\n"));
+        document.add(new Paragraph("Ce document atteste de la bonne réalisation de l'intervention."));
+        document.add(new Paragraph("Généré le : " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")), FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.GRAY)));
+
+        document.close();
+        return baos.toByteArray();
+    }
+
     // Méthodes utilitaires pour le style
     private void addSectionHeader(Document document, String text) throws DocumentException {
         Font font = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, BaseColor.DARK_GRAY);

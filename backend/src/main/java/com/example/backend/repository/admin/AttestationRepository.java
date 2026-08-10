@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface AttestationRepository extends JpaRepository<Attestation, Integer> {
     Optional<Attestation> findByIntervention(Intervention intervention);
+    void deleteByIntervention(Intervention intervention);
 }
