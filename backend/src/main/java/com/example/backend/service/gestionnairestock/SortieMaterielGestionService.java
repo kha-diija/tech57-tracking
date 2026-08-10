@@ -3,9 +3,9 @@ package com.example.backend.service.gestionnairestock;
 import com.example.backend.dto.gestionnairestock.*;
 import com.example.backend.entity.*;
 import com.example.backend.repository.UtilisateurRepository;
-import com.example.backend.repository.NotificationRepository; // ⚠️ à confirmer/ajuster
 import com.example.backend.repository.admin.SortieMaterielRepository;
 import com.example.backend.repository.gestionnairestock.GsStockMaterielRepository;
+import com.example.backend.service.NotificationHelperService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,18 +18,18 @@ public class SortieMaterielGestionService {
 
     private final SortieMaterielRepository sortieMaterielRepository;
     private final GsStockMaterielRepository stockMaterielRepository;
-    private final NotificationRepository notificationRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final NotificationHelperService notificationHelperService;
 
     public SortieMaterielGestionService(
             SortieMaterielRepository sortieMaterielRepository,
             GsStockMaterielRepository stockMaterielRepository,
-            NotificationRepository notificationRepository,
-            UtilisateurRepository utilisateurRepository) {
+            UtilisateurRepository utilisateurRepository,
+            NotificationHelperService notificationHelperService) {
         this.sortieMaterielRepository = sortieMaterielRepository;
         this.stockMaterielRepository = stockMaterielRepository;
-        this.notificationRepository = notificationRepository;
         this.utilisateurRepository = utilisateurRepository;
+        this.notificationHelperService = notificationHelperService;
     }
 
     public List<SortieMaterielDto> listerParStatut(String statut) {
@@ -84,12 +84,26 @@ public class SortieMaterielGestionService {
             throw new IllegalStateException("Cette demande a déjà été traitée.");
         }
 
+        Utilisateur validateur = utilisateurRepository.findById(idValidateur)
+                .orElseThrow(() -> new EntityNotFoundException("Validateur introuvable."));
+
         for (DetailSortieMateriel detail : sortie.getDetails()) {
             StockMateriel stock = stockMaterielRepository.findById(detail.getMateriel().getIdMateriel())
                     .orElseThrow(() -> new IllegalStateException(
                             "Aucune fiche de stock pour le matériel " + detail.getMateriel().getReference()));
 
             if (stock.getQuantiteDisponible() < detail.getQuantite()) {
+                String refMission = (sortie.getIntervention() != null && sortie.getIntervention().getMission() != null)
+                        ? sortie.getIntervention().getMission().getReference() : "N/A";
+
+                String message = "Alerte Rupture de Stock : Le matériel " + detail.getMateriel().getNom()
+                        + " (Réf: " + detail.getMateriel().getReference() + ") est en rupture de stock suite à "
+                        + "une demande pour la mission " + refMission
+                        + " (disponible: " + stock.getQuantiteDisponible()
+                        + ", demandé: " + detail.getQuantite() + ").";
+
+                notificationHelperService.notifierTousLesAdmins(validateur, message, "RUPTURE_STOCK");
+
                 throw new IllegalStateException(
                         "Stock insuffisant pour " + detail.getMateriel().getReference()
                                 + " (disponible: " + stock.getQuantiteDisponible()
@@ -103,9 +117,6 @@ public class SortieMaterielGestionService {
             stock.setQuantiteReservee(stock.getQuantiteReservee() + detail.getQuantite());
             stockMaterielRepository.save(stock);
         }
-
-        Utilisateur validateur = utilisateurRepository.findById(idValidateur)
-                .orElseThrow(() -> new EntityNotFoundException("Validateur introuvable."));
 
         sortie.setStatut("Validée");
         sortie.setValidateur(validateur);
@@ -132,15 +143,11 @@ public class SortieMaterielGestionService {
         SortieMateriel saved = sortieMaterielRepository.save(sortie);
 
         if (sortie.getTechnicien() != null) {
-            Notification notif = new Notification();
-            notif.setExpediteur(validateur);
-            notif.setDestinataire(sortie.getTechnicien());
             String refMission = sortie.getIntervention() != null && sortie.getIntervention().getMission() != null
                     ? sortie.getIntervention().getMission().getReference() : "N/A";
-            notif.setMessage("Votre demande de matériel pour la mission " + refMission
-                    + " a été rejetée. Motif : " + request.getMotifRejet());
-            notif.setType("DEMANDE_REJETEE");
-            notificationRepository.save(notif);
+            String message = "Votre demande de matériel pour la mission " + refMission
+                    + " a été rejetée. Motif : " + request.getMotifRejet();
+            notificationHelperService.envoyerNotification(validateur, sortie.getTechnicien(), message, "DEMANDE_REJETEE");
         }
 
         return toDto(saved);

@@ -85,7 +85,7 @@ public class SecurityConfig {
                         // Authentification publique
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
-
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/user/**").authenticated()
 
                         // Routes protégées par rôle (à adapter au fur et à mesure des modules)

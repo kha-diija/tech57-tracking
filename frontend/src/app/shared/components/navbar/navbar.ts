@@ -10,9 +10,12 @@ import {
   Moon, 
   LogOut, 
   User, 
-  ChevronDown 
+  ChevronDown,
+  Check,
+  CheckCheck
 } from 'lucide-angular';
 import { AuthService } from '../../services/auth.service';
+import { NotificationService } from '../../../shared/services/notification.service'; // ⚠️ ajuste le chemin selon ton arborescence
 
 @Component({
   selector: 'app-navbar',
@@ -24,17 +27,18 @@ import { AuthService } from '../../services/auth.service';
 export class Navbar implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
+  notificationService = inject(NotificationService);
 
   breadcrumbTitle = 'Tableau de bord';
   isDarkMode = true;
   showUserMenu = false;
+  showNotifPanel = false;
 
   userName = 'Utilisateur';
   userRole = 'Membre';
   userInitials = 'U';
 
-  readonly icons = { HelpCircle, Bell, Sun, Moon, LogOut, User, ChevronDown };
-
+  readonly icons = { HelpCircle, Bell, Sun, Moon, LogOut, User, ChevronDown, Check, CheckCheck };
 
   private routeTitles: { [key: string]: string } = {
     '/dashboard': 'Tableau de bord',
@@ -45,20 +49,20 @@ export class Navbar implements OnInit {
     '/etablissements': 'Établissements',
     '/missions': 'Missions',
     '/stock': 'Stock & Matériel',
+    '/sorties': 'Sorties de matériel',
+    '/retours': 'Retours & inspection',
     '/users': 'Utilisateurs',
     '/chat-ia': 'Assistant IA',
     '/guides': 'Guides & Support',
     '/settings': 'Paramètres'
   };
-  
 
   ngOnInit() {
     document.documentElement.classList.add('dark');
     
-    // 1. Charger les données réactives de l'utilisateur
     this.loadUserData();
+    this.notificationService.initialiser();
 
-    // 2. Gestion du fil d'Ariane
     this.updateBreadcrumb(this.router.url);
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
@@ -68,7 +72,6 @@ export class Navbar implements OnInit {
   }
 
   private loadUserData() {
-    // Appel du signal currentUser()
     const user = this.authService.currentUser();
 
     if (user) {
@@ -102,9 +105,25 @@ export class Navbar implements OnInit {
 
   toggleUserMenu() {
     this.showUserMenu = !this.showUserMenu;
+    this.showNotifPanel = false;
+  }
+
+  toggleNotifPanel() {
+    this.showNotifPanel = !this.showNotifPanel;
+    this.showUserMenu = false;
+  }
+
+  marquerLue(id: number, event: Event) {
+    event.stopPropagation();
+    this.notificationService.marquerCommeLue(id);
+  }
+
+  marquerToutesLues() {
+    this.notificationService.marquerToutesCommeLues();
   }
 
   logout() {
+    this.notificationService.deconnecter();
     this.authService.logout();
   }
 }

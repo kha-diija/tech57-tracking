@@ -5,14 +5,16 @@ import com.example.backend.dto.admin.intervention.InterventionResponse;
 import com.example.backend.dto.admin.intervention.UpdateInterventionRequest;
 import com.example.backend.dto.admin.intervention.TechnicienDropdownDto;
 import com.example.backend.repository.admin.TechnicienRepository;
+import com.example.backend.security.UserPrincipal;
 import com.example.backend.service.admin.InterventionService;
-import com.example.backend.service.admin.RapportPdfService; // <-- NOUVEL IMPORT
+import com.example.backend.service.admin.RapportPdfService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -27,15 +29,14 @@ public class InterventionController {
 
     private final InterventionService interventionService;
     private final TechnicienRepository technicienRepository;
-    private final RapportPdfService rapportPdfService; // <-- NOUVEAU SERVICE
+    private final RapportPdfService rapportPdfService;
 
-    // CONSTRUCTEUR MIS À JOUR
     public InterventionController(InterventionService interventionService,
                                   TechnicienRepository technicienRepository,
                                   RapportPdfService rapportPdfService) {
         this.interventionService = interventionService;
         this.technicienRepository = technicienRepository;
-        this.rapportPdfService = rapportPdfService; // <-- INJECTION
+        this.rapportPdfService = rapportPdfService;
     }
 
     @GetMapping
@@ -72,8 +73,10 @@ public class InterventionController {
     @PutMapping("/{id}")
     public ResponseEntity<InterventionResponse> updateIntervention(
             @PathVariable Integer id,
-            @Valid @RequestBody UpdateInterventionRequest request) {
-        InterventionResponse updated = interventionService.update(id, request);
+            @Valid @RequestBody UpdateInterventionRequest request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        Integer idAuteur = principal != null ? principal.getId() : null;
+        InterventionResponse updated = interventionService.update(id, request, idAuteur);
         return ResponseEntity.ok(updated);
     }
 
@@ -83,9 +86,6 @@ public class InterventionController {
         return ResponseEntity.noContent().build();
     }
 
-    // ======================================================
-    // NOUVEL ENDPOINT : TÉLÉCHARGEMENT DE L'ATTESTATION PDF (EXISTANT)
-    // ======================================================
     @GetMapping("/{id}/attestation/download")
     public ResponseEntity<byte[]> downloadAttestation(@PathVariable Integer id) {
         try {
@@ -101,9 +101,6 @@ public class InterventionController {
         }
     }
 
-    // ======================================================
-    // NOUVEL ENDPOINT : GÉNÉRATION DU RAPPORT PDF (NOUVEAU)
-    // ======================================================
     @GetMapping("/{id}/rapport/download")
     public ResponseEntity<byte[]> downloadRapport(@PathVariable Integer id) {
         try {
@@ -118,9 +115,7 @@ public class InterventionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    // ======================================================
-    // ENDPOINT : FORCER LA CLÔTURE (ADMIN)
-    // ======================================================
+
     @PatchMapping("/{id}/force-complete")
     public ResponseEntity<InterventionResponse> forceCompleteIntervention(@PathVariable Integer id) {
         InterventionResponse updated = interventionService.forceCompleteByAdmin(id);
