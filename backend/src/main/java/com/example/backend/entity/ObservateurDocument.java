@@ -1,0 +1,34 @@
+package com.example.backend.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "observateur_document")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+public class ObservateurDocument {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_observateur", nullable = false)
+    private Observateur observateur;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_source", nullable = false)
+    private DocumentSource document;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigne_par_admin", nullable = false)
+    private Administrateur assigneParAdmin;
+
+    @Column(name = "date_assignation", nullable = false)
+    private LocalDateTime dateAssignation = LocalDateTime.now();
+
+    @Column(name = "actif", nullable = false)
+    private Boolean actif = true;
+}
