@@ -87,6 +87,12 @@ export const routes: Routes = [
           import('./features/admin/interventions/interventions').then((m) => m.Interventions),
       },
       {
+        path: 'admin/observateurs',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/observateur/observateur').then((m) => m.ObservateurPermissions),
+      },
+      {
         path: 'technicien/dashboard',
         canActivate: [roleGuard(['TECHNICIEN'])],
         loadComponent: () =>
