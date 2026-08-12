@@ -58,6 +58,7 @@ export class Sidebar {
     { label: 'Sorties de matériel', route: '/sorties', icon: PackageMinus, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
     { label: 'Retours & inspection', route: '/retours', icon: PackagePlus, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
     { label: 'Utilisateurs', route: '/users', icon: Users, roles: ['ADMINISTRATEUR'] },
+    { label: 'Observateurs', route: '/admin/observateurs', icon: Users, roles: ['ADMINISTRATEUR'] },
     { label: 'Assistant IA', route: '/chat-ia', icon: Bot, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
     { label: 'Gestion des ressources', route: '/admin/ressources', icon: PackageSearch, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
     { label: 'Gestion et suivi des interventions', route: '/admin/interventions', icon: ClipboardList, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
