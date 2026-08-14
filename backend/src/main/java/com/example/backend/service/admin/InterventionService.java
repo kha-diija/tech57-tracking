@@ -8,6 +8,7 @@ import com.example.backend.service.NotificationHelperService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -88,11 +89,12 @@ public class InterventionService {
                 .orElseThrow(() -> new EntityNotFoundException("Technicien introuvable."));
 
         Intervention intervention = new Intervention();
+        intervention.setDatePrevue(request.getDatePrevue());
         intervention.setDateDebut(request.getDateDebut());
         intervention.setDateFin(request.getDateFin());
-        intervention.setTauxAvancement(request.getTauxAvancement());
-        intervention.setNumeroVisite(request.getNumeroVisite());
-        intervention.setStatut(request.getStatut());
+        intervention.setTauxAvancement(request.getTauxAvancement() != null ? request.getTauxAvancement() : 0.0);
+        intervention.setNumeroVisite(request.getNumeroVisite() != null ? request.getNumeroVisite() : 0);
+        intervention.setStatut(request.getStatut() != null ? request.getStatut() : "Planifiée");
         intervention.setLocalisationGps(request.getLocalisationGps());
         intervention.setMission(mission);
         intervention.setTechnicien(technicien);
@@ -121,14 +123,49 @@ public class InterventionService {
 
         String ancienStatut = intervention.getStatut();
 
+        intervention.setDatePrevue(request.getDatePrevue());
         intervention.setDateDebut(request.getDateDebut());
         intervention.setDateFin(request.getDateFin());
         intervention.setTauxAvancement(request.getTauxAvancement());
-        intervention.setNumeroVisite(request.getNumeroVisite());
-        intervention.setStatut(request.getStatut());
         intervention.setLocalisationGps(request.getLocalisationGps());
         intervention.setMission(mission);
         intervention.setTechnicien(technicien);
+
+        // --- VALIDATION MÉTIER : basée sur les vraies visites (checkInOuts) ET l'avancement ---
+        List<CheckInOut> visitesActuelles = intervention.getCheckInOuts() != null
+                ? intervention.getCheckInOuts() : new ArrayList<>();
+
+        long visitesTermineesCount = visitesActuelles.stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+        boolean visiteEnCoursExiste = visitesActuelles.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+
+        double avancementDemande = request.getTauxAvancement() != null ? request.getTauxAvancement() : 0.0;
+        boolean travailCommence = !visitesActuelles.isEmpty() || avancementDemande > 0;
+
+        String statutDemande = request.getStatut();
+
+        if ("Exécutée".equals(statutDemande) || "Clôturée".equals(statutDemande)) {
+            if (visitesTermineesCount < 2) {
+                throw new IllegalArgumentException(
+                        "Impossible de clôturer : l'intervention doit comporter au moins 2 visites terminées (check-in + check-out).");
+            }
+            if (visiteEnCoursExiste) {
+                throw new IllegalArgumentException(
+                        "Impossible de clôturer : une visite en cours n'a pas encore de check-out enregistré.");
+            }
+            // --- NOUVEAU : la clôture exige en plus un avancement à 100% ---
+            if ("Clôturée".equals(statutDemande) && avancementDemande < 100.0) {
+                throw new IllegalArgumentException(
+                        "Impossible de clôturer : l'avancement doit être à 100% (actuellement " + avancementDemande + "%).");
+            }
+        } else if (travailCommence && "Planifiée".equals(statutDemande)) {
+            statutDemande = "En cours";
+        }
+
+        intervention.setStatut(statutDemande);
+        intervention.setNumeroVisite(visitesActuelles.size());
 
         Intervention updated = interventionRepository.save(intervention);
 
@@ -138,7 +175,7 @@ public class InterventionService {
         if (vientDePasserATerminee && idAuteur != null) {
             utilisateurRepository.findById(idAuteur).ifPresent(auteur -> {
                 String refMission = updated.getMission() != null ? updated.getMission().getReference() : "N/A";
-                String message = "L'intervention " + refMission + " est passée au statut Terminée. "
+                String message = "L'intervention " + refMission + " est passée au statut Exécutée. "
                         + "Le matériel sorti doit être régularisé au stock.";
                 notificationHelperService.notifierTousLesAdmins(auteur, message, "INTERVENTION_TERMINEE");
             });
@@ -160,12 +197,54 @@ public class InterventionService {
     private InterventionResponse convertToResponse(Intervention intervention) {
         InterventionResponse response = new InterventionResponse();
         response.setId(intervention.getIdIntervention());
+        response.setDatePrevue(intervention.getDatePrevue());
         response.setDateDebut(intervention.getDateDebut());
         response.setDateFin(intervention.getDateFin());
-        response.setTauxAvancement(intervention.getTauxAvancement());
-        response.setNumeroVisite(intervention.getNumeroVisite());
-        response.setStatut(intervention.getStatut());
         response.setLocalisationGps(intervention.getLocalisationGps());
+
+        // --- CALCUL DU STATUT : basé sur les vraies visites (checkInOuts) ET l'avancement ---
+        List<CheckInOut> visites = intervention.getCheckInOuts() != null
+                ? intervention.getCheckInOuts() : new ArrayList<>();
+
+        long visitesTerminees = visites.stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+        boolean uneVisiteEnCours = visites.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+
+        double avancement = intervention.getTauxAvancement() != null ? intervention.getTauxAvancement() : 0.0;
+        boolean travailCommence = !visites.isEmpty() || avancement > 0;
+
+        String statutAffichage;
+
+        if (!travailCommence) {
+            if (intervention.getDatePrevue() != null
+                    && intervention.getDatePrevue().isBefore(LocalDateTime.now())) {
+                statutAffichage = "En retard";
+            } else {
+                statutAffichage = "Planifiée";
+            }
+        } else if (visitesTerminees >= 2 && !uneVisiteEnCours) {
+            statutAffichage = "Exécutée";
+        } else {
+            statutAffichage = "En cours";
+        }
+
+        if ("Clôturée".equals(intervention.getStatut())) {
+            statutAffichage = "Clôturée";
+        }
+
+        // --- CORRECTION : l'avancement ne doit jamais rester à 0/null si des visites existent ---
+        // On ne force JAMAIS 100% automatiquement sur "Exécutée" : ça reste un choix
+        // explicite de l'admin/technicien, la clôture réelle exigeant elle 100%.
+        double avancementAffiche = avancement;
+        if (!visites.isEmpty() && avancementAffiche <= 0.0) {
+            avancementAffiche = Math.min(95.0, visitesTerminees * 40.0);
+        }
+
+        response.setStatut(statutAffichage);
+        response.setTauxAvancement(avancementAffiche);
+        response.setNumeroVisite(visites.size());
 
         if (intervention.getMission() != null) {
             response.setMissionId(intervention.getMission().getIdMission());
@@ -181,6 +260,21 @@ public class InterventionService {
             response.setTechnicienNom(
                     intervention.getTechnicien().getNom() + " " + intervention.getTechnicien().getPrenom()
             );
+        }
+
+        if (!visites.isEmpty()) {
+            List<CheckInOutDto> checkInOutDtos = visites.stream().map(cio -> {
+                CheckInOutDto dto = new CheckInOutDto();
+                dto.setIdCheckinout(cio.getIdCheckinout());
+                dto.setNumeroVisite(cio.getNumeroVisite());
+                dto.setDateHeureCheckin(cio.getDateHeureCheckin());
+                dto.setDateHeureCheckout(cio.getDateHeureCheckout());
+                dto.setDureeMinutes(cio.getDureeMinutes());
+                dto.setGpsCheckin(cio.getGpsCheckin());
+                dto.setGpsCheckout(cio.getGpsCheckout());
+                return dto;
+            }).collect(Collectors.toList());
+            response.setCheckInOuts(checkInOutDtos);
         }
 
         List<Photo> photos = photoRepository.findByIntervention(intervention);
@@ -263,6 +357,30 @@ public class InterventionService {
     public InterventionResponse forceCompleteByAdmin(Integer id) {
         Intervention intervention = interventionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+
+        List<CheckInOut> visites = intervention.getCheckInOuts() != null
+                ? intervention.getCheckInOuts() : new ArrayList<>();
+
+        long visitesTerminees = visites.stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+        boolean uneVisiteEnCours = visites.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+        double avancement = intervention.getTauxAvancement() != null ? intervention.getTauxAvancement() : 0.0;
+
+        if (visitesTerminees < 2) {
+            throw new IllegalArgumentException(
+                    "Impossible de clôturer : au moins 2 visites terminées (check-in + check-out) sont requises.");
+        }
+        if (uneVisiteEnCours) {
+            throw new IllegalArgumentException(
+                    "Impossible de clôturer : une visite est encore en cours (pas de check-out).");
+        }
+        // --- NOUVEAU : la clôture exige en plus un avancement à 100% ---
+        if (avancement < 100.0) {
+            throw new IllegalArgumentException(
+                    "Impossible de clôturer : l'avancement doit être à 100% (actuellement " + avancement + "%).");
+        }
 
         intervention.setStatut("Clôturée");
         intervention.setTauxAvancement(100.0);

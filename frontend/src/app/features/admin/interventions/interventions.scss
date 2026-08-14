@@ -668,3 +668,33 @@
   gap: 1rem !important;
   margin-top: 0 !important;
 }
+.badge-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+.text-danger {
+  color: #ef4444;
+}
+.kpi-icon-wrapper.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+.visite-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.form-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}

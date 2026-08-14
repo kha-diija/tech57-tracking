@@ -14,21 +14,24 @@ import { LucideAngularModule, MapPin, CheckCircle, Clock, Calendar, Trash2, Plus
   styleUrl: './interventions.scss'
 })
 export class Interventions implements OnInit {
-  readonly icons = { 
+  readonly icons = {
     MapPin, CheckCircle, Clock, Calendar, Trash2, Plus, Download, Search, Edit, Eye, Activity, Map,
     Image: LucideImage, FileText, Package, AlertCircle
   };
-  
+
   private interventionService = inject(InterventionService);
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
-  
+
   interventions: Intervention[] = [];
   searchTerm: string = '';
 
-  // --- AJOUT : filtre par statut ---
+  // --- filtre par statut : "En retard" ajouté ---
   selectedStatutFilter: string = 'tous';
-  readonly statutOptions = ['Planifiée', 'En cours', 'Exécutée', 'Clôturée'];
+  readonly statutOptions = ['Planifiée', 'En cours', 'En retard', 'Exécutée', 'Clôturée'];
+
+  // statuts sélectionnables manuellement dans le formulaire (jamais "En retard", c'est calculé)
+  readonly statutOptionsEditables = ['Planifiée', 'En cours', 'Exécutée'];
 
   missionsList: any[] = [];
   techniciensList: any[] = [];
@@ -36,14 +39,14 @@ export class Interventions implements OnInit {
   showModal = false;
   isEditMode = false;
   selectedIntervention: Partial<InterventionRequest> & { id?: number } = {};
+  formError: string | null = null;
 
   showDetailModal = false;
   currentDetail: Intervention | null = null;
 
   showDeleteModal = false;
   deleteTargetId: number | null = null;
-  
-  // --- NOUVELLE VARIABLE POUR LA MODALE DE CONFIRMATION ---
+
   showConfirmCloseModal = false;
   confirmCloseId: number | null = null;
 
@@ -51,6 +54,7 @@ export class Interventions implements OnInit {
     total: 0,
     enCours: 0,
     executees: 0,
+    enRetard: 0,
     tauxMoyen: 0
   };
 
@@ -59,13 +63,12 @@ export class Interventions implements OnInit {
     this.loadMissionsAndTechniciens();
   }
 
-  // --- MÉTHODE CHARGEMENT (Anti-cache) ---
   loadInterventions() {
     this.interventionService.getInterventionsNoCache().subscribe({
       next: (data) => {
         this.interventions = data || [];
         this.calculerKPIs();
-        this.cdr.detectChanges(); 
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Erreur lors du chargement des interventions', err);
@@ -97,7 +100,6 @@ export class Interventions implements OnInit {
     });
   }
 
-  // --- MODIFIÉ : le filtre gère maintenant le statut ET la recherche texte ---
   get filteredInterventions(): Intervention[] {
     let result = this.interventions;
 
@@ -119,11 +121,21 @@ export class Interventions implements OnInit {
 
   calculerKPIs() {
     this.kpis.total = this.interventions.length;
-    this.kpis.executees = this.interventions.filter(i => i.numeroVisite >= 2 || i.statut === 'Exécutée').length;
-    this.kpis.enCours = this.interventions.filter(i => i.statut === 'En cours' || i.statut === 'Planifiée').length;
-    
+    this.kpis.executees = this.interventions.filter(i => i.statut === 'Exécutée' || i.statut === 'Clôturée').length;
+    this.kpis.enCours = this.interventions.filter(i => i.statut === 'En cours').length;
+    this.kpis.enRetard = this.interventions.filter(i => i.statut === 'En retard').length;
+
     const totalAvancement = this.interventions.reduce((sum, current) => sum + (current.tauxAvancement || 0), 0);
     this.kpis.tauxMoyen = this.interventions.length > 0 ? Math.round(totalAvancement / this.interventions.length) : 0;
+  }
+
+  // --- Utilitaires basés sur checkInOuts (pas "visites") ---
+  aUneVisiteEnCours(item: Intervention): boolean {
+    return !!item.checkInOuts?.some(v => v.dateHeureCheckin && !v.dateHeureCheckout);
+  }
+
+  nombreVisitesTerminees(item: Intervention): number {
+    return item.checkInOuts?.filter(v => v.dateHeureCheckin && v.dateHeureCheckout).length || 0;
   }
 
   exporterCSV() {
@@ -131,12 +143,12 @@ export class Interventions implements OnInit {
       alert("Aucune donnée à exporter.");
       return;
     }
-    const headers = ['"ID"', '"Mission"', '"Technicien"', '"Date Debut"', '"Visites"', '"Avancement"', '"Statut"'];
+    const headers = ['"ID"', '"Mission"', '"Technicien"', '"Date Prevue"', '"Visites"', '"Avancement"', '"Statut"'];
     const rows = this.interventions.map(i => [
       `"${i.id}"`,
       `"${i.missionReference}"`,
       `"${i.technicienNom}"`,
-      `"${i.dateDebut}"`,
+      `"${i.datePrevue}"`,
       `"${i.numeroVisite}"`,
       `"${i.tauxAvancement}%"`,
       `"${i.statut}"`
@@ -152,19 +164,21 @@ export class Interventions implements OnInit {
     document.body.removeChild(link);
   }
 
+  // --- Création : seule la date PRÉVUE est demandée, plus dateDebut/numeroVisite ---
   ouvrirModalCreation() {
     this.isEditMode = false;
+    this.formError = null;
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    this.selectedIntervention = { 
-      numeroVisite: 0, 
-      tauxAvancement: 0, 
+    this.selectedIntervention = {
+      numeroVisite: 0,
+      tauxAvancement: 0,
       statut: 'Planifiée',
-      dateDebut: `${year}-${month}-${day}T${hours}:${minutes}`
+      datePrevue: `${year}-${month}-${day}T${hours}:${minutes}`
     };
     this.showModal = true;
   }
@@ -173,9 +187,14 @@ export class Interventions implements OnInit {
     const found = this.interventions.find(i => i.id === id);
     if (found) {
       this.isEditMode = true;
-      this.selectedIntervention = { 
+      this.formError = null;
+      this.selectedIntervention = {
         ...found,
-        dateDebut: found.dateDebut ? found.dateDebut.slice(0, 16) : ''
+        // "En retard" n'est jamais une valeur éditable : on retombe sur "Planifiée"
+        statut: found.statut === 'En retard' ? 'Planifiée' : found.statut,
+        datePrevue: found.datePrevue ? found.datePrevue.slice(0, 16) : '',
+        dateDebut: found.dateDebut ? found.dateDebut.slice(0, 16) : undefined,
+        dateFin: found.dateFin ? found.dateFin.slice(0, 16) : undefined
       };
       this.showModal = true;
     }
@@ -184,15 +203,20 @@ export class Interventions implements OnInit {
   fermerModal() {
     this.showModal = false;
     this.selectedIntervention = {};
+    this.formError = null;
   }
 
   sauvegarderIntervention() {
-    let formattedDate = this.selectedIntervention.dateDebut;
-    if (formattedDate && !formattedDate.endsWith(':00') && formattedDate.length === 16) {
-      formattedDate += ':00';
+    this.formError = null;
+
+    let formattedDatePrevue = this.selectedIntervention.datePrevue;
+    if (formattedDatePrevue && formattedDatePrevue.length === 16) {
+      formattedDatePrevue += ':00';
     }
+
     const payload: InterventionRequest = {
-      dateDebut: formattedDate || new Date().toISOString().slice(0, 19),
+      datePrevue: formattedDatePrevue || new Date().toISOString().slice(0, 19),
+      dateDebut: this.selectedIntervention.dateDebut ? this.selectedIntervention.dateDebut + ':00' : undefined,
       dateFin: this.selectedIntervention.dateFin ? this.selectedIntervention.dateFin + ':00' : undefined,
       tauxAvancement: Number(this.selectedIntervention.tauxAvancement ?? 0),
       numeroVisite: Number(this.selectedIntervention.numeroVisite ?? 0),
@@ -201,9 +225,11 @@ export class Interventions implements OnInit {
       missionId: Number(this.selectedIntervention.missionId),
       technicienId: Number(this.selectedIntervention.technicienId)
     };
+
     const request$ = this.isEditMode && this.selectedIntervention.id
       ? this.interventionService.updateIntervention(this.selectedIntervention.id, payload)
       : this.interventionService.createIntervention(payload);
+
     request$.subscribe({
       next: () => {
         this.loadInterventions();
@@ -211,21 +237,18 @@ export class Interventions implements OnInit {
       },
       error: (err) => {
         console.error("Erreur technique backend :", err);
-        setTimeout(() => {
-          this.loadInterventions();
-          this.fermerModal();
-        }, 400);
+        this.formError = err?.error?.message || err?.error || "Erreur lors de l'enregistrement.";
       }
     });
   }
 
   getCityFromGps(gps?: string): string {
     if (!gps) return 'Non renseignée';
-    return 'Meknès, Maroc (Approx.)'; 
+    return 'Meknès, Maroc (Approx.)';
   }
 
   onImageError(event: any) {
-    event.target.src = 'assets/placeholder.png'; 
+    event.target.src = 'assets/placeholder.png';
   }
 
   voirDetails(id: number) {
@@ -246,7 +269,6 @@ export class Interventions implements OnInit {
     this.currentDetail = null;
   }
 
-  // --- MÉTHODE : Générer le rapport PDF ---
   genererRapport(id: number) {
     const url = `http://localhost:8080/api/admin/interventions/${id}/rapport/download`;
     this.http.get(url, { responseType: 'blob' }).subscribe({
@@ -267,8 +289,19 @@ export class Interventions implements OnInit {
     });
   }
 
-  // --- NOUVELLES MÉTHODES POUR LA MODALE DE CONFIRMATION ---
   ouvrirConfirmationCloture(id: number) {
+    const intervention = this.interventions.find(i => i.id === id)
+      || (this.currentDetail?.id === id ? this.currentDetail : null);
+
+    if (intervention && this.aUneVisiteEnCours(intervention)) {
+      alert("Impossible de clôturer : une visite est encore en cours (pas de check-out enregistré).");
+      return;
+    }
+    if (intervention && this.nombreVisitesTerminees(intervention) < 2) {
+      alert("Impossible de clôturer : au moins 2 visites terminées (check-in + check-out) sont requises.");
+      return;
+    }
+
     this.confirmCloseId = id;
     this.showConfirmCloseModal = true;
   }
@@ -286,19 +319,18 @@ export class Interventions implements OnInit {
         this.fermerDetailModal();
         this.showConfirmCloseModal = false;
         this.confirmCloseId = null;
-        // Petit délai pour laisser le temps au Backend de finir l'écriture, puis on recharge
         setTimeout(() => {
           this.loadInterventions();
         }, 300);
       },
       error: (err) => {
         console.error("Erreur lors de la clôture:", err);
-        alert("Erreur lors de la clôture de l'intervention.");
+        const msg = err?.error?.message || err?.error || "Erreur lors de la clôture de l'intervention.";
+        alert(msg);
       }
     });
   }
 
-  // --- MODIFIÉ : extension .pdf au lieu de .txt ---
   downloadAttestation(id: number) {
     const url = `http://localhost:8080/api/admin/interventions/${id}/attestation/download`;
     this.http.get(url, { responseType: 'blob' }).subscribe({
