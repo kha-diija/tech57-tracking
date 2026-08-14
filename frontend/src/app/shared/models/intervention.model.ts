@@ -12,7 +12,17 @@ export interface Attestation {
   valide: boolean;
 }
 
-// --- NOUVEAU : Interfaces pour le Stock ---
+// --- Aligné exactement sur CheckInOutDto.java ---
+export interface CheckInOut {
+  idCheckinout: number;
+  numeroVisite: number;
+  dateHeureCheckin: string | null;
+  dateHeureCheckout: string | null;
+  dureeMinutes: number | null;
+  gpsCheckin: string | null;
+  gpsCheckout: string | null;
+}
+
 export interface SortieMateriel {
   idSortie: number;
   materielReference: string;
@@ -36,32 +46,37 @@ export interface ChecklistItem {
   conforme: boolean;
 }
 
+// --- Aligné exactement sur InterventionResponse.java ---
 export interface Intervention {
   id: number;
-  dateDebut: string;
-  dateFin?: string;
+  datePrevue: string | null;   // ajouté : correspond à response.getDatePrevue()
+  dateDebut: string | null;
+  dateFin: string | null;
   tauxAvancement: number;
   numeroVisite: number;
-  statut: string;
+  statut: string;              // 'Planifiée' | 'En cours' | 'En retard' | 'Exécutée' | 'Clôturée'
   localisationGps?: string;
   missionId: number;
   missionReference: string;
+  etablissementDesignation?: string; // ajouté : présent dans InterventionResponse
   technicienId: number;
   technicienNom: string;
 
-  // --- CHAMPS EXISTANTS ---
   photos?: Photo[];
   attestation?: Attestation;
-
-  // --- NOUVEAUX CHAMPS STOCK ---
   sortiesMateriel?: SortieMateriel[];
   retoursMateriel?: RetourMateriel[];
   checklistItems?: ChecklistItem[];
+
+  // ajouté : correspond à response.getCheckInOuts()
+  checkInOuts?: CheckInOut[];
 }
 
+// --- Aligné exactement sur CreateInterventionRequest.java / UpdateInterventionRequest.java ---
 export interface InterventionRequest {
-  dateDebut: string;
-  dateFin?: string;
+  datePrevue: string;    // obligatoire côté formulaire : c'est ce que l'admin fixe
+  dateDebut?: string;    // optionnel : le backend l'accepte mais ne devrait plus être saisi à la main
+  dateFin?: string;      // optionnel, idem
   tauxAvancement: number;
   numeroVisite: number;
   statut: string;

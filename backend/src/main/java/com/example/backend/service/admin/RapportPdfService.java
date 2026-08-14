@@ -56,6 +56,8 @@ public class RapportPdfService {
         document.add(new Paragraph("-------------------------------------------------------------------", FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.LIGHT_GRAY)));
         document.add(new Paragraph("\n"));
 
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
         // 4. Section : Informations Générales
         addSectionHeader(document, "📋 Informations Générales");
         document.add(new Paragraph("Intervention N° : " + intervention.getId()));
@@ -63,14 +65,36 @@ public class RapportPdfService {
         document.add(new Paragraph("Établissement : " + (intervention.getEtablissementDesignation() != null ? intervention.getEtablissementDesignation() : "Non renseigné")));
         document.add(new Paragraph("Technicien : " + intervention.getTechnicienNom()));
         document.add(new Paragraph("Statut : " + intervention.getStatut()));
-        document.add(new Paragraph("Visites effectuées : " + intervention.getNumeroVisite() + " / 2"));
+        document.add(new Paragraph("Date prévue : " + (intervention.getDatePrevue() != null ? intervention.getDatePrevue().format(dtf) : "Non renseignée")));
+        document.add(new Paragraph("Visites effectuées : " + intervention.getNumeroVisite() + " / 2 requises"));
+        document.add(new Paragraph("Taux d'avancement : " + (intervention.getTauxAvancement() != null ? intervention.getTauxAvancement() : 0) + " %"));
         document.add(new Paragraph("\n"));
 
-        // 5. Section : Déroulement
-        addSectionHeader(document, "⏱️ Déroulement de l'intervention");
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        document.add(new Paragraph("Date de début : " + (intervention.getDateDebut() != null ? intervention.getDateDebut().format(dtf) : "Non démarré")));
-        document.add(new Paragraph("Date de fin : " + (intervention.getDateFin() != null ? intervention.getDateFin().format(dtf) : "En cours")));
+        // 5. Section : Déroulement — basé sur les VRAIES visites (check-in / check-out)
+        addSectionHeader(document, "⏱️ Déroulement de l'intervention (historique des visites)");
+
+        List<CheckInOutDto> visites = intervention.getCheckInOuts();
+
+        if (visites != null && !visites.isEmpty()) {
+            PdfPTable tableVisites = new PdfPTable(4);
+            tableVisites.setWidthPercentage(100);
+            tableVisites.setSpacingBefore(10f);
+            tableVisites.setSpacingAfter(10f);
+            tableVisites.setWidths(new float[]{1.5f, 2.5f, 2.5f, 1.5f});
+
+            addTableHeader(tableVisites, "Visite N°", "Check-in", "Check-out", "Durée");
+            for (CheckInOutDto v : visites) {
+                tableVisites.addCell("Visite " + v.getNumeroVisite());
+                tableVisites.addCell(v.getDateHeureCheckin() != null ? v.getDateHeureCheckin().format(dtf) : "-");
+                tableVisites.addCell(v.getDateHeureCheckout() != null ? v.getDateHeureCheckout().format(dtf) : "En cours...");
+                tableVisites.addCell(v.getDureeMinutes() != null ? v.getDureeMinutes() + " min" : "-");
+            }
+            document.add(tableVisites);
+        } else {
+            document.add(new Paragraph("Aucune visite enregistrée pour cette intervention.", FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 10, BaseColor.GRAY)));
+        }
+
+        document.add(new Paragraph("\n"));
         document.add(new Paragraph("Localisation GPS : " + (intervention.getLocalisationGps() != null ? intervention.getLocalisationGps() : "Non renseignée")));
         document.add(new Paragraph("\n"));
 
@@ -172,7 +196,7 @@ public class RapportPdfService {
     }
 
     // ==============================================================
-    // --- NOUVELLE MÉTHODE : Génération de l'attestation en PDF ---
+    // --- Génération de l'attestation en PDF ---
     // ==============================================================
     public byte[] genererAttestationPdf(Integer interventionId) throws DocumentException, IOException {
         InterventionResponse intervention = interventionService.getById(interventionId);

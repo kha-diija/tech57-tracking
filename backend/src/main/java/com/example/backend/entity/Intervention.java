@@ -16,6 +16,9 @@ public class Intervention {
     @Column(name = "id_intervention")
     private Integer idIntervention;
 
+    @Column(name = "date_prevue")
+    private LocalDateTime datePrevue; // Date planifiée par l'administrateur
+
     @Column(name = "date_debut")
     private LocalDateTime dateDebut;
 
@@ -26,7 +29,7 @@ public class Intervention {
     private Double tauxAvancement = 0.0;
 
     @Column(name = "numero_visite", nullable = false)
-    private Integer numeroVisite = 1;
+    private Integer numeroVisite = 0;
 
     @Column(nullable = false, length = 30)
     private String statut = "Planifiée";
@@ -42,8 +45,11 @@ public class Intervention {
     @JoinColumn(name = "id_technicien")
     private Technicien technicien;
 
-    // --- NOUVELLES RELATIONS v3.0 ---
+    // --- HISTORIQUE DE TOUTES LES VISITES ---
+    @OneToMany(mappedBy = "intervention", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CheckInOut> checkInOuts = new ArrayList<>();
 
+    // --- RELATIONS EXISTANTES ---
     @OneToMany(mappedBy = "intervention", cascade = CascadeType.ALL)
     private List<SortieMateriel> sortiesMateriel = new ArrayList<>();
 
