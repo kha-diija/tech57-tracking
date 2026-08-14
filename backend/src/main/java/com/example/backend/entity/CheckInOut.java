@@ -13,6 +13,9 @@ public class CheckInOut {
     @Column(name = "id_checkinout")
     private Integer idCheckinout;
 
+    @Column(name = "numero_visite")
+    private Integer numeroVisite; // Pour identifier s'il s'agit de la visite 1, 2, etc.
+
     @Column(name = "date_heure_checkin")
     private LocalDateTime dateHeureCheckin;
 
@@ -28,7 +31,7 @@ public class CheckInOut {
     @Column(name = "gps_checkout", length = 100)
     private String gpsCheckout;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_intervention", nullable = false, unique = true)
-    private Intervention intervention;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_intervention", nullable = false)
+    private Intervention intervention; // <-- Changé de @OneToOne à @ManyToOne
 }
