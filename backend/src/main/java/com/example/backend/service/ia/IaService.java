@@ -18,7 +18,7 @@ public class IaService {
         // Configuration des timeouts de connexion et de lecture
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout((int) Duration.ofSeconds(10).toMillis()); // 10 secondes pour établir la connexion
-        factory.setReadTimeout((int) Duration.ofSeconds(60).toMillis());   // 60 secondes pour lire la réponse de l'IA
+        factory.setReadTimeout((int) Duration.ofSeconds(600).toMillis());   // 600 secondes pour lire la réponse de l'IA
 
         this.restClient = RestClient.builder()
                 .baseUrl(iaServiceUrl)

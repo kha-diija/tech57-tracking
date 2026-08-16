@@ -26,11 +26,11 @@ DB_PORT = 5432
 DB_SSLMODE = "require"
 
 # --- Paramètres du découpage en chunks (voir ingestion/chunker.py) ---
-CHUNK_SIZE_WORDS = 350       # taille approximative d'un chunk, en mots
+CHUNK_SIZE_WORDS = 200       # taille approximative d'un chunk, en mots
 CHUNK_OVERLAP_WORDS = 50     # chevauchement entre deux chunks consécutifs
 
 # --- Paramètres de la recherche vectorielle ---
-TOP_K_CHUNKS = 5             # nombre de chunks les plus pertinents renvoyés au LLM
+TOP_K_CHUNKS = 3           # nombre de chunks les plus pertinents renvoyés au LLM
 
 # --- Dossier contenant les fichiers à indexer ---
 DATA_DIR = "./data"
