@@ -72,8 +72,8 @@ def _count_missions_par_statut(statut: str) -> str:
 
 
 def _liste_etablissements() -> str:
-    rows = fetch_all("SELECT nom FROM etablissement ORDER BY nom;")
-    noms = [r["nom"] for r in rows]
+    rows = fetch_all("SELECT designation FROM etablissement ORDER BY designation;")
+    noms = [r["designation"] for r in rows]
     if not noms:
         return "Aucun établissement trouvé."
     return "Établissements enregistrés : " + ", ".join(noms)
@@ -85,14 +85,12 @@ def _liste_missions_par_etablissement(nom_etablissement: str) -> str:
         SELECT m.titre, m.statut
         FROM mission_installation m
         JOIN etablissement e ON e.id_etablissement = m.id_etablissement
-        WHERE LOWER(e.nom) LIKE LOWER(%s)
+        WHERE LOWER(e.designation) LIKE LOWER(%s)
         ORDER BY m.date_creation DESC;
         """,
         (f"%{nom_etablissement}%",),
     )
-    if not rows:
-        return f"Aucune mission trouvée pour un établissement contenant « {nom_etablissement} »."
-    return "Missions trouvées : " + "; ".join(f"{r['titre']} ({r['statut']})" for r in rows)
+
 
 
 # Table de routage : (mots-clés qui doivent TOUS apparaître, fonction sans argument)

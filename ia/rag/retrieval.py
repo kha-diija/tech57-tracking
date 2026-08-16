@@ -4,28 +4,21 @@ recherche des chunks les plus pertinents, puis construction du prompt
 final envoyé au LLM de génération.
 """
 
+import time
 from db import get_connection
 from rag.embeddings import embed_text
 from config import TOP_K_CHUNKS
 
 
 def retrieve_relevant_chunks(question: str) -> list[str]:
-    """
-    1. Transforme la question en vecteur.
-    2. Cherche dans document_chunk les vecteurs les plus PROCHES du vecteur
-       de la question (opérateur <=> = distance cosinus, fourni par pgvector).
-    3. Renvoie les k contenus texte les plus pertinents.
-
-    NOTE (cast ::vector) : psycopg2 adapte une liste Python en ARRAY[...]
-    (typé numeric[] par défaut), pas en type "vector". Dans un INSERT,
-    PostgreSQL déduit le type depuis la colonne cible et caste tout seul.
-    Mais ici, dans ORDER BY embedding <=> %s, il n'y a pas de colonne cible
-    pour déduire le type du paramètre -> il faut caster explicitement avec
-    %s::vector, sinon l'opérateur <=> ne trouve aucune signature
-    correspondante (vector <=> numeric[] n'existe pas).
-    """
+    print(f"[RAG] 🔎 Étape 1/2 : génération de l'embedding de la question...")
+    t0 = time.perf_counter()
     vecteur_question = embed_text(question)
+    t1 = time.perf_counter()
+    print(f"[RAG] ✅ Embedding généré en {t1 - t0:.2f}s (dimension={len(vecteur_question)})")
 
+    print(f"[RAG] 🔎 Étape 2/2 : recherche des {TOP_K_CHUNKS} chunks les plus proches (pgvector)...")
+    t2 = time.perf_counter()
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -38,12 +31,15 @@ def retrieve_relevant_chunks(question: str) -> list[str]:
                 (vecteur_question, TOP_K_CHUNKS),
             )
             rows = cur.fetchall()
+    t3 = time.perf_counter()
+    print(f"[RAG] ✅ Recherche pgvector terminée en {t3 - t2:.2f}s ({len(rows)} chunk(s) trouvé(s))")
 
     return [row[0] for row in rows]
 
 
 def build_context_prompt(question: str, role_label: str, prenom: str | None) -> str:
     """Construit le prompt final envoyé au LLM, avec le contexte RAG injecté et le rôle."""
+    print(f"[RAG] 📚 Construction du prompt pour la question : « {question} »")
     chunks = retrieve_relevant_chunks(question)
 
     if chunks:
@@ -55,12 +51,14 @@ def build_context_prompt(question: str, role_label: str, prenom: str | None) -> 
             "Si les extraits ne suffisent pas pour répondre, dis-le clairement plutôt "
             "que d'inventer une réponse.\n\n"
         )
+        print(f"[RAG] 📎 {len(chunks)} chunk(s) injecté(s) dans le contexte")
     else:
         bloc_contexte = (
             "Aucun document interne pertinent n'a été trouvé pour cette question. "
             "Réponds avec tes connaissances générales, en précisant que ce n'est pas "
             "issu des documents internes.\n\n"
         )
+        print(f"[RAG] ⚠️ Aucun chunk pertinent trouvé, fallback connaissances générales")
 
     salutation = (
         f"L'utilisateur connecté est {role_label}" + (f" ({prenom})" if prenom else "") + ".\n"
@@ -76,4 +74,5 @@ def build_context_prompt(question: str, role_label: str, prenom: str | None) -> 
         f"{bloc_contexte}"
     )
 
+    print(f"[RAG] ✅ Prompt prêt ({len(system_prompt)} caractères), envoi au LLM...")
     return f"{system_prompt}Question de l'utilisateur : {question}"

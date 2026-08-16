@@ -1,41 +1,43 @@
 """
 Génération des embeddings (texte -> vecteur de 768 nombres) via Ollama.
-
-C'est un modèle DIFFÉRENT du modèle de chat (llama3.2). nomic-embed-text
-est spécialisé pour produire des vecteurs sémantiques ; il ne "discute" pas,
-il ne fait que transformer un texte en liste de nombres.
-
-Prérequis : ollama pull nomic-embed-text
 """
 
+import time
 from langchain_ollama import OllamaEmbeddings
 from config import LOCAL_OLLAMA_URL, DOCKER_OLLAMA_URL, EMBEDDING_MODEL_NAME
 
 
 def _get_embedder(base_url: str) -> OllamaEmbeddings:
-    return OllamaEmbeddings(model=EMBEDDING_MODEL_NAME, base_url=base_url)
+    return OllamaEmbeddings(model=EMBEDDING_MODEL_NAME, base_url=base_url, keep_alive=1800)
 
 
 def embed_text(text: str) -> list[float]:
-    """
-    Transforme UN texte (ex: la question de l'utilisateur) en vecteur.
-    Même logique de fallback local -> docker que pour le chat.
-    """
     for url in (LOCAL_OLLAMA_URL, DOCKER_OLLAMA_URL):
+        print(f"[EMBEDDINGS] 🔌 Tentative de connexion à {url} (modèle={EMBEDDING_MODEL_NAME})...")
+        t0 = time.perf_counter()
         try:
             embedder = _get_embedder(url)
-            return embedder.embed_query(text)
+            result = embedder.embed_query(text)
+            t1 = time.perf_counter()
+            print(f"[EMBEDDINGS] ✅ Succès via {url} en {t1 - t0:.2f}s")
+            return result
         except Exception as e:
-            print(f"[embeddings] Échec avec {url} : {e}")
+            t1 = time.perf_counter()
+            print(f"[EMBEDDINGS] ❌ Échec avec {url} après {t1 - t0:.2f}s : {e}")
     raise RuntimeError("Impossible de générer l'embedding (Ollama injoignable).")
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Version batch (plusieurs textes d'un coup), utilisée pendant l'indexation."""
     for url in (LOCAL_OLLAMA_URL, DOCKER_OLLAMA_URL):
+        print(f"[EMBEDDINGS] 🔌 Tentative batch ({len(texts)} textes) via {url}...")
+        t0 = time.perf_counter()
         try:
             embedder = _get_embedder(url)
-            return embedder.embed_documents(texts)
+            result = embedder.embed_documents(texts)
+            t1 = time.perf_counter()
+            print(f"[EMBEDDINGS] ✅ Batch réussi via {url} en {t1 - t0:.2f}s")
+            return result
         except Exception as e:
-            print(f"[embeddings] Échec batch avec {url} : {e}")
+            t1 = time.perf_counter()
+            print(f"[EMBEDDINGS] ❌ Échec batch avec {url} après {t1 - t0:.2f}s : {e}")
     raise RuntimeError("Impossible de générer les embeddings (Ollama injoignable).")

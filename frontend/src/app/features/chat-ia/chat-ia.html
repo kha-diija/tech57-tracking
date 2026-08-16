@@ -34,16 +34,60 @@
         </div>
       </div>
     }
+
+    <!-- Suggestions de démarrage -->
+    @if (showSuggestions()) {
+      <div class="suggestions-panel">
+
+        <div class="suggestions-group">
+          <div class="suggestions-eyebrow">
+            <svg class="eyebrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <ellipse cx="12" cy="5" rx="8" ry="3"/>
+              <path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/>
+              <path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/>
+            </svg>
+            <span>Réponse instantanée · Base de données</span>
+          </div>
+          <div class="chip-row">
+            @for (s of sqlSuggestions; track s.label) {
+              <button class="suggestion-chip chip-sql" (click)="useSuggestion(s)">
+                {{ s.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="suggestions-group">
+          <div class="suggestions-eyebrow">
+            <svg class="eyebrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+              <path d="M14 2v5h5"/>
+              <path d="M8 13h8"/>
+              <path d="M8 17h5"/>
+            </svg>
+            <span>Recherche documentaire · IA</span>
+          </div>
+          <div class="chip-row">
+            @for (s of ragSuggestions; track s.label) {
+              <button class="suggestion-chip chip-rag" (click)="useSuggestion(s)">
+                {{ s.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+      </div>
+    }
   </div>
 
   <!-- Barre de Saisie -->
   <div class="ia-chat-footer">
     <div class="cyber-input-container">
-      <input 
-        type="text" 
-        [(ngModel)]="userMessage" 
-        (keyup.enter)="sendMessage()" 
-        placeholder="Posez votre question à l'assistant..." 
+      <input
+        type="text"
+        [(ngModel)]="userMessage"
+        (keyup.enter)="sendMessage()"
+        placeholder="Posez votre question à l'assistant..."
         [disabled]="loading()"
       />
       <button class="cyber-send-btn" (click)="sendMessage()" [disabled]="loading() || !userMessage().trim()">
