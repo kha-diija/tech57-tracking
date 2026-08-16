@@ -1,0 +1,74 @@
+RÈGLES DE GESTION — TECH-57 (Système de Tracking des Installations Logistiques)
+Version consolidée — 14 Août 2026
+Source : Cahier des Charges v3 (finale) + PV de réunion du 21/07/2026
+
+RG-01 — Validation d'une intervention
+Une intervention ne peut être marquée « Exécutée » (statut vert) qu'après un minimum de
+2 (deux) visites du technicien sur l'établissement concerné.
+
+RG-02 — Notification de planification
+Le Technicien peut planifier des missions, mais doit notifier l'Administrateur de toute
+planification effectuée.
+
+RG-03 — Périmètre du Gestionnaire de Stock
+Le rôle Gestionnaire de Stock a un accès strictement limité au périmètre « Gestion de
+Stock / Matériel ». Il n'a accès ni aux missions, ni aux établissements, ni à la gestion
+des comptes utilisateurs.
+
+RG-04 — Périmètre de l'Observateur
+Le rôle Observateur (Client) dispose d'un accès en lecture seule uniquement : consultation
+des statistiques (KPI) et impression / export de rapports. Il ne peut réaliser aucune
+action de création, modification ou suppression.
+
+RG-05 — Droits du Technicien
+Le Technicien peut effectuer des opérations de type CRUD sans suppression (création,
+lecture, modification). Il ne peut pas créer de comptes utilisateurs.
+
+RG-06 — Droits de l'Administrateur
+L'Administrateur hérite de toutes les capacités du Technicien, auxquelles s'ajoutent la
+gestion complète des comptes utilisateurs et l'accès total à la planification des
+interventions par ville / établissement.
+
+RG-07 — Traçabilité des sorties de matériel
+Toute sortie de matériel doit obligatoirement enregistrer : la quantité sortie, le
+technicien affecté, et le lieu de l'intervention.
+
+RG-08 — Traçabilité des retours de matériel
+Tout retour de matériel doit obligatoirement enregistrer : la quantité rendue par le
+technicien à l'issue de l'intervention, ainsi que l'état du matériel rendu.
+
+RG-09 — Contrôle du matériel par référence
+Le contrôle du matériel par référence doit permettre le rapprochement entre la quantité
+sortie, la quantité effectivement installée, et la quantité rendue.
+
+RG-10 — Département Achat
+Le Département Achat enregistre les achats de matériel comme entrées de stock magasin.
+Seuls l'Administrateur et le Gestionnaire de Stock ont accès à ce périmètre.
+
+RG-11 — Création des comptes Observateur
+Un compte pour le rôle Observateur (Client) doit être créé et validé par l'Administrateur
+avant toute connexion possible.
+
+RG-12 — Calcul de trajet et budget d'intervention
+Le calcul de trajet (type Waze) doit tenir compte du prix du carburant, de la distance et
+du temps estimé, afin de proposer la meilleure offre budgétaire pour une intervention.
+Cette fonctionnalité est utilisée principalement par le Technicien au quotidien ;
+l'Administrateur y a également accès.
+
+RG-13 — Périmètre de l'Assistant IA
+L'Assistant IA ne dispose d'aucun canal générique ou anonyme (« Accueil »). Chaque
+interaction est obligatoirement rattachée à un utilisateur authentifié et à l'un des
+4 rôles : Administrateur, Technicien, Gestionnaire de Stock, Observateur.
+
+RG-14 — Restriction de l'Assistant IA (Gestionnaire de Stock)
+L'Assistant IA utilisé par le rôle Gestionnaire de Stock ne doit répondre que sur son
+périmètre : sorties, retours, maintenance, achats, contrôle du matériel par référence.
+
+RG-15 — Restriction de l'Assistant IA (Observateur)
+L'Assistant IA utilisé par le rôle Observateur ne doit fournir que des informations en
+lecture (statistiques, statuts). Il ne doit jamais proposer d'action de modification.
+
+RG-16 — Matériel en attente de configuration
+Les quantités définitives de matériel par établissement sont en attente de transmission
+(fichier Excel, M. Hamza). Tant que ce fichier n'est pas reçu, les quantités ne doivent
+pas être considérées comme figées dans les rapports générés.
