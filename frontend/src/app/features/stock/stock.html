@@ -10,10 +10,6 @@
       </p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-ghost" (click)="ouvrirCreation('kit')">
-        <lucide-icon [img]="icons.Boxes" [size]="18"></lucide-icon>
-        <span>Nouveau kit</span>
-      </button>
       <button class="btn btn-primary" (click)="ouvrirCreation('simple')">
         <lucide-icon [img]="icons.Plus" [size]="18"></lucide-icon>
         <span>Nouveau matériel</span>
@@ -65,13 +61,15 @@
   <!-- ============================= GRID ============================= -->
   <div class="materiel-grid" [class.is-loading]="loading()">
 
-    <button
-      type="button"
+    <div
       class="asset-card"
       [class.is-kit]="m.estKit"
       [class.in-maintenance]="m.enMaintenance"
       *ngFor="let m of materiels(); trackBy: trackByMateriel"
+      role="button"
+      tabindex="0"
       (click)="ouvrirDetail(m)"
+      (keydown.enter)="ouvrirDetail(m)"
     >
       <div class="asset-card-face">
         <span class="punch-hole"></span>
@@ -82,6 +80,16 @@
             <span class="dot"></span>{{ m.etat }}
           </span>
         </div>
+
+        <!-- Bouton delete -->
+        <button
+          type="button"
+          class="card-delete-btn"
+          title="Supprimer ce matériel"
+          (click)="supprimerMateriel(m, $event)"
+        >
+          <lucide-icon [img]="icons.Trash2" [size]="14"></lucide-icon>
+        </button>
 
         <h3 class="card-title">{{ m.nom }}</h3>
         <p class="card-ref">{{ m.reference }}</p>
@@ -99,7 +107,7 @@
           <lucide-icon [img]="icons.Wrench" [size]="13"></lucide-icon>
         </span>
       </div>
-    </button>
+    </div>
 
     <div class="empty-state" *ngIf="!loading() && materiels().length === 0">
       <lucide-icon [img]="icons.Package" [size]="40"></lucide-icon>
@@ -136,7 +144,7 @@
 <aside class="drawer" [class.open]="drawerOpen()" *ngIf="selected() as m">
   <header class="drawer-header">
     <div class="drawer-header-icon" [ngClass]="classeEtat(m.etat)">
-      <lucide-icon [img]="iconePourCategorie(m.nomCategorie)" [size]="22"></lucide-icon>
+      <lucide-icon [img]="iconePourCategorie(m.nomCategorie ?? undefined)" [size]="22"></lucide-icon>
     </div>
     <div class="drawer-header-titles">
       <div class="title-row">
@@ -219,7 +227,9 @@
           </div>
           <div class="info-field">
             <span class="field-label">Établissement</span>
-            <span class="field-value">{{ m.designationEtablissement || '—' }}</span>
+            <span class="field-value">
+              {{ m.designationEtablissement || (m.idEtablissement ? 'ID ' + m.idEtablissement : '—') }}
+            </span>
           </div>
         </div>
 
@@ -255,8 +265,13 @@
               <option *ngFor="let c of categories()" [ngValue]="c.idCategorie">{{ c.nom }}</option>
             </select>
           </label>
-          <label>Établissement (ID)
-            <input type="number" [(ngModel)]="editForm.idEtablissement" name="editEtab" />
+          <label>Établissement
+            <select [(ngModel)]="editForm.idEtablissement" name="editEtab">
+              <option [ngValue]="null">Aucun</option>
+              <option *ngFor="let e of etablissements()" [ngValue]="e.idEtablissement">
+                {{ e.designation }}
+              </option>
+            </select>
           </label>
 
           <div class="form-actions">
@@ -434,8 +449,13 @@
           <option *ngFor="let c of categoriesSimples()" [ngValue]="c.idCategorie">{{ c.nom }}</option>
         </select>
       </label>
-      <label>Établissement (ID)
-        <input type="number" [(ngModel)]="simpleForm.idEtablissement" name="sEtab" />
+      <label>Établissement
+        <select [(ngModel)]="simpleForm.idEtablissement" name="sEtab">
+          <option [ngValue]="null">Aucun</option>
+          <option *ngFor="let e of etablissements()" [ngValue]="e.idEtablissement">
+            {{ e.designation }}
+          </option>
+        </select>
       </label>
 
       <div class="form-actions">
@@ -467,8 +487,13 @@
           <option *ngFor="let c of categoriesKit()" [ngValue]="c.idCategorie">{{ c.nom }}</option>
         </select>
       </label>
-      <label>Établissement (ID)
-        <input type="number" [(ngModel)]="kitForm.idEtablissement" name="kEtab" />
+      <label>Établissement
+        <select [(ngModel)]="kitForm.idEtablissement" name="kEtab">
+          <option [ngValue]="null">Aucun</option>
+          <option *ngFor="let e of etablissements()" [ngValue]="e.idEtablissement">
+            {{ e.designation }}
+          </option>
+        </select>
       </label>
       <label class="checkbox-line">
         <input type="checkbox" [(ngModel)]="kitForm.composantsHeritentQr" name="kHerite" />
@@ -558,5 +583,29 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ============================= MODAL DE CONFIRMATION ============================= -->
+<div class="modal-backdrop" *ngIf="showConfirmModal()" (click)="annulerConfirmation()"></div>
+
+<div class="confirm-modal" *ngIf="showConfirmModal()">
+  <header class="modal-header">
+    <div class="confirm-header-title">
+      <lucide-icon [img]="icons.AlertTriangle" [size]="20" class="warning-icon"></lucide-icon>
+      <h2>{{ confirmTitle() }}</h2>
+    </div>
+    <button type="button" class="icon-btn" (click)="annulerConfirmation()">
+      <lucide-icon [img]="icons.X" [size]="20"></lucide-icon>
+    </button>
+  </header>
+
+  <div class="modal-body">
+    <p class="confirm-message">{{ confirmMessage() }}</p>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" (click)="annulerConfirmation()">Non, annuler</button>
+      <button type="button" class="btn btn-danger" (click)="confirmerAction()">Oui, confirmer</button>
+    </div>
   </div>
 </div>
