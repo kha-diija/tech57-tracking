@@ -1,10 +1,13 @@
+// src/app/features/models/materiel.model.ts
+
+// Ancien type réinventé
 export type EtatMateriel = 'Neuf' | 'En service' | 'En panne' | 'Retiré';
 
 export interface Page<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
-  number: number; // page courante (0-based)
+  number: number;
   size: number;
 }
 
@@ -67,7 +70,7 @@ export interface ComposantRequest {
 
 export interface MaintenanceDTO {
   idMaintenance: number;
-  dateMaintenance: string; // ISO yyyy-MM-dd
+  dateMaintenance: string;
   description: string | null;
   cout: number | null;
   disponible: boolean;
@@ -91,6 +94,7 @@ export interface MouvementMateriel {
   destination: string | null;
 }
 
+// Tableau des valeurs possibles
 export const ETATS: EtatMateriel[] = ['Neuf', 'En service', 'En panne', 'Retiré'];
 
 export const KIT_COMPOSANTS_DEFAUT = [
