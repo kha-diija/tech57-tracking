@@ -4,6 +4,10 @@ import com.example.backend.entity.Observateur;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface ObservateurRepository extends JpaRepository<Observateur, Integer> {
+
+    Optional<Observateur> findByEmail(String email);
 }
