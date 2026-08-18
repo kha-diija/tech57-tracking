@@ -1,0 +1,59 @@
+<div class="dashboard">
+  <div class="dashboard__header">
+    <div>
+      <span class="dashboard__eyebrow"><span class="dashboard__eyebrow-dot"></span>Mes ressources</span>
+      <h1 class="dashboard__title">Vidéos, guides & documents</h1>
+      <p class="dashboard__subtitle">Contenus partagés par votre administrateur — lecture seule.</p>
+    </div>
+  </div>
+
+  <div class="lecture-tabs">
+    <button class="lecture-tab" [class.lecture-tab--active]="activeTab() === 'videos'" (click)="setTab('videos')">
+      <lucide-icon [img]="icons.Video" [size]="16"></lucide-icon> Vidéos ({{ mesVideos().length }})
+    </button>
+    <button class="lecture-tab" [class.lecture-tab--active]="activeTab() === 'ressources'" (click)="setTab('ressources')">
+      <lucide-icon [img]="icons.BookOpen" [size]="16"></lucide-icon> Ressources ({{ mesRessources().length }})
+    </button>
+    <button class="lecture-tab" [class.lecture-tab--active]="activeTab() === 'documents'" (click)="setTab('documents')">
+      <lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon> Documents ({{ mesDocuments().length }})
+    </button>
+  </div>
+
+  <div class="lecture-grid" *ngIf="activeTab() === 'videos'">
+    <div class="lecture-card" *ngFor="let v of mesVideos()">
+      <div class="lecture-card__icon"><lucide-icon [img]="icons.Video" [size]="20"></lucide-icon></div>
+      <div class="lecture-card__body">
+        <h3 class="lecture-card__title">{{ v.titreVideo }}</h3>
+        <span class="badge">Partagé par {{ v.assigneParAdminNom }}</span>
+        <span class="lecture-card__date">{{ v.dateAssignation | date:'dd/MM/yyyy' }}</span>
+      </div>
+    </div>
+    <p class="dashboard__subtitle" *ngIf="!mesVideos().length">Aucune vidéo ne vous a été partagée pour le moment.</p>
+  </div>
+
+  <div class="lecture-grid" *ngIf="activeTab() === 'ressources'">
+    <div class="lecture-card" *ngFor="let r of mesRessources()">
+      <div class="lecture-card__icon"><lucide-icon [img]="icons.BookOpen" [size]="20"></lucide-icon></div>
+      <div class="lecture-card__body">
+        <h3 class="lecture-card__title">{{ r.titreRessource }}</h3>
+        <span class="badge">{{ r.typeRessource }}</span>
+        <span class="badge">Partagé par {{ r.assigneParAdminNom }}</span>
+        <span class="lecture-card__date">{{ r.dateAssignation | date:'dd/MM/yyyy' }}</span>
+      </div>
+    </div>
+    <p class="dashboard__subtitle" *ngIf="!mesRessources().length">Aucune ressource ne vous a été partagée pour le moment.</p>
+  </div>
+
+  <div class="lecture-grid" *ngIf="activeTab() === 'documents'">
+    <div class="lecture-card" *ngFor="let d of mesDocuments()">
+      <div class="lecture-card__icon"><lucide-icon [img]="icons.FileText" [size]="20"></lucide-icon></div>
+      <div class="lecture-card__body">
+        <h3 class="lecture-card__title">{{ d.nomFichier }}</h3>
+        <span class="badge">{{ d.typeDocument }}</span>
+        <span class="badge">Partagé par {{ d.assigneParAdminNom }}</span>
+        <span class="lecture-card__date">{{ d.dateAssignation | date:'dd/MM/yyyy' }}</span>
+      </div>
+    </div>
+    <p class="dashboard__subtitle" *ngIf="!mesDocuments().length">Aucun document ne vous a été partagé pour le moment.</p>
+  </div>
+</div>
