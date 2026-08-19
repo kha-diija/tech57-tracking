@@ -3,12 +3,12 @@ package com.example.backend.dto.admin.intervention;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
-
 import java.time.LocalDateTime;
 
 public class CreateInterventionRequest {
 
-    @NotNull(message = "La date de début est obligatoire")
+    private LocalDateTime datePrevue; // Date planifiée par l'administrateur
+
     private LocalDateTime dateDebut;
 
     private LocalDateTime dateFin;
@@ -16,7 +16,6 @@ public class CreateInterventionRequest {
     @PositiveOrZero(message = "Le taux d'avancement doit être supérieur ou égal à 0")
     private Double tauxAvancement;
 
-    @NotNull(message = "Le numéro de visite est obligatoire")
     private Integer numeroVisite;
 
     @NotNull(message = "Le statut est obligatoire")
@@ -32,7 +31,14 @@ public class CreateInterventionRequest {
     @NotNull(message = "Le technicien est obligatoire")
     private Integer technicienId;
 
-    public CreateInterventionRequest() {
+    public CreateInterventionRequest() {}
+
+    public LocalDateTime getDatePrevue() {
+        return datePrevue;
+    }
+
+    public void setDatePrevue(LocalDateTime datePrevue) {
+        this.datePrevue = datePrevue;
     }
 
     public LocalDateTime getDateDebut() {
