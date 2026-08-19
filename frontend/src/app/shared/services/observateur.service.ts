@@ -51,4 +51,10 @@ export class ObservateurService {
   getTimeline(): Observable<AssignmentTimelinePoint[]> {
     return this.http.get<AssignmentTimelinePoint[]>(`${this.baseUrl}/dashboard/timeline`);
   }
+  
+  viewDocument(idDocument: number) {
+  return this.http.get(`${this.baseUrl}/documents/${idDocument}/view`, {
+    responseType: 'blob'
+  });
+}
 }

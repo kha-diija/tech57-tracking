@@ -26,4 +26,22 @@ export class ObservateurLecture {
   setTab(tab: TabKey) {
     this.activeTab.set(tab);
   }
+  openDocument(idDocument: number) {
+  // Ouvrir l'onglet immédiatement (synchrone) pour éviter le blocage popup
+  const newTab = window.open('', '_blank');
+
+  this.observateurService.viewDocument(idDocument).subscribe({
+    next: (blob) => {
+      const url = window.URL.createObjectURL(blob);
+      if (newTab) {
+        newTab.location.href = url;
+      }
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    },
+    error: (err) => {
+      console.error('Erreur lors de l\'ouverture du document', err);
+      newTab?.close();
+    }
+  });
+}
 }
