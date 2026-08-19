@@ -1,0 +1,149 @@
+<div class="dashboard">
+
+  <div class="dashboard__header">
+    <div>
+      <span class="dashboard__eyebrow">
+        <span class="dashboard__eyebrow-dot"></span>
+        Suivi du stock
+      </span>
+      <h1 class="dashboard__title">Bonjour, {{ prenomGestionnaire() }} </h1>
+      <p class="dashboard__subtitle">Voici l'état de votre stock et du matériel aujourd'hui.</p>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi-card" *ngFor="let kpi of kpis()">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">{{ kpi.label }}</span>
+        <span class="kpi-card__icon">
+          <lucide-icon [img]="kpiIcon(kpi.id)" [size]="16"></lucide-icon>
+        </span>
+      </div>
+      <div class="kpi-card__value">
+        {{ kpi.value }}<span class="kpi-card__suffix" *ngIf="kpi.suffix">{{ kpi.suffix }}</span>
+      </div>
+      <div class="kpi-card__footer">
+        <span class="kpi-card__comparison">{{ kpi.comparison }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sorties de stock & répartition -->
+  <div class="dashboard__row dashboard__row--2-1">
+
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Sorties de stock — 4 dernières semaines</h2>
+          <p class="panel__subtitle">Quantité de matériel sortie du stock</p>
+        </div>
+      </div>
+
+      <div class="bar-chart-container">
+        <div class="bar-chart">
+          <div class="bar-chart__col" *ngFor="let point of weeklyStockOut()">
+            <span class="bar-chart__value">{{ point.quantite }}</span>
+            <div class="bar-chart__bars">
+              <div class="bar-chart__bar bar-chart__bar--primary"
+                   [style.height.%]="barHeight(point.quantite)"></div>
+            </div>
+            <span class="bar-chart__label">{{ point.periode }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Répartition du stock</h2>
+          <p class="panel__subtitle">{{ stockTotal() | number }} unités</p>
+        </div>
+      </div>
+
+      <div class="donut">
+        <div class="donut__ring" [style.background]="donutGradient()">
+          <div class="donut__hole">
+            <span class="donut__total">{{ stockTotal() | number }}</span>
+            <span class="donut__total-label">au total</span>
+          </div>
+        </div>
+      </div>
+
+      <ul class="donut-legend">
+        <li class="donut-legend__item" *ngFor="let item of stockDistribution()">
+          <div class="donut-legend__top">
+            <span class="donut-legend__left">
+              <i class="dot" [style.background]="item.color"></i>
+              {{ item.label }}
+            </span>
+            <span class="donut-legend__right">
+              {{ item.value | number }}
+              <span class="donut-legend__percent">({{ stockPercent(item.value) }}%)</span>
+            </span>
+          </div>
+          <div class="donut-legend__bar">
+            <div class="donut-legend__bar-fill"
+                 [style.width.%]="stockPercent(item.value)"
+                 [style.background]="item.color"></div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Maintenance & alertes stock bas -->
+  <div class="dashboard__row dashboard__row--2-1">
+
+    <div class="panel">
+      <div class="panel__header">
+        <h2 class="panel__title">Matériel nécessitant une maintenance</h2>
+        <span class="badge badge--danger" *ngIf="maintenanceList().length">
+          <lucide-icon [img]="icons.Wrench" [size]="12"></lucide-icon>
+          {{ maintenanceList().length }}
+        </span>
+      </div>
+      <ul class="mission-list" *ngIf="maintenanceList().length; else noMaintenance">
+        <li class="mission-list__item" *ngFor="let item of maintenanceList()">
+          <div class="mission-list__meta">
+            <span class="mission-list__code">{{ item.reference }}</span>
+            <span class="mission-list__time">{{ item.etat }}</span>
+          </div>
+          <p class="mission-list__title">{{ item.nom }}</p>
+          <span class="mission-list__tech">{{ item.categorie }} — {{ item.etablissement }}</span>
+        </li>
+      </ul>
+      <ng-template #noMaintenance>
+        <p class="dashboard__subtitle">Aucun matériel en maintenance actuellement.</p>
+      </ng-template>
+    </div>
+
+    <div class="panel">
+      <div class="panel__header">
+        <h2 class="panel__title">Alertes de stock bas</h2>
+        <span class="badge badge--danger" *ngIf="lowStockAlerts().length">
+          <lucide-icon [img]="icons.AlertTriangle" [size]="12"></lucide-icon>
+          {{ lowStockAlerts().length }}
+        </span>
+      </div>
+      <ul class="activity-list" *ngIf="lowStockAlerts().length; else noAlert">
+        <li class="activity-list__item" *ngFor="let item of lowStockAlerts()">
+          <span class="activity-list__dot activity-list__dot--warning"></span>
+          <div class="activity-list__body">
+            <p class="activity-list__text">
+              <strong>{{ item.nom }}</strong> ({{ item.reference }})
+            </p>
+            <span class="activity-list__time">
+              {{ item.quantiteDisponible }} disponible(s) — seuil : {{ item.seuilAlerte }}
+            </span>
+          </div>
+        </li>
+      </ul>
+      <ng-template #noAlert>
+        <p class="dashboard__subtitle">Aucune alerte de stock bas.</p>
+      </ng-template>
+    </div>
+  </div>
+
+</div>
