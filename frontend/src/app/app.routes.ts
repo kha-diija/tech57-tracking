@@ -103,6 +103,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/technicien/technicien-dashboard').then((m) => m.TechnicienDashboard),
       },
+      // {
+      //   path: 'client/dashboard',
+      //   canActivate: [roleGuard(['OBSERVATEUR'])],
+      //   loadComponent: () =>
+      //     import('./features/client/client-dashboard').then((m) => m.ClientDashboard),
+      // },
       {
         path: 'technicien/missions',
         canActivate: [roleGuard(['TECHNICIEN'])],
@@ -113,7 +119,13 @@ export const routes: Routes = [
         path: 'client/dashboard',
         canActivate: [roleGuard(['OBSERVATEUR'])],
         loadComponent: () =>
-          import('./features/client/client-dashboard').then((m) => m.ClientDashboard),
+          import('./features/role_observateur/dashboard/dashboard').then(m => m.ObservateurDashboard),
+      },
+      {
+        path: 'observateur/ressources',
+        canActivate: [roleGuard(['OBSERVATEUR'])],
+        loadComponent: () =>
+          import('./features/role_observateur/lecture/lecture').then(m => m.ObservateurLecture),
       },
       {
         path: 'gestionnaire/dashboard',
