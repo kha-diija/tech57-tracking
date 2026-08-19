@@ -1,0 +1,140 @@
+<div class="dashboard">
+
+  <div class="dashboard__header">
+    <div>
+      <span class="dashboard__eyebrow">
+        <span class="dashboard__eyebrow-dot"></span>
+        Espace observateur
+      </span>
+      <h1 class="dashboard__title">Bonjour, {{ prenomObservateur() }} 👋</h1>
+      <p class="dashboard__subtitle">Voici les ressources qui vous ont été partagées par l'administrateur.</p>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Vidéos</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.Video" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ summary().totalVideos }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Ressources</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.BookOpen" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ summary().totalRessources }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Documents</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ summary().totalDocuments }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Total partagé</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.Boxes" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ summary().totalElements }}</div>
+    </div>
+  </div>
+
+  <div class="dashboard__row dashboard__row--2-1">
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Ressources partagées — par semaine</h2>
+          <p class="panel__subtitle">Nombre d'éléments assignés</p>
+        </div>
+      </div>
+      <div class="bar-chart-container">
+        <div class="bar-chart">
+          <div class="bar-chart__col" *ngFor="let point of timeline()">
+            <span class="bar-chart__value">{{ point.total }}</span>
+            <div class="bar-chart__bars">
+              <div class="bar-chart__bar bar-chart__bar--primary" [style.height.%]="barHeight(point.total)"></div>
+            </div>
+            <span class="bar-chart__label">{{ point.periode }}</span>
+          </div>
+        </div>
+        <p class="panel__subtitle" *ngIf="!timeline().length">Aucune donnée disponible pour le moment.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Répartition par type</h2>
+          <p class="panel__subtitle">{{ distributionTotal() }} éléments</p>
+        </div>
+      </div>
+      <div class="donut">
+        <div class="donut__ring" [style.background]="donutGradient()">
+          <div class="donut__hole">
+            <span class="donut__total">{{ distributionTotal() }}</span>
+            <span class="donut__total-label">au total</span>
+          </div>
+        </div>
+      </div>
+      <ul class="donut-legend">
+        <li class="donut-legend__item" *ngFor="let item of distribution()">
+          <div class="donut-legend__top">
+            <span class="donut-legend__left"><i class="dot" [style.background]="item.color"></i>{{ item.label }}</span>
+            <span class="donut-legend__right">{{ item.value }} <span class="donut-legend__percent">({{ distributionPercent(item.value) }}%)</span></span>
+          </div>
+          <div class="donut-legend__bar">
+            <div class="donut-legend__bar-fill" [style.width.%]="distributionPercent(item.value)" [style.background]="item.color"></div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="dashboard__row dashboard__row--2-1">
+    <div class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Progression cumulée</h2>
+          <p class="panel__subtitle">Total des ressources reçues dans le temps</p>
+        </div>
+      </div>
+      <div class="line-chart-wrapper">
+        <svg class="line-chart" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="progressAreaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f97316" stop-opacity="0.35"></stop>
+              <stop offset="100%" stop-color="#f97316" stop-opacity="0"></stop>
+            </linearGradient>
+          </defs>
+          <path class="line-chart__area" [attr.d]="cumulativePath().area"></path>
+          <path class="line-chart__line" [attr.d]="cumulativePath().line"></path>
+          <g *ngFor="let coord of cumulativePath().coords; let isLast = last" class="line-point-group" [class.line-point-group--active]="isLast">
+            <circle [attr.cx]="coord.x" [attr.cy]="coord.y" r="7" class="line-point__halo"></circle>
+            <circle [attr.cx]="coord.x" [attr.cy]="coord.y" [attr.r]="isLast ? 3.4 : 2.6" class="line-point"></circle>
+          </g>
+        </svg>
+        <div class="line-chart__labels">
+          <span *ngFor="let point of timeline()">{{ point.periode }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__header"><h2 class="panel__title">Activité récente</h2></div>
+      <ul class="activity-list">
+        <li class="activity-list__item" *ngFor="let item of recentActivity()">
+          <span class="activity-list__dot activity-list__dot--info"></span>
+          <div class="activity-list__body">
+            <p class="activity-list__text"><strong>{{ item.par }}</strong> vous a partagé — {{ item.type }} : <strong>{{ item.label }}</strong></p>
+            <span class="activity-list__time">{{ item.date | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+        </li>
+        <li *ngIf="!recentActivity().length" class="activity-list__text">Aucune activité récente.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
