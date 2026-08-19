@@ -107,8 +107,7 @@ export class GsMission {
   readonly editingId = signal<number | null>(null);
   readonly formModel = signal<MissionFormModel>(this.emptyForm());
 
-  // Responsable de l'établissement sélectionné (affichage informatif seulement,
-  // n'est jamais envoyé au backend : MissionInstallation n'a pas ce champ)
+  // Responsable de l'établissement sélectionné (affichage informatif seulement)
   readonly selectedResponsable = computed(() => {
     const idEtab = this.formModel().idEtablissement;
     if (!idEtab) return null;
@@ -116,33 +115,32 @@ export class GsMission {
     return etab?.responsable ?? null;
   });
 
-  // Nom complet de l'admin créateur d'origine (utile uniquement en mode édition,
-  // car en création l'admin créateur est toujours l'admin connecté)
+  // Nom complet de l'admin créateur d'origine
   private readonly editingAdminNomComplet = signal<string | null>(null);
 
-  // Affichage de l'admin "créateur" de la mission dans le formulaire :
-  // - en création : l'admin actuellement connecté (celui qui va créer la mission)
-  // - en édition : l'admin d'origine ayant créé la mission (non modifiable)
   readonly creatorDisplay = computed(() => {
     const currentUser = this.authService.currentUser();
     if (this.editingId() === null) {
-      // Mode création : c'est l'admin connecté
       return currentUser
         ? { id: currentUser.id, nomComplet: `${currentUser.prenom} ${currentUser.nom}` }
         : null;
     }
-    // Mode édition : l'admin d'origine de la mission
     const id = this.formModel().idAdministrateur;
     return id !== null
       ? { id, nomComplet: this.editingAdminNomComplet() ?? '—' }
       : null;
   });
 
-  // Jointure côté client : le DTO de mission ne contient pas le responsable de
-  // l'établissement, mais on l'a déjà en mémoire via etablissementsList().
-  // Utilisé dans le tableau pour afficher le responsable de chaque établissement.
+  // Jointure côté client : Récupérer le responsable de l'établissement
   getResponsableForEtablissement(idEtablissement: number) {
     return this.etablissementsList().find(e => e.idEtablissement === idEtablissement)?.responsable ?? null;
+  }
+
+  // Jointure côté client : Récupérer le nom de l'équipe technique affectée à la mission
+  getEquipeNameForMission(idEquipe: number | null | undefined): string {
+    if (!idEquipe) return 'Aucune équipe';
+    const equipe = this.equipesList().find(eq => eq.idEquipe === idEquipe);
+    return equipe ? equipe.nomEquipe : 'Équipe inconnue';
   }
 
   private emptyForm(): MissionFormModel {
@@ -320,12 +318,13 @@ export class GsMission {
   }
 
   onExport(): void {
-    const rows: string[] = ['Référence;Titre;Statut;Budget;Établissement;Responsable Établissement;Administrateur;ID Administrateur;Date de création'];
+    const rows: string[] = ['Référence;Titre;Statut;Budget;Établissement;Équipe Technique;Responsable Établissement;Administrateur;ID Administrateur;Date de création'];
     this.filteredMissions().forEach((m) => {
       const resp = this.getResponsableForEtablissement(m.idEtablissement);
       const respNom = resp ? `${resp.prenom} ${resp.nom}` : '';
+      const equipeNom = this.getEquipeNameForMission(m.idEquipe);
       rows.push(
-        `${m.reference};${m.titre};${m.statut};${m.budgetPropose ?? 0};${m.etablissementDesignation ?? ''};${respNom};${m.adminNomComplet ?? ''};${m.idAdministrateur ?? ''};${m.dateCreation}`
+        `${m.reference};${m.titre};${m.statut};${m.budgetPropose ?? 0};${m.etablissementDesignation ?? ''};${equipeNom};${respNom};${m.adminNomComplet ?? ''};${m.idAdministrateur ?? ''};${m.dateCreation}`
       );
     });
 

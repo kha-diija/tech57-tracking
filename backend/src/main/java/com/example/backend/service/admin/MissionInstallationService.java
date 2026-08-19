@@ -17,6 +17,7 @@ import com.example.backend.repository.admin.PhotoRepository;
 import com.example.backend.repository.admin.AttestationRepository;
 import com.example.backend.repository.admin.ChecklistEquipementRepository;
 import com.example.backend.repository.UtilisateurRepository;
+import com.example.backend.service.NotificationHelperService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,13 +35,13 @@ public class MissionInstallationService {
     private EtablissementRepository etablissementRepository;
 
     @Autowired
-    private EquipeTechniqueRepository equipeTechniqueRepository; // <--- Ajouté pour gérer l'équipe technique
+    private EquipeTechniqueRepository equipeTechniqueRepository;
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
 
     @Autowired
-    private InterventionRepository interventionRepository; // <-- pour recalculerStatut() et deleteMission()
+    private InterventionRepository interventionRepository;
 
     @Autowired
     private RapportRepository rapportRepository;
@@ -54,9 +55,22 @@ public class MissionInstallationService {
     @Autowired
     private ChecklistEquipementRepository checklistEquipementRepository;
 
+    @Autowired
+    private NotificationHelperService notificationHelperService;
+
     @Transactional
     public List<MissionResponseDTO> getAllMissions() {
         return missionRepository.findAll().stream()
+                .map(MissionResponseDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<MissionResponseDTO> getMissionsByTechnicienEquipe(Integer idTechnicien) {
+        EquipeTechnique equipe = equipeTechniqueRepository.findByMembreId(idTechnicien)
+                .orElseThrow(() -> new RuntimeException("Ce technicien n'est affecté à aucune équipe technique."));
+
+        return missionRepository.findByEquipeIdEquipe(equipe.getIdEquipe()).stream()
                 .map(MissionResponseDTO::new)
                 .collect(Collectors.toList());
     }
@@ -76,9 +90,33 @@ public class MissionInstallationService {
             MissionInstallation saved = missionRepository.save(mission);
             return new MissionResponseDTO(saved);
         } catch (Exception e) {
-            e.printStackTrace(); // Affiche toute l'erreur en rouge vif dans IntelliJ
+            e.printStackTrace();
             throw new RuntimeException("ERREUR EXACTE : " + e.getMessage(), e);
         }
+    }
+
+    @Transactional
+    public MissionResponseDTO createMissionByTechnicien(MissionRequestDTO dto, Integer idTechnicien) {
+        Utilisateur technicien = utilisateurRepository.findById(idTechnicien)
+                .orElseThrow(() -> new RuntimeException("Technicien introuvable"));
+
+        EquipeTechnique equipe = equipeTechniqueRepository.findByMembreId(idTechnicien)
+                .orElseThrow(() -> new RuntimeException("Impossible de créer la mission : vous n'êtes rattaché à aucune équipe."));
+
+        dto.setIdEquipe(equipe.getIdEquipe());
+
+        if (dto.getStatut() == null || dto.getStatut().isEmpty()) {
+            dto.setStatut("Planifiée");
+        }
+
+        MissionResponseDTO createdMission = createMission(dto);
+
+        String message = "Le technicien " + technicien.getPrenom() + " " + technicien.getNom() +
+                " a créé une nouvelle mission : \"" + dto.getTitre() + "\" pour son équipe (" + equipe.getNomEquipe() + ").";
+
+        notificationHelperService.notifierTousLesAdmins(technicien, message, "MISSION_CREEE");
+
+        return createdMission;
     }
 
     @Transactional
@@ -92,9 +130,6 @@ public class MissionInstallationService {
         return new MissionResponseDTO(updated);
     }
 
-    /**
-     * Suppression sécurisée avec gestion de la cascade et avertissement préalable.
-     */
     @Transactional
     public void deleteMission(Integer id, boolean force) {
         MissionInstallation mission = missionRepository.findById(id)
@@ -124,10 +159,6 @@ public class MissionInstallationService {
         missionRepository.deleteById(id);
     }
 
-    // ==============================================================
-    // --- Recalcul automatique du statut de la Mission ---
-    // en fonction des statuts de ses Interventions liées
-    // ==============================================================
     @Transactional
     public void recalculerStatut(Integer idMission) {
         MissionInstallation mission = missionRepository.findById(idMission)
@@ -136,7 +167,7 @@ public class MissionInstallationService {
         List<Intervention> interventions = interventionRepository.findByMissionIdMission(idMission);
 
         if (interventions.isEmpty()) {
-            return; // Aucune intervention -> la mission reste "Planifiée"
+            return;
         }
 
         boolean toutesCloturees = interventions.stream()
@@ -154,7 +185,6 @@ public class MissionInstallationService {
         missionRepository.save(mission);
     }
 
-    // Méthode utilitaire interne pour lier les entités relationnelles
     private void mapDtoToEntity(MissionRequestDTO dto, MissionInstallation mission) {
         mission.setReference(dto.getReference());
         mission.setTitre(dto.getTitre());
@@ -163,27 +193,32 @@ public class MissionInstallationService {
         }
         mission.setBudgetPropose(dto.getBudgetPropose());
 
-        // Récupération et association de l'Établissement
         Etablissement etab = etablissementRepository.findById(dto.getIdEtablissement())
                 .orElseThrow(() -> new RuntimeException("Établissement introuvable"));
         mission.setEtablissement(etab);
 
-        // Récupération et association de l'Administrateur via le repository Utilisateur
-        Utilisateur user = utilisateurRepository.findById(dto.getIdAdministrateur())
-                .orElseThrow(() -> new RuntimeException("Utilisateur/Administrateur introuvable"));
-
-        if (!(user instanceof Administrateur)) {
-            throw new RuntimeException("L'utilisateur spécifié n'est pas un administrateur.");
+        // Gestion Admin
+        if (dto.getIdAdministrateur() != null) {
+            Utilisateur user = utilisateurRepository.findById(dto.getIdAdministrateur())
+                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+            if (user instanceof Administrateur) {
+                mission.setAdministrateur((Administrateur) user);
+            } else {
+                mission.setAdministrateur(null);
+            }
+        } else {
+            mission.setAdministrateur(null);
         }
-        mission.setAdministrateur((Administrateur) user);
 
-        // Récupération et association de l'Équipe Technique (Corrigé et activé)
+        // Gestion Équipe : on ne modifie que si une nouvelle équipe est fournie
         if (dto.getIdEquipe() != null) {
             EquipeTechnique equipe = equipeTechniqueRepository.findById(dto.getIdEquipe())
                     .orElseThrow(() -> new RuntimeException("Équipe technique introuvable avec l'ID : " + dto.getIdEquipe()));
             mission.setEquipe(equipe);
-        } else {
+        } else if (mission.getIdMission() == null) {
+            // Si création et pas d'équipe, on met null
             mission.setEquipe(null);
         }
+        // Si modification et dto.getIdEquipe() est null, on ne fait rien (on garde l'équipe actuelle)
     }
 }

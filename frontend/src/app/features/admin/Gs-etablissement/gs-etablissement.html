@@ -1,6 +1,5 @@
 <div class="gs-etab">
 
-  <!-- En-tête -->
   <div class="gs-etab__header">
     <div>
       <span class="gs-etab__eyebrow">
@@ -25,7 +24,6 @@
     </div>
   </div>
 
-  <!-- KPI -->
   <div class="kpi-grid" *ngIf="kpis() as k">
     <div class="kpi-card">
       <div class="kpi-card__top">
@@ -60,7 +58,6 @@
     </div>
   </div>
 
-  <!-- Barre de filtres -->
   <div class="toolbar">
     <div class="toolbar__search">
       <lucide-icon [img]="icons.Search" [size]="16"></lucide-icon>
@@ -80,7 +77,6 @@
     <span class="toolbar__count">{{ filteredEtablissements().length }} résultat(s)</span>
   </div>
 
-  <!-- Tableau -->
   <div class="panel panel--table">
     <div class="table-wrapper">
       <table class="etab-table">
@@ -144,7 +140,12 @@
                 <button class="icon-btn" title="Modifier" (click)="openEditForm(etab)">
                   <lucide-icon [img]="icons.Pencil" [size]="15"></lucide-icon>
                 </button>
-                <button class="icon-btn icon-btn--danger" title="Supprimer" (click)="deleteEtablissement(etab)">
+                
+                <button 
+                  class="icon-btn icon-btn--danger" 
+                  title="Supprimer" 
+                  *ngIf="isAdmin()" 
+                  (click)="deleteEtablissement(etab)">
                   <lucide-icon [img]="icons.Trash2" [size]="15"></lucide-icon>
                 </button>
               </div>
@@ -161,7 +162,6 @@
     </div>
   </div>
 
-  <!-- Panneau latéral : création / édition -->
   <div class="side-panel-backdrop" *ngIf="showForm()" (click)="closeForm()"></div>
 
   <aside class="side-panel" *ngIf="showForm()">
@@ -280,27 +280,28 @@
     </div>
   </aside>
 
-  <!-- Modale de confirmation personnalisée -->
-  <div class="side-panel-backdrop" *ngIf="confirmModal().isOpen" (click)="closeConfirmModal()"></div>
+  <ng-container *ngIf="isAdmin()">
+    <div class="side-panel-backdrop" *ngIf="confirmModal().isOpen" (click)="closeConfirmModal()"></div>
 
-  <div class="custom-modal-container" *ngIf="confirmModal().isOpen">
-    <div class="custom-modal">
-      <div class="custom-modal__header">
-        <h3>{{ confirmModal().title }}</h3>
-        <button class="icon-btn" (click)="closeConfirmModal()">
-          <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
-        </button>
-      </div>
-      <div class="custom-modal__body">
-        <p>{{ confirmModal().message }}</p>
-      </div>
-      <div class="custom-modal__footer">
-        <button class="btn btn--ghost" (click)="closeConfirmModal()">Annuler</button>
-        <button class="btn" [ngClass]="confirmModal().force ? 'btn--danger' : 'btn--primary'" (click)="executeDelete()">
-          Confirmer
-        </button>
+    <div class="custom-modal-container" *ngIf="confirmModal().isOpen">
+      <div class="custom-modal">
+        <div class="custom-modal__header">
+          <h3>{{ confirmModal().title }}</h3>
+          <button class="icon-btn" (click)="closeConfirmModal()">
+            <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+          </button>
+        </div>
+        <div class="custom-modal__body">
+          <p>{{ confirmModal().message }}</p>
+        </div>
+        <div class="custom-modal__footer">
+          <button class="btn btn--ghost" (click)="closeConfirmModal()">Annuler</button>
+          <button class="btn" [ngClass]="confirmModal().force ? 'btn--danger' : 'btn--primary'" (click)="executeDelete()">
+            Confirmer
+          </button>
+        </div>
       </div>
     </div>
-  </div>
+  </ng-container>
 
 </div>

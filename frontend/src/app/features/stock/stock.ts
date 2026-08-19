@@ -59,16 +59,19 @@ type ModeCreation = 'simple' | 'kit';
 export class Stock implements OnInit {
   private materielService = inject(MaterielService);
   private authService = inject(AuthService);
-private achatMaterielService = inject(AchatMaterielService);
+  private achatMaterielService = inject(AchatMaterielService);
 
   readonly icons = {
-  Search, SlidersHorizontal, Plus, QrCode, Laptop, Projector, Cable, Router,
-  Boxes, Package, Wrench, History, Trash2, Pencil, X, ChevronRight, ChevronDown,
-  AlertTriangle, CheckCircle2, PackagePlus, RefreshCw, Building2, Info,
-  ShoppingCart,
-};
+    Search, SlidersHorizontal, Plus, QrCode, Laptop, Projector, Cable, Router,
+    Boxes, Package, Wrench, History, Trash2, Pencil, X, ChevronRight, ChevronDown,
+    AlertTriangle, CheckCircle2, PackagePlus, RefreshCw, Building2, Info,
+    ShoppingCart,
+  };
 
   readonly etats = ETATS;
+
+  // --- Accès lecture seule pour le rôle Technicien ---
+  readonly lectureSeule = computed(() => !this.authService.hasRole('ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'));
 
   // --- Liste / recherche ---
   materiels = signal<MaterielDTO[]>([]);
@@ -118,55 +121,56 @@ private achatMaterielService = inject(AchatMaterielService);
     this.rechercher();
   }
 
-// --- Achat de stock ---
-showAchatModal = signal(false);
-achatMateriels = signal<MaterielDTO[]>([]); // liste complète pour le select
-achatForm: CreerAchatRequest = this.emptyAchatRequest();
-achatSaving = signal(false);
-achatError = signal<string | null>(null);
+  // --- Achat de stock ---
+  showAchatModal = signal(false);
+  achatMateriels = signal<MaterielDTO[]>([]); // liste complète pour le select
+  achatForm: CreerAchatRequest = this.emptyAchatRequest();
+  achatSaving = signal(false);
+  achatError = signal<string | null>(null);
 
-peutAcheter(): boolean {
-  return this.authService.hasRole('ADMINISTRATEUR', 'GESTIONNAIRE_STOCK');
-}
-
-ouvrirAchat(): void {
-  this.achatError.set(null);
-  this.achatForm = this.emptyAchatRequest();
-  // Charge une liste complète (sans pagination) pour le select du modal
-  this.materielService.rechercher({ topLevelOnly: true, size: 500, page: 0 }).subscribe((res) => {
-    this.achatMateriels.set(res.content);
-  });
-  this.showAchatModal.set(true);
-}
-
-fermerAchat(): void {
-  this.showAchatModal.set(false);
-  this.achatError.set(null);
-}
-
-soumettreAchat(): void {
-  this.achatError.set(null);
-  if (!this.achatForm.idMateriel || !this.achatForm.quantite || this.achatForm.quantite < 1) {
-    this.achatError.set('Matériel et quantité (> 0) sont obligatoires');
-    return;
+  peutAcheter(): boolean {
+    return this.authService.hasRole('ADMINISTRATEUR', 'GESTIONNAIRE_STOCK');
   }
-  this.achatSaving.set(true);
-  this.achatMaterielService.creer(this.achatForm).subscribe({
-    next: () => {
-      this.achatSaving.set(false);
-      this.fermerAchat();
-      this.rechercher(0); // rafraîchit la liste (les quantités affichées, si tu les ajoutes plus tard, seront à jour)
-    },
-    error: (err) => {
-      this.achatError.set(err?.error?.message ?? "Erreur lors de l'enregistrement de l'achat");
-      this.achatSaving.set(false);
-    },
-  });
-}
 
-private emptyAchatRequest(): CreerAchatRequest {
-  return { idMateriel: 0, quantite: 1, fournisseur: '', numeroFacture: '', prixUnitaireHt: null };
-}
+  ouvrirAchat(): void {
+    if (this.lectureSeule()) return;
+    this.achatError.set(null);
+    this.achatForm = this.emptyAchatRequest();
+    this.materielService.rechercher({ topLevelOnly: true, size: 500, page: 0 }).subscribe((res) => {
+      this.achatMateriels.set(res.content);
+    });
+    this.showAchatModal.set(true);
+  }
+
+  fermerAchat(): void {
+    this.showAchatModal.set(false);
+    this.achatError.set(null);
+  }
+
+  soumettreAchat(): void {
+    if (this.lectureSeule()) return;
+    this.achatError.set(null);
+    if (!this.achatForm.idMateriel || !this.achatForm.quantite || this.achatForm.quantite < 1) {
+      this.achatError.set('Matériel et quantité (> 0) sont obligatoires');
+      return;
+    }
+    this.achatSaving.set(true);
+    this.achatMaterielService.creer(this.achatForm).subscribe({
+      next: () => {
+        this.achatSaving.set(false);
+        this.fermerAchat();
+        this.rechercher(0);
+      },
+      error: (err) => {
+        this.achatError.set(err?.error?.message ?? "Erreur lors de l'enregistrement de l'achat");
+        this.achatSaving.set(false);
+      },
+    });
+  }
+
+  private emptyAchatRequest(): CreerAchatRequest {
+    return { idMateriel: 0, quantite: 1, fournisseur: '', numeroFacture: '', prixUnitaireHt: null };
+  }
 
   // =================================================================
   // Recherche / filtres
@@ -257,6 +261,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   // --- Édition ---
 
   entrerEditMode(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.editForm = {
@@ -272,6 +277,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   }
 
   enregistrerEdition(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.saving.set(true);
@@ -287,6 +293,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   }
 
   changerEtat(etat: EtatMateriel): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.materielService.changerEtat(m.idMateriel, etat).subscribe((dto) => {
@@ -296,6 +303,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   }
 
   supprimerDepuisDrawer(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     if (!confirm(`Supprimer définitivement "${m.nom}" (${m.reference}) ?`)) return;
@@ -306,6 +314,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   }
 
   regenererQr(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.materielService.regenererCodeQr(m.idMateriel).subscribe((res) => {
@@ -317,11 +326,13 @@ private emptyAchatRequest(): CreerAchatRequest {
   // --- Composants de kit ---
 
   ouvrirFormComposant(): void {
+    if (this.lectureSeule()) return;
     this.composantForm = { nom: '', quantiteComposant: 1 };
     this.showComposantForm.set(true);
   }
 
   ajouterComposant(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m || !this.composantForm.nom.trim()) return;
     this.saving.set(true);
@@ -336,6 +347,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   }
 
   retirerComposant(idComposant: number): void {
+    if (this.lectureSeule()) return;
     if (!confirm('Retirer ce composant du kit ?')) return;
     this.materielService.retirerComposant(idComposant).subscribe(() => {
       const m = this.selected();
@@ -346,6 +358,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   // --- Maintenance ---
 
   ouvrirFormMaintenance(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.maintenanceForm = this.emptyMaintenanceRequest(m.idMateriel);
@@ -353,6 +366,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   }
 
   creerMaintenance(): void {
+    if (this.lectureSeule()) return;
     this.saving.set(true);
     this.materielService.creerMaintenance(this.maintenanceForm).subscribe({
       next: () => {
@@ -370,6 +384,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   }
 
   cloturerMaintenance(id: number): void {
+    if (this.lectureSeule()) return;
     this.materielService.cloturerMaintenance(id).subscribe(() => {
       const m = this.selected();
       if (m) {
@@ -385,6 +400,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   // =================================================================
 
   ouvrirCreation(mode: ModeCreation): void {
+    if (this.lectureSeule()) return;
     this.errorMessage.set(null);
     this.createMode.set(mode);
     this.simpleForm = this.emptyMaterielRequest();
@@ -410,6 +426,7 @@ private emptyAchatRequest(): CreerAchatRequest {
   }
 
   soumettreCreation(): void {
+    if (this.lectureSeule()) return;
     this.errorMessage.set(null);
     if (this.createMode() === 'simple') {
       if (!this.simpleForm.reference.trim() || !this.simpleForm.nom.trim() || !this.simpleForm.idCategorie) {

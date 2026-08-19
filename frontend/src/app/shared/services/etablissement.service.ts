@@ -7,7 +7,8 @@ import { Etablissement, EtablissementKpi, EtablissementRequest } from '../models
 @Injectable({ providedIn: 'root' })
 export class EtablissementService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/admin/etablissements`;
+  // Modification ici : suppression de "/admin" pour correspondre au nouveau contrôleur Spring Boot
+  private readonly apiUrl = `${environment.apiUrl}/etablissements`;
 
   getAll(): Observable<Etablissement[]> {
     return this.http.get<Etablissement[]>(this.apiUrl);

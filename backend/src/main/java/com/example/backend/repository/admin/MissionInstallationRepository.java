@@ -7,13 +7,19 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+
 @Repository
 public interface MissionInstallationRepository extends JpaRepository<MissionInstallation, Integer> {
 
     // Compter le nombre de missions liées à un établissement
     @Query("SELECT COUNT(m) FROM MissionInstallation m WHERE m.etablissement.idEtablissement = :idEtablissement")
     long countByEtablissementIdEtablissement(@Param("idEtablissement") Integer idEtablissement);
+
     List<MissionInstallation> findByEtablissementIdEtablissement(Integer idEtablissement);
+
+    // [NOUVEAU] Récupérer les missions par équipe technique
+    List<MissionInstallation> findByEquipeIdEquipe(Integer idEquipe);
+
     // Supprimer les missions liées à un établissement en mode force
     @Modifying
     @Query("DELETE FROM MissionInstallation m WHERE m.etablissement.idEtablissement = :idEtablissement")
