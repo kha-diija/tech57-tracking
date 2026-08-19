@@ -15,18 +15,21 @@ import {
 } from 'lucide-angular';
 import { SortieMaterielGestionService } from './services/sortie-materiel.service';
 import { SortieMaterielDto } from './models/sortie.model';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationService } from '../../../shared/services/confirmation.service';
 
 type StatutFiltre = 'En attente' | 'Validée' | 'Rejetée';
 
 @Component({
   selector: 'app-sorties-stock',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ConfirmationDialogComponent],
   templateUrl: './sorties.html',
   styleUrl: './sorties.scss',
 })
 export class SortiesStock implements OnInit {
   private sortieService = inject(SortieMaterielGestionService);
+  private confirmationService = inject(ConfirmationService);
 
   readonly icons = { PackageCheck, Clock, User, MapPin, AlertTriangle, RefreshCw, X, CheckCircle2, XCircle };
 
@@ -63,12 +66,27 @@ export class SortiesStock implements OnInit {
     });
   }
 
-  approuver(s: SortieMaterielDto): void {
-    if (!confirm(`Approuver la sortie #${s.idSortie} pour ${s.technicienNom} ?`)) return;
+  /**
+   * Approuver une sortie avec confirmation modal (orange)
+   */
+  async approuver(s: SortieMaterielDto): Promise<void> {
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Approuver la sortie',
+      message: `Approuver la sortie #${s.idSortie} pour ${s.technicienNom} ? Le matériel sera considéré comme distribué.`,
+      confirmText: 'Approuver',
+      cancelText: 'Annuler',
+      variant: 'warning' // Orange
+    });
+
+    if (!confirmed) return;
+
     this.actionLoading.set(s.idSortie);
     this.errorMessage.set(null);
     this.sortieService.approuver(s.idSortie).subscribe({
-      next: () => { this.actionLoading.set(null); this.charger(); },
+      next: () => { 
+        this.actionLoading.set(null); 
+        this.charger(); 
+      },
       error: (err) => {
         this.errorMessage.set(err?.error?.message ?? "Erreur lors de l'approbation");
         this.actionLoading.set(null);
