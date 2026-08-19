@@ -1,0 +1,222 @@
+<div class="gs-etab">
+  <!-- En-tête de la page -->
+  <div class="gs-etab__header">
+    <div>
+      <div class="gs-etab__eyebrow">
+        <span class="gs-etab__eyebrow-dot"></span>
+        Espace Technicien
+      </div>
+      <h1 class="gs-etab__title">Missions de mon équipe</h1>
+      <p class="gs-etab__subtitle">Consultez, créez et suivez les missions assignées à votre équipe technique.</p>
+    </div>
+    <div class="gs-etab__actions">
+      <button (click)="onExport()" class="btn btn--ghost">
+        <lucide-icon [name]="icons.Download" class="w-4 h-4"></lucide-icon>
+        Exporter CSV
+      </button>
+      <button (click)="openCreateForm()" class="btn btn--primary">
+        <lucide-icon [name]="icons.Plus" class="w-4 h-4"></lucide-icon>
+        Nouvelle Mission
+      </button>
+    </div>
+  </div>
+
+  <!-- Barre de recherche et filtres -->
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <lucide-icon [name]="icons.Search" class="w-4 h-4"></lucide-icon>
+      <input
+        type="text"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+        placeholder="Rechercher par titre, référence, établissement, équipe..."
+      />
+    </div>
+
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+      <button
+        (click)="selectedStatutFilter.set('tous')"
+        [class.btn--primary]="selectedStatutFilter() === 'tous'"
+        [class.btn--ghost]="selectedStatutFilter() !== 'tous'"
+        class="btn text-xs py-2">
+        Tous
+      </button>
+      <button
+        *ngFor="let st of statutOptions"
+        (click)="selectedStatutFilter.set(st)"
+        [class.btn--primary]="selectedStatutFilter() === st"
+        [class.btn--ghost]="selectedStatutFilter() !== st"
+        class="btn text-xs py-2">
+        {{ st }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Tableau des missions -->
+  <div class="panel">
+    <div class="table-wrapper">
+      <table class="etab-table">
+        <thead>
+          <tr>
+            <th>Référence / Titre</th>
+            <th>Établissement</th>
+            <th>Équipe Technique</th>
+            <th>Statut</th>
+            <th>Budget Proposé</th>
+            <th>Date Création</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isLoading()">
+            <td colspan="7" class="etab-table__empty">Chargement des missions...</td>
+          </tr>
+          <tr *ngIf="!isLoading() && filteredMissions().length === 0">
+            <td colspan="7" class="etab-table__empty">Aucune mission trouvée pour votre équipe.</td>
+          </tr>
+          <tr *ngFor="let item of filteredMissions()">
+            <td>
+              <span class="etab-table__name">{{ item.titre }}</span>
+              <span class="id-tag">{{ item.reference }}</span>
+            </td>
+            <td>
+              <div class="location-chain">
+                <lucide-icon [name]="icons.Building2" class="w-4 h-4 text-muted"></lucide-icon>
+                <span>{{ item.etablissementDesignation }}</span>
+              </div>
+              <div *ngIf="getResponsableForEtablissement(item.idEtablissement) as resp" class="text-xs text-muted mt-0.5">
+                Resp: {{ resp.prenom }} {{ resp.nom }}
+              </div>
+            </td>
+            <!-- Affichage du nom de l'équipe -->
+            <td>
+              <span class="badge badge--neutral" *ngIf="item.equipeNom; else noTeam">
+                {{ item.equipeNom }}
+              </span>
+              <ng-template #noTeam>
+                <span class="text-xs text-muted">Aucune équipe</span>
+              </ng-template>
+            </td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'badge--warning': item.statut === 'Planifiée',
+                  'badge--info': item.statut === 'En cours',
+                  'badge--success': item.statut === 'Terminée',
+                  'badge--danger': item.statut === 'Annulée'
+                }">
+                {{ item.statut }}
+              </span>
+            </td>
+            <td class="font-medium text-white">
+              {{ item.budgetPropose ? (item.budgetPropose | number:'1.2-2') + ' DH' : '—' }}
+            </td>
+            <td class="text-muted text-xs">
+              {{ item.dateCreation | date:'dd/MM/yyyy HH:mm' }}
+            </td>
+            <td class="text-right">
+              <button
+                (click)="openEditForm(item)"
+                class="icon-btn"
+                title="Modifier">
+                <lucide-icon [name]="icons.Pencil" class="w-4 h-4"></lucide-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Panneau latéral / Modale formulaire -->
+  <div *ngIf="showForm()">
+    <div class="side-panel-backdrop" (click)="closeForm()"></div>
+    <div class="side-panel">
+      
+      <!-- En-tête du tiroir -->
+      <div class="side-panel__header">
+        <h2>{{ editingId() ? 'Modifier la mission' : 'Nouvelle mission' }}</h2>
+        <button (click)="closeForm()" class="icon-btn">
+          <lucide-icon [name]="icons.X" class="w-5 h-5"></lucide-icon>
+        </button>
+      </div>
+
+      <!-- Corps du formulaire -->
+      <div class="side-panel__body">
+        <div class="form-group">
+          <label>Référence *</label>
+          <input
+            type="text"
+            [ngModel]="formModel().reference"
+            (ngModelChange)="updateField('reference', $event)"
+            placeholder="Ex: M-2026-001"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Titre de la mission *</label>
+          <input
+            type="text"
+            [ngModel]="formModel().titre"
+            (ngModelChange)="updateField('titre', $event)"
+            placeholder="Ex: Installation réseau site principal"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Établissement *</label>
+          <select
+            [ngModel]="formModel().idEtablissement"
+            (ngModelChange)="updateField('idEtablissement', +$event)">
+            <option [value]="null" disabled>Sélectionner un établissement</option>
+            <option *ngFor="let etab of etablissementsList()" [value]="etab.idEtablissement">
+              {{ etab.designation }} ({{ etab.reference }})
+            </option>
+          </select>
+          <div *ngIf="selectedResponsable() as resp" class="responsable-card mt-2">
+            <div class="responsable-card__row">
+              <lucide-icon [name]="icons.User" class="w-3.5 h-3.5 text-orange-500"></lucide-icon>
+              <span><strong>Responsable :</strong> {{ resp.prenom }} {{ resp.nom }} ({{ resp.telephone }})</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Statut</label>
+            <select
+              [ngModel]="formModel().statut"
+              (ngModelChange)="updateField('statut', $event)">
+              <option *ngFor="let st of statutOptions" [value]="st">{{ st }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Budget Proposé (DH)</label>
+            <input
+              type="number"
+              [ngModel]="formModel().budgetPropose"
+              (ngModelChange)="updateField('budgetPropose', $event ? +$event : null)"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+
+        <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-400 mt-4">
+          ℹ️ Cette mission sera automatiquement rattachée à votre équipe technique et une notification instantanée sera envoyée aux administrateurs.
+        </div>
+      </div>
+
+      <!-- Pied du tiroir -->
+      <div class="side-panel__footer">
+        <button (click)="closeForm()" class="btn btn--ghost">
+          Annuler
+        </button>
+        <button (click)="saveForm()" class="btn btn--primary">
+          {{ editingId() ? 'Enregistrer les modifications' : 'Créer la mission' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

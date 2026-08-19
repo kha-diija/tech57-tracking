@@ -1,4 +1,4 @@
-package com.example.backend.controller.admin;
+package com.example.backend.controller;
 
 import com.example.backend.dto.admin.etablissement.CommuneResponse;
 import com.example.backend.dto.admin.etablissement.ProvinceResponse;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/admin/locations")
+@RequestMapping("/api/locations")
 public class LocationController {
 
     private final RegionRepository regionRepository;
