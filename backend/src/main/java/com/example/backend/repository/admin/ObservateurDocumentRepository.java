@@ -19,4 +19,7 @@ public interface ObservateurDocumentRepository extends JpaRepository<Observateur
     List<ObservateurDocument> findByObservateur_Id(Integer idObservateur);
 
     List<ObservateurDocument> findByDocument_IdSourceAndActifTrue(Integer idSource);
+
+    Optional<ObservateurDocument> findByObservateur_IdAndDocument_IdSourceAndActifTrue(
+            Integer idObservateur, Integer idSource);
 }

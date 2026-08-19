@@ -34,6 +34,13 @@
         <span class="kpi-value">{{ kpis.enCours }}</span>
       </div>
     </div>
+    <div class="kpi-card" *ngIf="kpis.enRetard > 0">
+      <div class="kpi-icon-wrapper red"><lucide-icon [img]="icons.AlertCircle" [size]="24"></lucide-icon></div>
+      <div class="kpi-content">
+        <span class="kpi-label">En Retard</span>
+        <span class="kpi-value">{{ kpis.enRetard }}</span>
+      </div>
+    </div>
     <div class="kpi-card">
       <div class="kpi-icon-wrapper green"><lucide-icon [img]="icons.CheckCircle" [size]="24"></lucide-icon></div>
       <div class="kpi-content">
@@ -70,7 +77,7 @@
             <th>ID</th>
             <th>Mission</th>
             <th>Technicien & GPS</th>
-            <th>Check-in / Check-out</th>
+            <th>Date prévue</th>
             <th>Validation (Règle 2 visites)</th>
             <th>Avancement</th>
             <th>Statut</th>
@@ -88,15 +95,22 @@
                   <lucide-icon [img]="icons.Map" [size]="12"></lucide-icon> {{ item.localisationGps || 'GPS Actif' }}
                 </div>
               </td>
+
+              <!-- --- Colonne date prévue + alerte "En retard" --- -->
               <td class="text-muted text-sm">
                 <div class="d-flex align-center gap-1">
-                  <lucide-icon [img]="icons.Clock" [size]="12"></lucide-icon> In: {{ item.dateDebut | date:'dd/MM HH:mm' }}
+                  <lucide-icon [img]="icons.Calendar" [size]="12"></lucide-icon>
+                  {{ item.datePrevue | date:'dd/MM HH:mm' }}
                 </div>
-                <div class="d-flex align-center gap-1 mt-1" *ngIf="item.dateFin">
-                  <lucide-icon [img]="icons.CheckCircle" [size]="12"></lucide-icon> Out: {{ item.dateFin | date:'dd/MM HH:mm' }}
+                <div class="text-xs text-danger mt-1" *ngIf="item.statut === 'En retard'">
+                  <lucide-icon [img]="icons.AlertCircle" [size]="12"></lucide-icon>
+                  En retard — aucun technicien ne l'a visitée
                 </div>
-                <div class="text-xs text-orange mt-1" *ngIf="!item.dateFin">En cours...</div>
+                <div class="text-xs text-orange mt-1" *ngIf="aUneVisiteEnCours(item)">
+                  Visite en cours...
+                </div>
               </td>
+
               <td>
                 <span class="visit-badge" [ngClass]="{'valid': item.numeroVisite >= 2}">
                   Visite n°{{ item.numeroVisite }}
@@ -105,6 +119,7 @@
                   (Min. 2 visites requises)
                 </div>
               </td>
+
               <td>
                 <div class="d-flex align-center gap-2">
                   <div class="progress-container">
@@ -113,18 +128,20 @@
                   <span class="fw-bold">{{ item.tauxAvancement }}%</span>
                 </div>
               </td>
+
               <td>
-                <!-- CORRECTION DU STATUT DANS LE TABLEAU -->
-                <span class="badge" 
+                <span class="badge"
                       [ngClass]="{
                         'badge-success': item.statut === 'Exécutée',
                         'badge-blue': item.statut === 'En cours',
                         'badge-warning': item.statut === 'Planifiée',
+                        'badge-danger': item.statut === 'En retard',
                         'badge-gray': item.statut === 'Clôturée'
                       }">
                   {{ item.statut }}
                 </span>
               </td>
+
               <td>
                 <div class="actions-cell">
                   <button class="action-btn" title="Détails & Check-in" (click)="voirDetails(item.id)">
@@ -159,7 +176,11 @@
 <div class="modal-backdrop" *ngIf="showModal">
   <div class="modal-content form-modal-content">
     <h2>{{ isEditMode ? 'Modifier l\'intervention' : 'Nouvelle Intervention' }}</h2>
-    
+
+    <div class="form-error" *ngIf="formError">
+      <lucide-icon [img]="icons.AlertCircle" [size]="16"></lucide-icon> {{ formError }}
+    </div>
+
     <div class="form-group mt-3">
       <label>Mission d'Installation</label>
       <select [(ngModel)]="selectedIntervention.missionId" class="form-select">
@@ -180,14 +201,19 @@
       </select>
     </div>
 
+    <!-- --- Date PRÉVUE : seule date saisie par l'admin --- -->
     <div class="form-group mt-3">
-      <label>Date et Heure de Début</label>
-      <input type="datetime-local" [(ngModel)]="selectedIntervention.dateDebut">
+      <label>Date prévue de l'intervention</label>
+      <input type="datetime-local" [(ngModel)]="selectedIntervention.datePrevue">
+      <small class="text-muted">
+        Le check-in / check-out réel de chaque visite sera enregistré par le technicien sur le terrain.
+      </small>
     </div>
 
-    <div class="form-group mt-3">
-      <label>Numéro de Visite (Initialisé à 0)</label>
-      <input type="number" [(ngModel)]="selectedIntervention.numeroVisite" min="0" max="5">
+    <!-- Numéro de visite : lecture seule, calculé, visible uniquement en édition -->
+    <div class="form-group mt-3" *ngIf="isEditMode">
+      <label>Nombre de visites effectuées</label>
+      <input type="number" [(ngModel)]="selectedIntervention.numeroVisite" min="0" readonly>
     </div>
 
     <div class="form-group mt-3">
@@ -198,10 +224,11 @@
     <div class="form-group mt-3">
       <label>Statut</label>
       <select [(ngModel)]="selectedIntervention.statut" class="form-select">
-        <option value="Planifiée">Planifiée</option>
-        <option value="En cours">En cours</option>
-        <option value="Exécutée">Exécutée</option>
+        <option *ngFor="let s of statutOptionsEditables" [value]="s">{{ s }}</option>
       </select>
+      <small class="text-muted" *ngIf="isEditMode">
+        "Exécutée" sera refusé par le serveur tant que 2 visites (check-in + check-out) ne sont pas terminées.
+      </small>
     </div>
 
     <div class="modal-actions mt-4">
@@ -212,27 +239,24 @@
 </div>
 
 <!-- =========================================================== -->
-<!-- MODALE DETAILS & CHECK-IN (MISE À JOUR COMPLÈTE) -->
+<!-- MODALE DETAILS & CHECK-IN -->
 <!-- =========================================================== -->
 <div class="modal-backdrop detail-modal-backdrop" *ngIf="showDetailModal">
   <div class="detail-modal-wrapper" (click)="$event.stopPropagation()">
-    
-    <!-- En-tête de la modale -->
+
     <div class="detail-modal-header">
       <div>
         <h2>Détails de l'Intervention <span class="text-muted">#{{ currentDetail?.id }}</span></h2>
         <p class="text-muted text-sm">Informations complètes, photos et attestation de l'intervention terrain.</p>
       </div>
-      <button class="close-btn-detail" (click)="fermerDetailModal()">
-        <lucide-icon [img]="icons.Trash2" [size]="0"></lucide-icon> ✕
-      </button>
+      <button class="close-btn-detail" (click)="fermerDetailModal()">✕</button>
     </div>
 
     <div class="detail-modal-body">
-      
-      <!-- COLONNE DE GAUCHE : Informations & GPS -->
+
+      <!-- COLONNE DE GAUCHE -->
       <div class="detail-left-col">
-        
+
         <div class="info-card">
           <div class="info-grid">
             <div class="info-item">
@@ -246,11 +270,11 @@
             <div class="info-item full-width">
               <span class="label">Statut</span>
               <span class="value">
-                <!-- CORRECTION DU STATUT DANS LA MODALE -->
                 <span class="badge" [ngClass]="{
                   'badge-success': currentDetail?.statut === 'Exécutée',
                   'badge-blue': currentDetail?.statut === 'En cours',
                   'badge-warning': currentDetail?.statut === 'Planifiée',
+                  'badge-danger': currentDetail?.statut === 'En retard',
                   'badge-gray': currentDetail?.statut === 'Clôturée'
                 }">
                   {{ currentDetail?.statut }}
@@ -260,19 +284,17 @@
           </div>
         </div>
 
+        <!-- --- Date prévue + alerte retard --- -->
         <div class="info-card">
           <div class="info-grid">
-            <div class="info-item half">
-              <span class="label">Check-in (Début)</span>
-              <span class="value">{{ currentDetail?.dateDebut | date:'dd/MM/yyyy HH:mm' }}</span>
+            <div class="info-item full-width">
+              <span class="label">📅 Date prévue</span>
+              <span class="value">{{ currentDetail?.datePrevue | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
-            <div class="info-item half" *ngIf="currentDetail?.dateFin">
-              <span class="label">Check-out (Fin)</span>
-              <span class="value">{{ currentDetail?.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-            <div class="info-item half" *ngIf="!currentDetail?.dateFin">
-              <span class="label text-orange">En cours...</span>
-            </div>
+          </div>
+          <div class="text-danger mt-2 d-flex align-center gap-1" *ngIf="currentDetail?.statut === 'En retard'">
+            <lucide-icon [img]="icons.AlertCircle" [size]="14"></lucide-icon>
+            Date prévue dépassée — aucun technicien ne s'est présenté.
           </div>
         </div>
 
@@ -282,7 +304,7 @@
               <span class="label">📍 Localisation</span>
               <div class="value location-box">
                 <div class="gps-coord">
-                  <lucide-icon [img]="icons.MapPin" [size]="14"></lucide-icon> 
+                  <lucide-icon [img]="icons.MapPin" [size]="14"></lucide-icon>
                   <span class="text-muted">{{ currentDetail?.localisationGps || 'Non renseignée' }}</span>
                 </div>
                 <div class="city-name">
@@ -294,16 +316,33 @@
           </div>
         </div>
 
+        <!-- --- Historique des visites (chacune avec son check-in/check-out) --- -->
         <div class="info-card">
-          <div class="info-grid">
-            <div class="info-item full-width">
-              <span class="label">👁️ Visites</span>
-              <span class="value">
-                <span class="visit-badge" [ngClass]="{'valid': currentDetail?.numeroVisite! >= 2}">
-                  Visite n°{{ currentDetail?.numeroVisite }} / 2 requis
-                </span>
-              </span>
-            </div>
+          <h3 class="section-title">
+            <lucide-icon [img]="icons.Clock" [size]="16"></lucide-icon>
+            Historique des visites ({{ currentDetail?.checkInOuts?.length || 0 }})
+          </h3>
+
+          <div class="text-muted text-sm mt-2" *ngIf="!currentDetail?.checkInOuts?.length">
+            Aucune visite enregistrée pour le moment.
+          </div>
+
+          <div class="visite-row mt-2" *ngFor="let v of currentDetail?.checkInOuts">
+            <span class="visit-badge" [ngClass]="{'valid': v.dateHeureCheckout}">
+              Visite n°{{ v.numeroVisite }}
+            </span>
+            <span class="text-sm d-flex align-center gap-1">
+              <lucide-icon [img]="icons.Clock" [size]="12"></lucide-icon>
+              In : {{ v.dateHeureCheckin | date:'dd/MM HH:mm' }}
+            </span>
+            <span class="text-sm d-flex align-center gap-1" *ngIf="v.dateHeureCheckout">
+              <lucide-icon [img]="icons.CheckCircle" [size]="12"></lucide-icon>
+              Out : {{ v.dateHeureCheckout | date:'dd/MM HH:mm' }}
+              <em *ngIf="v.dureeMinutes">({{ v.dureeMinutes }} min)</em>
+            </span>
+            <span class="badge badge-warning" *ngIf="!v.dateHeureCheckout">
+              En cours — pas de check-out
+            </span>
           </div>
         </div>
 
@@ -311,19 +350,17 @@
 
       <!-- COLONNE DE DROITE : Photos, Attestation & STOCK -->
       <div class="detail-right-col">
-        
-        <!-- SECTION PHOTOS -->
+
         <div class="media-card">
           <div class="media-header">
             <h3 class="section-title"><lucide-icon [img]="icons.Image" [size]="16"></lucide-icon> Photos</h3>
           </div>
-          
+
           <div class="photo-grid-container" *ngIf="currentDetail?.photos && currentDetail?.photos!.length > 0; else noPhotos">
             <div class="photo-item" *ngFor="let photo of currentDetail?.photos">
               <div class="photo-type" [ngClass]="photo.typePhoto.toLowerCase()">{{ photo.typePhoto }}</div>
               <div class="photo-img-wrapper">
                 <img [src]="photo.cheminFichier" (error)="onImageError($event)" alt="Photo {{ photo.typePhoto }}">
-                <!-- Bouton Télécharger l'image -->
                 <a [href]="photo.cheminFichier" download class="photo-download-btn" title="Télécharger cette photo">
                   <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon>
                 </a>
@@ -338,12 +375,11 @@
           </ng-template>
         </div>
 
-        <!-- SECTION ATTESTATION -->
         <div class="media-card">
           <div class="media-header">
             <h3 class="section-title"><lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon> Attestation</h3>
           </div>
-          
+
           <div *ngIf="currentDetail?.attestation as att; else noAttestation" class="attestation-body">
             <div class="att-row">
               <span class="label">Signataire</span>
@@ -361,8 +397,6 @@
                 </span>
               </span>
             </div>
-            
-            <!-- Bouton Télécharger l'attestation -->
             <div class="att-actions">
               <button class="btn btn-primary btn-sm" (click)="downloadAttestation(currentDetail?.id!)">
                 <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon> Télécharger le PDF
@@ -377,25 +411,15 @@
           </ng-template>
         </div>
 
-        <!-- ========================================================== -->
-        <!-- NOUVELLE SECTION : SUIVI DU MATÉRIEL (STOCK & CHECKLIST) -->
-        <!-- ========================================================== -->
         <div class="media-card" *ngIf="currentDetail?.sortiesMateriel?.length || currentDetail?.retoursMateriel?.length || currentDetail?.checklistItems?.length">
           <div class="media-header">
             <h3 class="section-title"><lucide-icon [img]="icons.Package" [size]="16"></lucide-icon> Suivi du Matériel</h3>
           </div>
 
-          <!-- Sorties de matériel -->
           <div *ngIf="currentDetail?.sortiesMateriel?.length" class="stock-section">
             <h4 class="sub-title text-orange">📤 Sorties de stock</h4>
             <table class="mini-table">
-              <thead>
-                <tr>
-                  <th>Réf. Matériel</th>
-                  <th>Qté</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Réf. Matériel</th><th>Qté</th><th>Date</th></tr></thead>
               <tbody>
                 <tr *ngFor="let s of currentDetail?.sortiesMateriel">
                   <td><strong>{{ s.materielReference }}</strong></td>
@@ -406,18 +430,10 @@
             </table>
           </div>
 
-          <!-- Retours de matériel -->
           <div *ngIf="currentDetail?.retoursMateriel?.length" class="stock-section mt-2">
             <h4 class="sub-title text-orange">📥 Retours de stock</h4>
             <table class="mini-table">
-              <thead>
-                <tr>
-                  <th>Réf. Matériel</th>
-                  <th>Qté</th>
-                  <th>État</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Réf. Matériel</th><th>Qté</th><th>État</th><th>Date</th></tr></thead>
               <tbody>
                 <tr *ngFor="let r of currentDetail?.retoursMateriel">
                   <td><strong>{{ r.materielReference }}</strong></td>
@@ -434,18 +450,10 @@
             </table>
           </div>
 
-          <!-- Checklist -->
           <div *ngIf="currentDetail?.checklistItems?.length" class="stock-section mt-2">
             <h4 class="sub-title text-orange">📋 Checklist d'installation</h4>
             <table class="mini-table">
-              <thead>
-                <tr>
-                  <th>Réf. Matériel</th>
-                  <th>Qté</th>
-                  <th>État constaté</th>
-                  <th>Conforme</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Réf. Matériel</th><th>Qté</th><th>État constaté</th><th>Conforme</th></tr></thead>
               <tbody>
                 <tr *ngFor="let c of currentDetail?.checklistItems">
                   <td><strong>{{ c.materielReference }}</strong></td>
@@ -462,17 +470,12 @@
           </div>
         </div>
 
-      </div> <!-- Fin detail-right-col -->
+      </div>
 
-    </div> <!-- Fin detail-modal-body -->
+    </div>
 
-    <!-- ========================================================== -->
-    <!-- PIED DE PAGE DE LA MODALE (AVEC BOUTONS RAPPORT & CLÔTURE) -->
-    <!-- ========================================================== -->
     <div class="detail-modal-footer">
-      
-      <!-- Actions conditionnelles (Uniquement si le statut est 'Exécutée' ET que la modale est ouverte) -->
-      <div class="footer-actions" *ngIf="showDetailModal && currentDetail?.statut === 'Exécutée'">
+      <div class="footer-actions" *ngIf="currentDetail?.statut === 'Exécutée'">
         <button class="btn btn-secondary" (click)="genererRapport(currentDetail?.id!)">
           <lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon> Générer le rapport
         </button>
@@ -480,53 +483,41 @@
           <lucide-icon [img]="icons.CheckCircle" [size]="16"></lucide-icon> Valider et Clôturer
         </button>
       </div>
-
-      <!-- Toujours visible : bouton Fermer -->
       <button class="btn btn-secondary" style="margin-left: auto;" (click)="fermerDetailModal()">Fermer</button>
     </div>
 
   </div>
 </div>
 
-<!-- ============================================ -->
 <!-- MODALE : CONFIRMATION DE SUPPRESSION -->
-<!-- ============================================ -->
 <div class="modal-backdrop" *ngIf="showDeleteModal">
   <div class="modal-content delete-modal">
-    
     <div class="delete-icon-wrapper">
       <lucide-icon [img]="icons.Trash2" [size]="48" class="delete-icon"></lucide-icon>
     </div>
-
     <h2>Confirmer la suppression</h2>
     <p class="delete-description">
       Êtes-vous sûr de vouloir supprimer l'intervention <strong>#{{ deleteTargetId }}</strong> ?<br>
       <span class="text-muted">Cette action est irréversible.</span>
     </p>
-
     <div class="modal-actions delete-actions">
       <button class="btn btn-secondary" (click)="fermerModalSuppression()">Annuler</button>
       <button class="btn btn-danger" (click)="confirmerSuppression()">Supprimer</button>
     </div>
-
   </div>
 </div>
 
-<!-- ============================================ -->
-<!-- MODALE : CONFIRMATION DE CLÔTURE (NOUVEAU DESIGN) -->
-<!-- ============================================ -->
+<!-- MODALE : CONFIRMATION DE CLÔTURE -->
 <div class="modal-backdrop" *ngIf="showConfirmCloseModal">
   <div class="modal-content confirm-modal">
     <div class="confirm-icon-wrapper">
       <lucide-icon [img]="icons.AlertCircle" [size]="48" class="confirm-icon"></lucide-icon>
     </div>
-
     <h2>Confirmer la clôture</h2>
     <p class="confirm-description">
       Êtes-vous sûr de vouloir valider et clôturer cette intervention ?<br>
       <span class="text-muted">Cette action est irréversible.</span>
     </p>
-
     <div class="modal-actions confirm-actions">
       <button class="btn btn-secondary" (click)="annulerCloture()">Annuler</button>
       <button class="btn btn-primary" (click)="confirmerCloture()">Confirmer</button>
