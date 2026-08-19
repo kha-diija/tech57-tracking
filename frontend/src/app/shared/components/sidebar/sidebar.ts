@@ -51,7 +51,10 @@ export class Sidebar {
   };
 
   private readonly allNavItems: NavItem[] = [
-    { label: 'Tableau de bord', route: '/admin/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
+
+    { label: 'Tableau de bord', route: '/admin/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'GESTIONNAIRE_STOCK'] },
+    { label: 'Tableau de bord', route: '/client/dashboard', icon: LayoutDashboard, roles: ['OBSERVATEUR'] },
+    { label: 'Mes ressources', route: '/observateur/ressources', icon: BookOpen, roles: ['OBSERVATEUR'] },
     { label: 'Établissements', route: '/admin/etablissements', icon: Building2, roles: ['ADMINISTRATEUR' , 'TECHNICIEN'] },
     { label: 'Missions', route: '/admin/missions', icon: Briefcase, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
     { label: 'Simulateur de trajet', route: '/admin/simulateur-trajet', icon: Route, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
@@ -61,10 +64,15 @@ export class Sidebar {
     { label: 'Utilisateurs', route: '/users', icon: Users, roles: ['ADMINISTRATEUR'] },
     { label: 'Observateurs', route: '/admin/observateurs', icon: Users, roles: ['ADMINISTRATEUR'] },
     { label: 'Assistant IA', route: '/chat-ia', icon: Bot, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
-    { label: 'Gestion des ressources', route: '/admin/ressources', icon: PackageSearch, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
+    { label: 'Gestion des ressources', route: '/admin/ressources', icon: PackageSearch, roles: ['ADMINISTRATEUR'] },
     { label: 'Gestion et suivi des interventions', route: '/admin/interventions', icon: ClipboardList, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
-    { label: 'Guides & Support', route: '/guides', icon: BookOpen, roles: ['ADMINISTRATEUR', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
+
+    
     { label: 'Paramètres', route: '/settings', icon: Settings, roles: ['ADMINISTRATEUR', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] }
+
+    // { label: 'Guides & Support', route: '/guides', icon: BookOpen, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
+    
+
   ];
 
   // Adapter dynamiquement les routes selon le rôle de l'utilisateur
