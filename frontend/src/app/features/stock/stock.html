@@ -9,7 +9,7 @@
         {{ totalElements() }} référence{{ totalElements() > 1 ? 's' : '' }} suivie{{ totalElements() > 1 ? 's' : '' }}
       </p>
     </div>
-    <div class="header-actions">
+    <div class="header-actions" *ngIf="!lectureSeule()">
       <button class="btn btn-ghost" (click)="ouvrirCreation('kit')">
         <lucide-icon [img]="icons.Boxes" [size]="18"></lucide-icon>
         <span>Nouveau kit</span>
@@ -105,7 +105,7 @@
       <lucide-icon [img]="icons.Package" [size]="40"></lucide-icon>
       <h3>Aucun matériel trouvé</h3>
       <p>Ajustez vos filtres ou ajoutez une nouvelle référence à l'inventaire.</p>
-      <button class="btn btn-primary" (click)="ouvrirCreation('simple')">
+      <button class="btn btn-primary" *ngIf="!lectureSeule()" (click)="ouvrirCreation('simple')">
         <lucide-icon [img]="icons.Plus" [size]="16"></lucide-icon>
         Ajouter un matériel
       </button>
@@ -151,7 +151,7 @@
   </header>
 
   <div class="drawer-toolbar">
-    <div class="etat-quickset">
+    <div class="etat-quickset" *ngIf="!lectureSeule()">
       <button
         *ngFor="let e of etats"
         type="button"
@@ -163,7 +163,13 @@
         <span class="dot"></span>{{ e }}
       </button>
     </div>
-    <div class="drawer-actions">
+    <div class="etat-quickset" *ngIf="lectureSeule()">
+      <span class="etat-chip active" [ngClass]="classeEtat(m.etat)">
+        <span class="dot"></span>{{ m.etat }}
+      </span>
+    </div>
+
+    <div class="drawer-actions" *ngIf="!lectureSeule()">
       <button type="button" class="icon-btn" title="Régénérer le QR" (click)="regenererQr()">
         <lucide-icon [img]="icons.RefreshCw" [size]="16"></lucide-icon>
       </button>
@@ -232,7 +238,7 @@
         </div>
 
         <!-- Vue édition -->
-        <form class="edit-form" *ngIf="editMode()" (ngSubmit)="enregistrerEdition()">
+        <form class="edit-form" *ngIf="editMode() && !lectureSeule()" (ngSubmit)="enregistrerEdition()">
           <label>Référence
             <input type="text" [(ngModel)]="editForm.reference" name="editReference" required />
           </label>
@@ -272,7 +278,7 @@
         <div class="composants-section" *ngIf="m.estKit">
           <div class="section-head">
             <h3><lucide-icon [img]="icons.Boxes" [size]="15"></lucide-icon> Composants</h3>
-            <button type="button" class="icon-btn" (click)="ouvrirFormComposant()">
+            <button type="button" class="icon-btn" *ngIf="!lectureSeule()" (click)="ouvrirFormComposant()">
               <lucide-icon [img]="icons.PackagePlus" [size]="16"></lucide-icon>
             </button>
           </div>
@@ -282,7 +288,7 @@
               <div class="composant-row">
                 <span class="composant-name">{{ comp.nom }}</span>
                 <span class="composant-qty" *ngIf="comp.quantiteComposant">×{{ comp.quantiteComposant }}</span>
-                <button type="button" class="icon-btn danger sm" (click)="retirerComposant(comp.idMateriel)">
+                <button type="button" class="icon-btn danger sm" *ngIf="!lectureSeule()" (click)="retirerComposant(comp.idMateriel)">
                   <lucide-icon [img]="icons.Trash2" [size]="13"></lucide-icon>
                 </button>
               </div>
@@ -292,7 +298,7 @@
             </li>
           </ul>
 
-          <form class="inline-form" *ngIf="showComposantForm()" (ngSubmit)="ajouterComposant()">
+          <form class="inline-form" *ngIf="showComposantForm() && !lectureSeule()" (ngSubmit)="ajouterComposant()">
             <input type="text" placeholder="Nom du composant" [(ngModel)]="composantForm.nom" name="compNom" required />
             <input type="text" placeholder="Référence (optionnel)" [(ngModel)]="composantForm.reference" name="compRef" />
             <input type="number" min="1" placeholder="Qté" [(ngModel)]="composantForm.quantiteComposant" name="compQty" />
@@ -327,7 +333,7 @@
       <section class="tab-panel" *ngIf="activeTab() === 'maintenance'">
         <div class="section-head">
           <h3><lucide-icon [img]="icons.Wrench" [size]="15"></lucide-icon> Historique</h3>
-          <button type="button" class="icon-btn" (click)="ouvrirFormMaintenance()">
+          <button type="button" class="icon-btn" *ngIf="!lectureSeule()" (click)="ouvrirFormMaintenance()">
             <lucide-icon [img]="icons.Plus" [size]="16"></lucide-icon>
           </button>
         </div>
@@ -337,7 +343,7 @@
           {{ errorMessage() }}
         </div>
 
-        <form class="inline-form" *ngIf="showMaintenanceForm()" (ngSubmit)="creerMaintenance()">
+        <form class="inline-form" *ngIf="showMaintenanceForm() && !lectureSeule()" (ngSubmit)="creerMaintenance()">
           <label>Date
             <input type="date" [(ngModel)]="maintenanceForm.dateMaintenance" name="mDate" required />
           </label>
@@ -370,7 +376,7 @@
                   <lucide-icon [img]="mt.disponible ? icons.CheckCircle2 : icons.AlertTriangle" [size]="13"></lucide-icon>
                   {{ mt.disponible ? 'Clôturée' : 'En cours' }}
                 </span>
-                <button type="button" class="btn btn-ghost sm" *ngIf="!mt.disponible" (click)="cloturerMaintenance(mt.idMaintenance)">
+                <button type="button" class="btn btn-ghost sm" *ngIf="!mt.disponible && !lectureSeule()" (click)="cloturerMaintenance(mt.idMaintenance)">
                   Clôturer
                 </button>
               </div>
@@ -384,9 +390,9 @@
 </aside>
 
 <!-- ============================= MODAL CRÉATION ============================= -->
-<div class="modal-backdrop" *ngIf="showCreateModal()" (click)="fermerCreation()"></div>
+<div class="modal-backdrop" *ngIf="showCreateModal() && !lectureSeule()" (click)="fermerCreation()"></div>
 
-<div class="create-modal" *ngIf="showCreateModal()">
+<div class="create-modal" *ngIf="showCreateModal() && !lectureSeule()">
   <header class="modal-header">
     <h2>Nouveau {{ createMode() === 'kit' ? 'kit' : 'matériel' }}</h2>
     <button type="button" class="icon-btn" (click)="fermerCreation()">
@@ -512,9 +518,9 @@
 </div>
 
 <!-- ============================= MODAL ACHAT ============================= -->
-<div class="modal-backdrop" *ngIf="showAchatModal()" (click)="fermerAchat()"></div>
+<div class="modal-backdrop" *ngIf="showAchatModal() && !lectureSeule()" (click)="fermerAchat()"></div>
 
-<div class="create-modal" *ngIf="showAchatModal()">
+<div class="create-modal" *ngIf="showAchatModal() && !lectureSeule()">
   <header class="modal-header">
     <h2>Nouvel achat</h2>
     <button type="button" class="icon-btn" (click)="fermerAchat()">

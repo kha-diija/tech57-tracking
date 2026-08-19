@@ -54,6 +54,7 @@
             <th>Référence</th>
             <th>Titre</th>
             <th>Établissement</th>
+            <th>Équipe Technique</th>
             <th>Responsable Établissement</th>
             <th>Admin Responsable</th>
             <th>Budget Proposé</th>
@@ -74,6 +75,12 @@
               <span class="location-chain">
                 <lucide-icon [img]="icons.Building2" [size]="12"></lucide-icon>
                 {{ mission.etablissementDesignation }}
+              </span>
+            </td>
+            <td>
+              <span class="location-chain">
+                <lucide-icon [img]="icons.Users" [size]="12"></lucide-icon>
+                {{ getEquipeNameForMission(mission.idEquipe) }}
               </span>
             </td>
             <td>
@@ -124,7 +131,7 @@
           </tr>
 
           <tr *ngIf="!isLoading() && filteredMissions().length === 0">
-            <td colspan="8" class="etab-table__empty">
+            <td colspan="9" class="etab-table__empty">
               Aucune mission d'installation ne correspond à vos critères.
             </td>
           </tr>
@@ -172,7 +179,7 @@
         <input type="text" [ngModel]="formModel().titre" (ngModelChange)="updateField('titre', $event)" placeholder="Installation équipement réseau" />
       </div>
 
-      <!-- Sélection de l'établissement (Remplit automatiquement l'ID de l'admin en arrière-plan) -->
+      <!-- Sélection de l'établissement -->
       <div class="form-group">
         <label>Établissement cible</label>
         <select [ngModel]="formModel().idEtablissement" (ngModelChange)="updateField('idEtablissement', +$event)">
@@ -209,7 +216,7 @@
           <input type="number" step="0.01" [ngModel]="formModel().budgetPropose" (ngModelChange)="updateField('budgetPropose', $event ? +$event : null)" placeholder="0.00" />
         </div>
         
-        <!-- Sélection de l'équipe technique par son nom -->
+        <!-- Sélection de l'équipe technique -->
         <div class="form-group">
           <label>Équipe Technique (Optionnel)</label>
           <select [ngModel]="formModel().idEquipe" (ngModelChange)="updateField('idEquipe', $event ? +$event : null)">

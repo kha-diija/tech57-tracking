@@ -19,6 +19,7 @@ import {
 } from 'lucide-angular';
 import { EtablissementService } from '../../../shared/services/etablissement.service';
 import { LocationService } from '../../../shared/services/location.service';
+import { AuthService } from '../../../shared/services/auth.service';
 import {
   Commune,
   Etablissement,
@@ -59,6 +60,12 @@ interface FormModel {
 export class GsEtablissement {
   private readonly etablissementService = inject(EtablissementService);
   private readonly locationService = inject(LocationService);
+  private readonly authService = inject(AuthService);
+
+  // Vérifie si l'utilisateur connecté est un administrateur (ajustez le libellé exact du rôle admin si besoin, ex: 'ADMIN', 'ADMINISTRATEUR')
+  readonly isAdmin = computed(() => {
+    return this.authService.hasRole('ADMINISTRATEUR') ;
+  });
 
   readonly icons = {
     Building2, MapPin, Users, UserX, Search, Plus, Download,
@@ -77,7 +84,7 @@ export class GsEtablissement {
   readonly selectedRegionFilter = signal<string>('toutes');
   readonly searchTerm = signal<string>('');
 
-  // --- Modale de confirmation personnalisée ---
+  // --- Modale de suppression (réservée à l'admin) ---
   readonly confirmModal = signal<{
     isOpen: boolean;
     title: string;
@@ -110,7 +117,7 @@ export class GsEtablissement {
     });
   });
 
-  // --- Panneau formulaire (création / édition) ---
+  // --- Panneau formulaire (création / édition accessible à tous les deux) ---
   readonly showForm = signal<boolean>(false);
   readonly editingId = signal<number | null>(null);
   readonly formModel = signal<FormModel>(this.emptyForm());
@@ -190,7 +197,7 @@ export class GsEtablissement {
   }
 
   // ============================================================
-  // --- Actions formulaire ---
+  // --- Actions formulaire (Créer / Modifier accessible au technicien et admin) ---
   // ============================================================
 
   openCreateForm(): void {
@@ -224,12 +231,16 @@ export class GsEtablissement {
       responsableEmail: item.responsable?.email ?? ''
     });
 
-    this.locationService.getProvinces(item.idRegion!).subscribe((provinces) => {
-      this.formProvinces.set(provinces);
-    });
-    this.locationService.getCommunes(item.idProvince!).subscribe((communes) => {
-      this.formCommunes.set(communes);
-    });
+    if (item.idRegion) {
+      this.locationService.getProvinces(item.idRegion).subscribe((provinces) => {
+        this.formProvinces.set(provinces);
+      });
+    }
+    if (item.idProvince) {
+      this.locationService.getCommunes(item.idProvince).subscribe((communes) => {
+        this.formCommunes.set(communes);
+      });
+    }
   }
 
   closeForm(): void {
@@ -272,7 +283,13 @@ export class GsEtablissement {
     });
   }
 
+  // ============================================================
+  // --- Suppression (Strictement réservée à l'Administrateur) ---
+  // ============================================================
+
   deleteEtablissement(item: Etablissement, force: boolean = false): void {
+    if (!this.isAdmin()) return; // Sécurité de blocage si ce n'est pas l'admin
+
     if (!force) {
       this.confirmModal.set({
         isOpen: true,
@@ -315,6 +332,8 @@ export class GsEtablissement {
   }
 
   executeDelete(): void {
+    if (!this.isAdmin()) return;
+
     const modal = this.confirmModal();
     if (!modal.item) {
       this.closeConfirmModal();
@@ -341,7 +360,6 @@ export class GsEtablissement {
           });
         } else {
           this.closeConfirmModal();
-          // Optionnel : afficher une notification d'erreur si besoin
         }
       }
     });
@@ -365,7 +383,7 @@ export class GsEtablissement {
   openOnMap(item: Etablissement): void {
     if (!item.localisationGps) return;
     const [lat, lng] = item.localisationGps.split(',').map((v) => v.trim());
-    window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
   }
 
   onExport(): void {
