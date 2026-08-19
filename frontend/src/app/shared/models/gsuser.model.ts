@@ -20,6 +20,13 @@ export interface CreateGsUserDto {
   password: string;
 }
 
+export interface UpdateGsUserDto {
+  firstname: string;
+  lastname: string;
+  email: string;
+  telephone?: string;
+}
+
 /**
  * Forme exacte renvoyée par le backend (UserResponseDto).
  * Sert uniquement à la conversion dans GsUserService — ne pas utiliser
