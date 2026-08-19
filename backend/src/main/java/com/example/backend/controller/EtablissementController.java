@@ -1,4 +1,4 @@
-package com.example.backend.controller.admin;
+package com.example.backend.controller;
 
 import com.example.backend.dto.admin.etablissement.EtablissementKpiResponse;
 import com.example.backend.dto.admin.etablissement.EtablissementRequest;
@@ -6,6 +6,7 @@ import com.example.backend.dto.admin.etablissement.EtablissementResponse;
 import com.example.backend.service.admin.EtablissementService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 @RestController
-@RequestMapping("/api/admin/etablissements")
+@RequestMapping("/api/etablissements")
 public class EtablissementController {
 
     private final EtablissementService etablissementService;
@@ -58,6 +59,7 @@ public class EtablissementController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRATEUR')")
     public ResponseEntity<?> delete(@PathVariable Integer id,
                                     @RequestParam(required = false, defaultValue = "false") boolean force) {
         try {
@@ -66,7 +68,6 @@ public class EtablissementController {
         } catch (NoSuchElementException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
         } catch (IllegalStateException ex) {
-            // Statut 409 Conflict renvoyant le message d'avertissement au front
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
         }
     }

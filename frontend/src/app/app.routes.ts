@@ -41,7 +41,12 @@ export const routes: Routes = [
       },
       { path: 'chat-ia', component: ChatIa },
       { path: 'guides', component: Guides },
-      { path: 'stock', component: Stock },
+      // APRÈS
+{ 
+  path: 'stock', 
+  component: Stock, 
+  canActivate: [roleGuard(['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK', 'TECHNICIEN'])] 
+},
 
      
       {
@@ -63,7 +68,7 @@ export const routes: Routes = [
       },
       {
         path: 'admin/etablissements',
-        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        canActivate: [roleGuard(['ADMINISTRATEUR' , 'TECHNICIEN'])],
         loadComponent: () =>
           import('./features/admin/Gs-etablissement/gs-etablissement').then((m) => m.GsEtablissement),
       },
@@ -104,6 +109,12 @@ export const routes: Routes = [
       //   loadComponent: () =>
       //     import('./features/client/client-dashboard').then((m) => m.ClientDashboard),
       // },
+      {
+        path: 'technicien/missions',
+        canActivate: [roleGuard(['TECHNICIEN'])],
+        loadComponent: () =>
+          import('./features/technicien/technicien-mission').then((m) => m.TechnicienMissionComponent),
+      },
       {
         path: 'client/dashboard',
         canActivate: [roleGuard(['OBSERVATEUR'])],

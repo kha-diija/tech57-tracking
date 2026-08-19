@@ -7,7 +7,7 @@ import { Region, Province, Commune } from '../models/etablissement.model';
 @Injectable({ providedIn: 'root' })
 export class LocationService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/admin/locations`;
+  private readonly apiUrl = `${environment.apiUrl}/locations`;
 
   getRegions(): Observable<Region[]> {
     return this.http.get<Region[]>(`${this.apiUrl}/regions`);

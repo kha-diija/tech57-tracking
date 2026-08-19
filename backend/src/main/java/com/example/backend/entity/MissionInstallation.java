@@ -34,7 +34,7 @@ public class MissionInstallation {
     private Etablissement etablissement;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_administrateur", nullable = false)
+    @JoinColumn(name = "id_administrateur", nullable = true)
     private Administrateur administrateur;
 
     @ManyToOne(fetch = FetchType.LAZY)

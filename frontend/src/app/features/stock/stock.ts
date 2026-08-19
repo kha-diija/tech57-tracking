@@ -62,7 +62,7 @@ export class Stock implements OnInit {
   private materielService = inject(MaterielService);
   private authService = inject(AuthService);
   private achatMaterielService = inject(AchatMaterielService);
-  private etablissementService = inject(EtablissementService);
+  private etablissementService = inject(EtablissementService); // Gardé de la branche main
 
   readonly icons = {
     Search, SlidersHorizontal, Plus, QrCode, Laptop, Projector, Cable, Router,
@@ -72,6 +72,9 @@ export class Stock implements OnInit {
   };
 
   readonly etats = ETATS;
+
+  // --- Accès lecture seule pour le rôle Technicien (Votre code) ---
+  readonly lectureSeule = computed(() => !this.authService.hasRole('ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'));
 
   // --- Liste / recherche ---
   materiels = signal<MaterielDTO[]>([]);
@@ -117,7 +120,7 @@ export class Stock implements OnInit {
   saving = signal(false);
   errorMessage = signal<string | null>(null);
 
-  // --- Modal Confirmation Personnalisée ---
+  // --- Modal Confirmation Personnalisée (De main) ---
   showConfirmModal = signal(false);
   confirmTitle = signal('');
   confirmMessage = signal('');
@@ -137,7 +140,7 @@ export class Stock implements OnInit {
   }
 
   // =================================================================
-  // Modal de Confirmation Personnalisée
+  // Modal de Confirmation Personnalisée (De main)
   // =================================================================
 
   demanderConfirmation(titre: string, message: string, action: () => void): void {
@@ -162,7 +165,7 @@ export class Stock implements OnInit {
   }
 
   // =================================================================
-  // Achat de stock
+  // Achat de stock (Sécurisé avec votre lectureSeule)
   // =================================================================
 
   peutAcheter(): boolean {
@@ -170,6 +173,7 @@ export class Stock implements OnInit {
   }
 
   ouvrirAchat(): void {
+    if (this.lectureSeule()) return; // Sécurité technicien
     this.achatError.set(null);
     this.achatForm = this.emptyAchatRequest();
     this.materielService.rechercher({ topLevelOnly: true, size: 500, page: 0 }).subscribe((res) => {
@@ -184,6 +188,7 @@ export class Stock implements OnInit {
   }
 
   soumettreAchat(): void {
+    if (this.lectureSeule()) return; // Sécurité technicien
     this.achatError.set(null);
     if (!this.achatForm.idMateriel || !this.achatForm.quantite || this.achatForm.quantite < 1) {
       this.achatError.set('Matériel et quantité (> 0) sont obligatoires');
@@ -268,10 +273,11 @@ export class Stock implements OnInit {
   }
 
   // =================================================================
-  // Suppressions
+  // Suppressions (Avec protection lectureSeule et confirmation)
   // =================================================================
 
   supprimerMateriel(m: MaterielDTO, event: Event): void {
+    if (this.lectureSeule()) return;
     event.stopPropagation();
     this.demanderConfirmation(
       'Supprimer le matériel',
@@ -286,6 +292,7 @@ export class Stock implements OnInit {
   }
 
   supprimerDepuisDrawer(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.demanderConfirmation(
@@ -349,10 +356,11 @@ export class Stock implements OnInit {
     }
   }
 
-  changerEtat(nouvelEtat: string): void {
+  changerEtat(etat: EtatMateriel): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
-    this.materielService.changerEtat(m.idMateriel, nouvelEtat as EtatMateriel).subscribe({
+    this.materielService.changerEtat(m.idMateriel, etat).subscribe({
       next: (updated: MaterielDTO) => {
         this.selected.set(updated);
         this.rechercher();
@@ -361,6 +369,7 @@ export class Stock implements OnInit {
   }
 
   regenererQr(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.materielService.regenererCodeQr(m.idMateriel).subscribe({
@@ -374,6 +383,7 @@ export class Stock implements OnInit {
   }
 
   entrerEditMode(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.editForm = {
@@ -389,6 +399,7 @@ export class Stock implements OnInit {
   }
 
   enregistrerEdition(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.saving.set(true);
@@ -408,11 +419,13 @@ export class Stock implements OnInit {
 
   // --- Composants (Kits) ---
   ouvrirFormComposant(): void {
+    if (this.lectureSeule()) return;
     this.composantForm = { nom: '', quantiteComposant: 1 };
     this.showComposantForm.set(true);
   }
 
   ajouterComposant(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.saving.set(true);
@@ -427,6 +440,7 @@ export class Stock implements OnInit {
   }
 
   retirerComposant(idComposant: number): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.materielService.retirerComposant(idComposant).subscribe({
@@ -436,6 +450,7 @@ export class Stock implements OnInit {
 
   // --- Maintenance ---
   ouvrirFormMaintenance(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.maintenanceForm = this.emptyMaintenanceRequest(m.idMateriel);
@@ -443,6 +458,7 @@ export class Stock implements OnInit {
   }
 
   creerMaintenance(): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.saving.set(true);
@@ -457,6 +473,7 @@ export class Stock implements OnInit {
   }
 
   cloturerMaintenance(idMaintenance: number): void {
+    if (this.lectureSeule()) return;
     const m = this.selected();
     if (!m) return;
     this.materielService.cloturerMaintenance(idMaintenance).subscribe({
@@ -469,6 +486,7 @@ export class Stock implements OnInit {
   // =================================================================
 
   ouvrirCreation(mode: ModeCreation = 'simple'): void {
+    if (this.lectureSeule()) return;
     this.createMode.set(mode);
     this.simpleForm = this.emptyMaterielRequest();
     this.kitForm = this.emptyKitRequest();
@@ -504,6 +522,7 @@ export class Stock implements OnInit {
   }
 
   soumettreCreation(): void {
+    if (this.lectureSeule()) return;
     this.saving.set(true);
     this.errorMessage.set(null);
 
