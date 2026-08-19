@@ -44,7 +44,7 @@
     <p class="dashboard__subtitle" *ngIf="!mesRessources().length">Aucune ressource ne vous a été partagée pour le moment.</p>
   </div>
 
-  <div class="lecture-grid" *ngIf="activeTab() === 'documents'">
+  <!-- <div class="lecture-grid" *ngIf="activeTab() === 'documents'">
     <div class="lecture-card" *ngFor="let d of mesDocuments()">
       <div class="lecture-card__icon"><lucide-icon [img]="icons.FileText" [size]="20"></lucide-icon></div>
       <div class="lecture-card__body">
@@ -55,5 +55,21 @@
       </div>
     </div>
     <p class="dashboard__subtitle" *ngIf="!mesDocuments().length">Aucun document ne vous a été partagé pour le moment.</p>
+  </div> -->
+  <div class="lecture-grid" *ngIf="activeTab() === 'documents'">
+  <div class="lecture-card lecture-card--clickable"
+       *ngFor="let d of mesDocuments()"
+       (click)="openDocument(d.idDocument)"
+       role="button"
+       tabindex="0">
+    <div class="lecture-card__icon"><lucide-icon [img]="icons.FileText" [size]="20"></lucide-icon></div>
+    <div class="lecture-card__body">
+      <h3 class="lecture-card__title">{{ d.nomFichier }}</h3>
+      <span class="badge">{{ d.typeDocument }}</span>
+      <span class="badge">Partagé par {{ d.assigneParAdminNom }}</span>
+      <span class="lecture-card__date">{{ d.dateAssignation | date:'dd/MM/yyyy' }}</span>
+    </div>
   </div>
+  <p class="dashboard__subtitle" *ngIf="!mesDocuments().length">Aucun document ne vous a été partagé pour le moment.</p>
+</div>
 </div>

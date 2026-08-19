@@ -6,7 +6,10 @@ import com.example.backend.service.observateur.ObservateurSelfService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
+import com.example.backend.dto.observateur.DocumentFileDto;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import java.util.List;
 
 @RestController
@@ -47,5 +50,17 @@ public class ObservateurController {
     @GetMapping("/dashboard/timeline")
     public ResponseEntity<List<TimelinePointDto>> getTimeline(Authentication authentication) {
         return ResponseEntity.ok(observateurSelfService.getTimeline(authentication.getName()));
+    }
+    @GetMapping("/documents/{idDocument}/view")
+    public ResponseEntity<Resource> viewDocument(@PathVariable Integer idDocument,
+                                                 Authentication authentication) {
+        DocumentFileDto file = observateurSelfService.getDocumentFileForViewing(
+                authentication.getName(), idDocument);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + file.getFilename() + "\"")
+                .body(file.getResource());
     }
 }

@@ -9,6 +9,16 @@ import com.example.backend.repository.admin.ObservateurResourceAssigneeRepositor
 import com.example.backend.repository.admin.ObservateurVideoAssigneeRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import com.example.backend.dto.observateur.DocumentFileDto;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import java.time.LocalDateTime;
 import java.time.temporal.WeekFields;
@@ -165,5 +175,54 @@ public class ObservateurSelfService {
         dto.setActif(a.getActif());
         dto.setAssigneParAdminNom(a.getAssigneParAdmin().getNom() + " " + a.getAssigneParAdmin().getPrenom());
         return dto;
+    }
+
+
+
+// ... dans la classe :
+
+    @Value("${app.storage.documents-path:ia/data}")
+    private String documentsStoragePath;
+
+    public DocumentFileDto getDocumentFileForViewing(String email, Integer idDocument) {
+        Observateur obs = resolveObservateur(email);
+
+        ObservateurDocument assignment = documentAssigneeRepository
+                .findByObservateur_IdAndDocument_IdSourceAndActifTrue(obs.getId(), idDocument)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Document introuvable ou non partagé avec vous."));
+
+        String nomFichier = assignment.getDocument().getNomFichier();
+
+        Path basePath = Paths.get(documentsStoragePath).normalize().toAbsolutePath();
+        Path filePath = basePath.resolve(nomFichier).normalize();
+
+        // Sécurité : empêche de sortir du dossier autorisé (path traversal)
+        if (!filePath.startsWith(basePath)) {
+            throw new SecurityException("Chemin de fichier invalide.");
+        }
+
+        Resource resource;
+        try {
+            resource = new UrlResource(filePath.toUri());
+        } catch (MalformedURLException e) {
+            throw new EntityNotFoundException("Fichier introuvable : " + nomFichier);
+        }
+
+        if (!resource.exists() || !resource.isReadable()) {
+            throw new EntityNotFoundException("Fichier introuvable ou illisible : " + nomFichier);
+        }
+
+        String contentType;
+        try {
+            contentType = Files.probeContentType(filePath);
+        } catch (IOException e) {
+            contentType = null;
+        }
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+        }
+
+        return new DocumentFileDto(resource, nomFichier, contentType);
     }
 }
