@@ -51,14 +51,13 @@ export class Sidebar {
   };
 
   private readonly allNavItems: NavItem[] = [
-
     { label: 'Tableau de bord', route: '/admin/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'GESTIONNAIRE_STOCK'] },
     { label: 'Tableau de bord', route: '/client/dashboard', icon: LayoutDashboard, roles: ['OBSERVATEUR'] },
     { label: 'Mes ressources', route: '/observateur/ressources', icon: BookOpen, roles: ['OBSERVATEUR'] },
-    { label: 'Établissements', route: '/admin/etablissements', icon: Building2, roles: ['ADMINISTRATEUR' , 'TECHNICIEN'] },
+    { label: 'Établissements', route: '/admin/etablissements', icon: Building2, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
     { label: 'Missions', route: '/admin/missions', icon: Briefcase, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
     { label: 'Simulateur de trajet', route: '/admin/simulateur-trajet', icon: Route, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
-    { label: 'Stock & Matériel', route: '/stock', icon: Package, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK' , 'TECHNICIEN'] },
+    { label: 'Stock & Matériel', route: '/stock', icon: Package, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK', 'TECHNICIEN'] },
     { label: 'Sorties de matériel', route: '/sorties', icon: PackageMinus, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
     { label: 'Retours & inspection', route: '/retours', icon: PackagePlus, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
     { label: 'Utilisateurs', route: '/users', icon: Users, roles: ['ADMINISTRATEUR'] },
@@ -66,13 +65,7 @@ export class Sidebar {
     { label: 'Assistant IA', route: '/chat-ia', icon: Bot, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
     { label: 'Gestion des ressources', route: '/admin/ressources', icon: PackageSearch, roles: ['ADMINISTRATEUR'] },
     { label: 'Gestion et suivi des interventions', route: '/admin/interventions', icon: ClipboardList, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
-
-    
     { label: 'Paramètres', route: '/settings', icon: Settings, roles: ['ADMINISTRATEUR', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] }
-
-    // { label: 'Guides & Support', route: '/guides', icon: BookOpen, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
-    
-
   ];
 
   // Adapter dynamiquement les routes selon le rôle de l'utilisateur
@@ -104,6 +97,15 @@ export class Sidebar {
             route = '/technicien/missions';
           } else {
             route = '/admin/missions';
+          }
+        }
+
+        // Adaptation de la Gestion et suivi des interventions pour le technicien
+        if (item.label === 'Gestion et suivi des interventions') {
+          if (role === 'TECHNICIEN') {
+            route = '/technicien/interventions';
+          } else {
+            route = '/admin/interventions';
           }
         }
 

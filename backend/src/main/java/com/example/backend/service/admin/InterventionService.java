@@ -194,7 +194,7 @@ public class InterventionService {
         missionInstallationService.recalculerStatut(idMission);
     }
 
-    private InterventionResponse convertToResponse(Intervention intervention) {
+    public InterventionResponse convertToResponse(Intervention intervention) {
         InterventionResponse response = new InterventionResponse();
         response.setId(intervention.getIdIntervention());
         response.setDatePrevue(intervention.getDatePrevue());
