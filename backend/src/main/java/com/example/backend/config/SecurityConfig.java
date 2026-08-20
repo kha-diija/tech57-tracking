@@ -86,19 +86,19 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/user/**").authenticated()
 
                         // Routes protégées par rôle (à adapter au fur et à mesure des modules)
                         .requestMatchers("/api/locations/**").hasAnyRole("ADMINISTRATEUR", "TECHNICIEN")
 
-
+                        .requestMatchers("/api/admin/resources/**").hasRole("ADMINISTRATEUR")
                         .requestMatchers("/api/etablissements/**").hasAnyRole("ADMINISTRATEUR", "TECHNICIEN")
                         .requestMatchers("/api/admin/**").hasRole("ADMINISTRATEUR")
                         .requestMatchers("/api/technicien/**").hasAnyRole("TECHNICIEN", "ADMINISTRATEUR")
                         .requestMatchers("/api/observateur/**").hasAnyRole("OBSERVATEUR", "ADMINISTRATEUR")
                         .requestMatchers("/api/gestionnaire-stock/**").hasAnyRole("GESTIONNAIRE_STOCK", "ADMINISTRATEUR")
                         .requestMatchers("/api/stock/**").hasAnyRole("GESTIONNAIRE_STOCK", "ADMINISTRATEUR")
-
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
