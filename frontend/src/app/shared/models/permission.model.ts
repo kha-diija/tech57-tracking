@@ -73,3 +73,28 @@ export interface CreateDocumentAssignmentRequest {
   idObservateur: number;
   idDocument: number;
 }
+export interface UploadDocumentResponse {
+  idSource: number;
+  nomFichier: string;
+  typeSource: string;
+  cheminFichier: string;
+  statutIndexation: string;
+}
+
+export interface UploadRessourceResponse {
+  idRessource: number;
+  titre: string;
+  type: string;
+  cheminFichier: string;
+}
+
+export interface CreateVideoRequest {
+  titre: string;
+  description?: string;
+  urlVideo: string;
+  urlMiniature?: string;
+  fournisseur?: string;
+  dureeSecondes?: number;
+  idCategorie?: number;
+  idMateriel?: number;
+}

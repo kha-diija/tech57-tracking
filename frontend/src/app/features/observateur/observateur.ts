@@ -2,6 +2,8 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ObservateurPermissionService } from '../../shared/services/observateur-permission.service';
+import { EtablissementService } from '../../shared/services/etablissement.service';
+import { Etablissement } from '../../shared/models/etablissement.model';
 import {
   ObservateurSummary,
   VideoAssignment,
@@ -10,6 +12,7 @@ import {
   VideoCatalogItem,
   RessourceCatalogItem,
   DocumentCatalogItem,
+  CreateVideoRequest,
 } from '../../shared/models/permission.model';
 
 @Component({
@@ -21,6 +24,7 @@ import {
 })
 export class ObservateurPermissions implements OnInit {
   private permissionService = inject(ObservateurPermissionService);
+  private etablissementService = inject(EtablissementService);
 
   // Liste principale
   observateurs = signal<ObservateurSummary[]>([]);
@@ -36,7 +40,7 @@ export class ObservateurPermissions implements OnInit {
     );
   });
 
-  // Modal
+  // Modal assignation
   isModalOpen = signal<boolean>(false);
   selectedObservateur = signal<ObservateurSummary | null>(null);
   modalLoading = signal<boolean>(false);
@@ -58,7 +62,6 @@ export class ObservateurPermissions implements OnInit {
   assigningResource = signal<boolean>(false);
   assigningDocument = signal<boolean>(false);
 
-  // Catalogues filtrés : on retire ce qui est déjà assigné
   availableVideos = computed(() => {
     const assignedIds = new Set(this.assignedVideos().map((a) => a.idVideo));
     return this.videoCatalog().filter((v) => !assignedIds.has(v.idVideo));
@@ -73,6 +76,35 @@ export class ObservateurPermissions implements OnInit {
     const assignedIds = new Set(this.assignedDocuments().map((a) => a.idDocument));
     return this.documentCatalog().filter((d) => !assignedIds.has(d.idSource));
   });
+
+  // ----------------------------------------------------------
+  // Modal d'upload de ressources
+  // ----------------------------------------------------------
+  isUploadModalOpen = signal<boolean>(false);
+  uploadTab = signal<'document' | 'ressource' | 'video'>('document');
+  uploading = signal<boolean>(false);
+  uploadError = signal<string>('');
+  uploadSuccess = signal<string>('');
+
+  selectedFile: File | null = null;
+
+  // TODO: vérifier le nom exact des champs (idEtablissement/designation) une fois
+  // etablissement.model.ts fourni.
+  etablissements = signal<Etablissement[]>([]);
+
+  docForm = { typeSource: 'PDF' };
+  ressourceForm: { titre: string; type: string; idEtablissement: number | null } = {
+    titre: '',
+    type: 'Guide',
+    idEtablissement: null,
+  };
+  videoForm: CreateVideoRequest = {
+    titre: '',
+    urlVideo: '',
+    description: '',
+    urlMiniature: '',
+    dureeSecondes: undefined,
+  };
 
   ngOnInit(): void {
     this.loadObservateurs();
@@ -93,6 +125,7 @@ export class ObservateurPermissions implements OnInit {
     });
   }
 
+  // ---- Modal assignation ----
   openModal(observateur: ObservateurSummary): void {
     this.selectedObservateur.set(observateur);
     this.modalError.set('');
@@ -252,6 +285,114 @@ export class ObservateurPermissions implements OnInit {
       },
       error: (err) => {
         this.modalError.set(err?.error?.message || 'Erreur lors de la révocation.');
+      },
+    });
+  }
+
+  // ----------------------------------------------------------
+  // Upload de ressources (document / ressource / vidéo)
+  // ----------------------------------------------------------
+  openUploadModal(): void {
+    this.uploadError.set('');
+    this.uploadSuccess.set('');
+    this.selectedFile = null;
+    this.docForm = { typeSource: 'PDF' };
+    this.ressourceForm = { titre: '', type: 'Guide', idEtablissement: null };
+    this.videoForm = { titre: '', urlVideo: '', description: '', urlMiniature: '', dureeSecondes: undefined };
+    this.isUploadModalOpen.set(true);
+
+    // Charge la liste des établissements pour le select "ressource"
+    this.etablissementService.getAll().subscribe({
+      next: (data) => this.etablissements.set(data),
+      error: () => this.uploadError.set('Erreur lors du chargement des établissements.'),
+    });
+  }
+
+  closeUploadModal(): void {
+    this.isUploadModalOpen.set(false);
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedFile = input.files?.[0] ?? null;
+  }
+
+  submitDocument(): void {
+    if (!this.selectedFile) {
+      this.uploadError.set('Sélectionnez un fichier.');
+      return;
+    }
+    this.uploading.set(true);
+    this.uploadError.set('');
+    this.permissionService.uploadDocument(this.selectedFile, this.docForm.typeSource).subscribe({
+      next: (res) => {
+        this.documentCatalog.update((list) => [
+          ...list,
+          { idSource: res.idSource, nomFichier: res.nomFichier, typeSource: res.typeSource },
+        ]);
+        this.uploadSuccess.set(`Document "${res.nomFichier}" ajouté.`);
+        this.uploading.set(false);
+        this.selectedFile = null;
+      },
+      error: (err) => {
+        this.uploadError.set(err?.error?.message || "Erreur lors de l'upload du document.");
+        this.uploading.set(false);
+      },
+    });
+  }
+
+  submitRessource(): void {
+    if (!this.selectedFile || !this.ressourceForm.titre.trim()) {
+      this.uploadError.set('Titre et fichier requis.');
+      return;
+    }
+    if (this.ressourceForm.idEtablissement == null) {
+      this.uploadError.set("L'établissement est obligatoire.");
+      return;
+    }
+
+    this.uploading.set(true);
+    this.uploadError.set('');
+    this.permissionService
+      .uploadRessource(
+        this.selectedFile,
+        this.ressourceForm.titre,
+        this.ressourceForm.type,
+        this.ressourceForm.idEtablissement
+      )
+      .subscribe({
+        next: (res) => {
+          this.resourceCatalog.update((list) => [
+            ...list,
+            { idRessource: res.idRessource, titre: res.titre, type: res.type },
+          ]);
+          this.uploadSuccess.set(`Ressource "${res.titre}" ajoutée.`);
+          this.uploading.set(false);
+          this.selectedFile = null;
+        },
+        error: (err) => {
+          this.uploadError.set(err?.error?.message || "Erreur lors de l'upload de la ressource.");
+          this.uploading.set(false);
+        },
+      });
+  }
+
+  submitVideo(): void {
+    if (!this.videoForm.titre.trim() || !this.videoForm.urlVideo.trim()) {
+      this.uploadError.set('Titre et URL vidéo requis.');
+      return;
+    }
+    this.uploading.set(true);
+    this.uploadError.set('');
+    this.permissionService.createVideo(this.videoForm).subscribe({
+      next: (res) => {
+        this.videoCatalog.update((list) => [...list, res]);
+        this.uploadSuccess.set(`Vidéo "${res.titre}" ajoutée.`);
+        this.uploading.set(false);
+      },
+      error: (err) => {
+        this.uploadError.set(err?.error?.message || "Erreur lors de la création de la vidéo.");
+        this.uploading.set(false);
       },
     });
   }
