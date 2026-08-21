@@ -13,6 +13,9 @@ import {
   CreateVideoAssignmentRequest,
   CreateResourceAssignmentRequest,
   CreateDocumentAssignmentRequest,
+  UploadDocumentResponse,
+  UploadRessourceResponse,
+  CreateVideoRequest,
 } from '../models/permission.model';
 
 @Injectable({ providedIn: 'root' })
@@ -75,4 +78,35 @@ export class ObservateurPermissionService {
   revokeDocument(idObservateur: number, idDocument: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/documents/${idObservateur}/${idDocument}`);
   }
+
+  uploadDocument(file: File, typeSource: string): Observable<UploadDocumentResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('typeSource', typeSource);
+  return this.http.post<UploadDocumentResponse>(
+    `${environment.apiUrl}/admin/resources/documents`,
+    formData
+  );
+}
+
+uploadRessource(file: File, titre: string, type: string, idEtablissement?: number): Observable<UploadRessourceResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('titre', titre);
+  formData.append('type', type);
+  if (idEtablissement != null) {
+    formData.append('idEtablissement', String(idEtablissement));
+  }
+  return this.http.post<UploadRessourceResponse>(
+    `${environment.apiUrl}/admin/resources/ressources`,
+    formData
+  );
+}
+
+createVideo(request: CreateVideoRequest): Observable<VideoCatalogItem> {
+  return this.http.post<VideoCatalogItem>(
+    `${environment.apiUrl}/admin/resources/videos`,
+    request
+  );
+}
 }

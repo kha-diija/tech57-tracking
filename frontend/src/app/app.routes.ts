@@ -130,10 +130,10 @@ export const routes: Routes = [
           import('./features/role_observateur/lecture/lecture').then(m => m.ObservateurLecture),
       },
       {
-        path: 'gestionnaire/dashboard',
-        canActivate: [roleGuard(['GESTIONNAIRE_STOCK'])],
-        loadComponent: () =>
-          import('./features/gestionnaire/gestionnaire-dashboard').then((m) => m.GestionnaireDashboard),
+      path: 'gestionnaire/dashboard',
+      canActivate: [roleGuard(['GESTIONNAIRE_STOCK'])],
+      loadComponent: () =>
+      import('./features/gestionnaire/stock-dashboard').then((m) => m.StockDashboard),
       },
       {
         path: 'sorties',
