@@ -199,8 +199,18 @@ public class TechnicienInterventionService {
         if (request.getAttestationFile() != null && !request.getAttestationFile().isEmpty()) {
             MultipartFile attFile = request.getAttestationFile();
             String base64Signature = "data:" + attFile.getContentType() + ";base64," + Base64.getEncoder().encodeToString(attFile.getBytes());
-            Optional<Attestation> existingAttestation = attestationRepository.findByIntervention(intervention);
-            Attestation attestation = existingAttestation.orElseGet(Attestation::new);
+
+            List<Attestation> existing = attestationRepository.findByIntervention(intervention);
+            Attestation attestation;
+            if (!existing.isEmpty()) {
+                attestation = existing.get(0);
+                // supprime les doublons résiduels s'il y en a
+                for (int i = 1; i < existing.size(); i++) {
+                    attestationRepository.delete(existing.get(i));
+                }
+            } else {
+                attestation = new Attestation();
+            }
             attestation.setIntervention(intervention);
             attestation.setNomSignataire(request.getSignataire() != null ? request.getSignataire() : technicien.getNom() + " " + technicien.getPrenom());
             attestation.setDateSignature(LocalDateTime.now());
@@ -236,8 +246,22 @@ public class TechnicienInterventionService {
                     checklistJson,
                     new com.fasterxml.jackson.core.type.TypeReference<List<ChecklistItemDto>>() {});
 
-            ChecklistEquipement checklistEquipement = new ChecklistEquipement();
-            checklistEquipement.setIntervention(intervention);
+            // Réutilise la checklist existante s'il y en a une, plutôt que d'en créer une nouvelle à chaque check-out
+            List<ChecklistEquipement> existingChecklists = checklistEquipementRepository.findByIntervention(intervention);
+            ChecklistEquipement checklistEquipement;
+            if (!existingChecklists.isEmpty()) {
+                checklistEquipement = existingChecklists.get(0);
+                // supprime les doublons résiduels s'il y en a
+                for (int i = 1; i < existingChecklists.size(); i++) {
+                    checklistItemRepository.deleteAll(checklistItemRepository.findByChecklist(existingChecklists.get(i)));
+                    checklistEquipementRepository.delete(existingChecklists.get(i));
+                }
+                // on repart d'une checklist propre : on supprime ses anciens items avant de reconstruire
+                checklistItemRepository.deleteAll(checklistItemRepository.findByChecklist(checklistEquipement));
+            } else {
+                checklistEquipement = new ChecklistEquipement();
+                checklistEquipement.setIntervention(intervention);
+            }
             checklistEquipement.setTypeChecklist("Installé");
             checklistEquipement.setDateValidation(LocalDateTime.now());
             checklistEquipement = checklistEquipementRepository.save(checklistEquipement);
@@ -250,18 +274,12 @@ public class TechnicienInterventionService {
                 item.setConforme(dto.getConforme() != null ? dto.getConforme() : true);
 
                 Materiel materiel = null;
-
-                // 1. Recherche par ID si présent dans le DTO
                 if (dto.getIdMateriel() != null) {
                     materiel = materielRepository.findById(dto.getIdMateriel()).orElse(null);
                 }
-
-                // 2. Sinon, tentative de recherche par référence texte
                 if (materiel == null && dto.getMaterielReference() != null && !dto.getMaterielReference().isBlank()) {
                     materiel = materielRepository.findByReference(dto.getMaterielReference()).orElse(null);
                 }
-
-                // 3. Sécurité absolue pour bloquer l'erreur Not-Null en base
                 if (materiel == null) {
                     materiel = materielRepository.findAll().stream().findFirst()
                             .orElseThrow(() -> new IllegalStateException("Aucun matériel disponible en base pour associer à l'élément de checklist."));

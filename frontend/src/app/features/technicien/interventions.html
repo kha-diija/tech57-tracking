@@ -1,3 +1,9 @@
+<!-- TOAST DE NOTIFICATION -->
+<div class="toast" [class.toast-error]="toast.type === 'error'" *ngIf="toast">
+  <lucide-icon [img]="toast.type === 'error' ? icons.AlertCircle : icons.CheckCircle" [size]="16"></lucide-icon>
+  {{ toast.message }}
+</div>
+
 <div class="interventions-container">
 
   <!-- En-tête de page -->
