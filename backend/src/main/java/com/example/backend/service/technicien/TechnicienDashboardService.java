@@ -64,9 +64,9 @@ public class TechnicienDashboardService {
             }
 
             // Anomalies : items de checklist non conformes
-            Optional<ChecklistEquipement> checklistOpt = checklistEquipementRepository.findByIntervention(it);
-            if (checklistOpt.isPresent()) {
-                List<ChecklistItem> items = checklistItemRepository.findByChecklist(checklistOpt.get());
+            List<ChecklistEquipement> checklists = checklistEquipementRepository.findByIntervention(it);
+            for (ChecklistEquipement chk : checklists) {
+                List<ChecklistItem> items = checklistItemRepository.findByChecklist(chk);
                 anomalies += items.stream().filter(item -> Boolean.FALSE.equals(item.getConforme())).count();
             }
 

@@ -108,75 +108,73 @@
     </div>
 
     <!-- Graphique donut : répartition par statut -->
-<div class="dashboard__row dashboard__row--2-1" *ngIf="statutRepartition.length">
-  <div class="panel">
-    <div class="panel__header">
-      <h2 class="panel__title">Répartition de mes interventions</h2>
-      <p class="panel__subtitle">{{ statutTotal }} intervention(s) au total</p>
-    </div>
+    <div class="dashboard__row dashboard__row--2-1" *ngIf="statutRepartition.length">
+      <div class="panel">
+        <div class="panel__header">
+          <h2 class="panel__title">Répartition de mes interventions</h2>
+          <p class="panel__subtitle">{{ statutTotal }} intervention(s) au total</p>
+        </div>
 
-    <div class="donut">
-      <div class="donut__ring" [style.background]="donutGradient">
-        <div class="donut__hole">
-          <span class="donut__total">
-            {{ activeDonutTooltip ? activeDonutTooltip.value : statutTotal }}
-          </span>
-          <span class="donut__total-label">
-            {{ activeDonutTooltip ? activeDonutTooltip.label : 'au total' }}
-          </span>
+        <div class="donut">
+          <div class="donut__ring" [style.background]="donutGradient">
+            <div class="donut__hole">
+              <span class="donut__total">
+                {{ activeDonutTooltip ? activeDonutTooltip.value : statutTotal }}
+              </span>
+              <span class="donut__total-label">
+                {{ activeDonutTooltip ? activeDonutTooltip.label : 'au total' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <ul class="donut-legend">
+          <li class="donut-legend__item"
+              *ngFor="let item of statutRepartition"
+              (mouseenter)="activeDonutTooltip = { label: item.label, value: item.value, percent: statutPercent(item.value) }"
+              (mouseleave)="activeDonutTooltip = null">
+            <div class="donut-legend__top">
+              <span class="donut-legend__left">
+                <i class="dot" [style.background]="item.color"></i>
+                {{ item.label }}
+              </span>
+              <span class="donut-legend__right">
+                {{ item.value }}
+                <span class="donut-legend__percent">({{ statutPercent(item.value) }}%)</span>
+              </span>
+            </div>
+            <div class="donut-legend__bar">
+              <div class="donut-legend__bar-fill" [style.width.%]="statutPercent(item.value)" [style.background]="item.color"></div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Comparaison matériel -->
+      <div class="panel">
+        <div class="panel__header">
+          <h2 class="panel__title">Matériel</h2>
+          <p class="panel__subtitle">Sorti vs rendu</p>
+        </div>
+
+        <div class="material-bars">
+          <div class="material-bar-col">
+            <span class="material-bar-value">{{ kpis.quantiteMaterielSortie }}</span>
+            <div class="material-bar-track">
+              <div class="material-bar-fill material-bar-fill--orange" [style.height.%]="materielBarHeight(kpis.quantiteMaterielSortie || 0)"></div>
+            </div>
+            <span class="material-bar-label">Sorti</span>
+          </div>
+          <div class="material-bar-col">
+            <span class="material-bar-value">{{ kpis.quantiteMaterielRendue }}</span>
+            <div class="material-bar-track">
+              <div class="material-bar-fill material-bar-fill--green" [style.height.%]="materielBarHeight(kpis.quantiteMaterielRendue || 0)"></div>
+            </div>
+            <span class="material-bar-label">Rendu</span>
+          </div>
         </div>
       </div>
     </div>
-
-    <ul class="donut-legend">
-      <li class="donut-legend__item"
-          *ngFor="let item of statutRepartition"
-          (mouseenter)="activeDonutTooltip = { label: item.label, value: item.value, percent: statutPercent(item.value) }"
-          (mouseleave)="activeDonutTooltip = null">
-        <div class="donut-legend__top">
-          <span class="donut-legend__left">
-            <i class="dot" [style.background]="item.color"></i>
-            {{ item.label }}
-          </span>
-          <span class="donut-legend__right">
-            {{ item.value }}
-            <span class="donut-legend__percent">({{ statutPercent(item.value) }}%)</span>
-          </span>
-        </div>
-        <div class="donut-legend__bar">
-          <div class="donut-legend__bar-fill" [style.width.%]="statutPercent(item.value)" [style.background]="item.color"></div>
-        </div>
-      </li>
-    </ul>
-  </div>
-
-  <!-- Comparaison matériel -->
-  <div class="panel">
-    <div class="panel__header">
-      <h2 class="panel__title">Matériel</h2>
-      <p class="panel__subtitle">Sorti vs rendu</p>
-    </div>
-
-    <div class="material-bars">
-      <div class="material-bar-col">
-        <span class="material-bar-value">{{ kpis?.quantiteMaterielSortie }}</span>
-        <div class="material-bar-track">
-          <div class="material-bar-fill material-bar-fill--orange" [style.height.%]="materielBarHeight(kpis?.quantiteMaterielSortie || 0)"></div>
-        </div>
-        <span class="material-bar-label">Sorti</span>
-      </div>
-      <div class="material-bar-col">
-        <span class="material-bar-value">{{ kpis?.quantiteMaterielRendue }}</span>
-        <div class="material-bar-track">
-          <div class="material-bar-fill material-bar-fill--green" [style.height.%]="materielBarHeight(kpis?.quantiteMaterielRendue || 0)"></div>
-        </div>
-        <span class="material-bar-label">Rendu</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-    
 
     <!-- Missions actuelles -->
     <div class="panel">
