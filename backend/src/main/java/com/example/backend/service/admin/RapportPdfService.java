@@ -7,6 +7,7 @@ import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -21,6 +22,9 @@ public class RapportPdfService {
 
     private final InterventionService interventionService;
     private final RapportRepository rapportRepository;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     public RapportPdfService(InterventionService interventionService, RapportRepository rapportRepository) {
         this.interventionService = interventionService;
@@ -143,6 +147,28 @@ public class RapportPdfService {
             document.add(new Paragraph("Signataire : " + intervention.getAttestation().getNomSignataire()));
             document.add(new Paragraph("Date de signature : " + (intervention.getAttestation().getDateSignature() != null ? intervention.getAttestation().getDateSignature().format(dtf) : "Non signé")));
             document.add(new Paragraph("Validité : " + (intervention.getAttestation().getValide() ? "Validée" : "En attente")));
+
+            // ✅ AJOUT : Insérer l'image de la signature
+            String signatureBase64 = intervention.getAttestation().getSignatureNumerique();
+            if (signatureBase64 != null && !signatureBase64.isEmpty()) {
+                try {
+                    String base64Data = signatureBase64;
+                    if (base64Data.contains(",")) {
+                        base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+                    }
+
+                    byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+
+                    Image signatureImage = Image.getInstance(imageBytes);
+                    signatureImage.scaleToFit(150, 80);
+                    signatureImage.setAlignment(Element.ALIGN_RIGHT);
+
+                    document.add(new Paragraph("\n"));
+                    document.add(signatureImage);
+                } catch (Exception e) {
+                    document.add(new Paragraph("(Signature non disponible)", FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.RED)));
+                }
+            }
         }
 
         // 8. Section : Photos (Avant / Après) - AVEC AFFICHAGE DES IMAGES
@@ -153,16 +179,24 @@ public class RapportPdfService {
             for (PhotoDto p : intervention.getPhotos()) {
                 document.add(new Paragraph(p.getTypePhoto() + " :", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.DARK_GRAY)));
                 try {
-                    // Télécharger l'image depuis l'URL
-                    Image image = Image.getInstance(new URL(p.getCheminFichier()));
+                    // Construire l'URL complète à partir du chemin
+                    String chemin = p.getCheminFichier();
+                    String urlComplete;
 
-                    // Redimensionner l'image pour qu'elle tienne dans le PDF (Largeur max 400px)
-                    float maxWidth = 400;
-                    if (image.getWidth() > maxWidth) {
-                        float scale = maxWidth / image.getWidth();
-                        image.scaleAbsolute(image.getWidth() * scale, image.getHeight() * scale);
+                    // Si c'est déjà une URL complète (http/https), on la garde telle quelle
+                    if (chemin != null && chemin.startsWith("http")) {
+                        urlComplete = chemin;
+                    } else {
+                        // ✅ CORRECTION : Encoder les espaces et caractères spéciaux
+                        String encodedChemin = chemin.replace(" ", "%20");
+                        urlComplete = baseUrl + encodedChemin;
                     }
 
+                    // Télécharger l'image depuis l'URL complète
+                    Image image = Image.getInstance(new URL(urlComplete));
+
+                    // ✅ Redimensionner sans déformer (préserve les proportions)
+                    image.scaleToFit(400, 400);
                     image.setAlignment(Element.ALIGN_CENTER);
                     document.add(image);
                 } catch (Exception e) {
@@ -235,6 +269,28 @@ public class RapportPdfService {
                             ? intervention.getAttestation().getDateSignature().format(dtf)
                             : "Non signé")));
             document.add(new Paragraph("Validité : " + (intervention.getAttestation().getValide() ? "Validée" : "En attente")));
+
+            // ✅ AJOUT : Insérer l'image de la signature
+            String signatureBase64 = intervention.getAttestation().getSignatureNumerique();
+            if (signatureBase64 != null && !signatureBase64.isEmpty()) {
+                try {
+                    String base64Data = signatureBase64;
+                    if (base64Data.contains(",")) {
+                        base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+                    }
+
+                    byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+
+                    Image signatureImage = Image.getInstance(imageBytes);
+                    signatureImage.scaleToFit(150, 80);
+                    signatureImage.setAlignment(Element.ALIGN_RIGHT);
+
+                    document.add(new Paragraph("\n"));
+                    document.add(signatureImage);
+                } catch (Exception e) {
+                    document.add(new Paragraph("(Signature non disponible)", FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.RED)));
+                }
+            }
         } else {
             document.add(new Paragraph("Aucune attestation enregistrée pour cette intervention."));
         }
