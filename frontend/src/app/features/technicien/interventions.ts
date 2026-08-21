@@ -73,10 +73,26 @@ export class TechnicienInterventions implements OnInit {
     tauxMoyen: 0
   };
 
+  // --- TOAST (remplace les alert()) ---
+  toast: { message: string, type: 'success' | 'error' } | null = null;
+  private toastTimeout: any = null;
+
   ngOnInit(): void {
     this.loadInterventions();
     this.loadMissionsAndTechniciens();
     this.loadMateriels();
+  }
+
+  showToast(message: string, type: 'success' | 'error' = 'success') {
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
+    this.toast = { message, type };
+    this.cdr.detectChanges();
+    this.toastTimeout = setTimeout(() => {
+      this.toast = null;
+      this.cdr.detectChanges();
+    }, 3000);
   }
 
   loadInterventions() {
@@ -103,30 +119,29 @@ export class TechnicienInterventions implements OnInit {
     });
   }
 
-loadMateriels() {
-  this.http.get<any[]>('http://localhost:8080/api/technicien/interventions/materiels').subscribe({
-    next: (data) => {
-      this.materielsList = data || [];
-      this.checkoutChecklist = this.materielsList.map(m => ({
-        idMateriel: m.idMateriel,
-        nom: m.nom + ' (' + m.reference + ')',
-        conforme: false
-      }));
-    },
-    error: () => {
-      this.materielsList = [
-        { idMateriel: 1, nom: 'PC Portable', reference: 'PC-002' },
-        { idMateriel: 2, nom: 'Datashow', reference: 'DS-002' }
-      ];
-      this.checkoutChecklist = this.materielsList.map(m => ({
-        idMateriel: m.idMateriel,
-        nom: m.nom + ' (' + m.reference + ')',
-        conforme: false
-      }));
-    }
-  });
-}
-
+  loadMateriels() {
+    this.http.get<any[]>('http://localhost:8080/api/technicien/interventions/materiels').subscribe({
+      next: (data) => {
+        this.materielsList = data || [];
+        this.checkoutChecklist = this.materielsList.map(m => ({
+          idMateriel: m.idMateriel,
+          nom: m.nom + ' (' + m.reference + ')',
+          conforme: false
+        }));
+      },
+      error: () => {
+        this.materielsList = [
+          { idMateriel: 1, nom: 'PC Portable', reference: 'PC-002' },
+          { idMateriel: 2, nom: 'Datashow', reference: 'DS-002' }
+        ];
+        this.checkoutChecklist = this.materielsList.map(m => ({
+          idMateriel: m.idMateriel,
+          nom: m.nom + ' (' + m.reference + ')',
+          conforme: false
+        }));
+      }
+    });
+  }
 
   getFileCount(type: 'Avant' | 'Après'): number {
     return this.selectedFiles.filter(f => f.type === type).length;
@@ -165,7 +180,7 @@ loadMateriels() {
     const gpsCheckin = "33.8935,-5.5473";
     this.technicienService.checkIn(id, gpsCheckin).subscribe({
       next: () => this.loadInterventions(),
-      error: (err: any) => alert("Erreur lors du Check-in.")
+      error: (err: any) => this.showToast("Erreur lors du check-in.", "error")
     });
   }
 
@@ -207,29 +222,29 @@ loadMateriels() {
   }
 
   confirmerCheckout() {
-  if (this.checkoutInterventionId === null) return;
+    if (this.checkoutInterventionId === null) return;
 
-  const payload = {
-    gpsCheckout: "33.8935,-5.5473",
-    signataire: this.checkoutData.signataire,
-    materielSortiIds: this.checkoutData.materielSortiIds || [],
-    materielRetourIds: this.checkoutData.materielRetourIds || [],
-    etatsRetours: this.checkoutData.etatMateriel ? [this.checkoutData.etatMateriel] : [],
-    checklist: this.checkoutChecklist
-  };
+    const payload = {
+      gpsCheckout: "33.8935,-5.5473",
+      signataire: this.checkoutData.signataire,
+      materielSortiIds: this.checkoutData.materielSortiIds || [],
+      materielRetourIds: this.checkoutData.materielRetourIds || [],
+      etatsRetours: this.checkoutData.etatMateriel ? [this.checkoutData.etatMateriel] : [],
+      checklist: this.checkoutChecklist
+    };
 
-  this.technicienService.checkOut(this.checkoutInterventionId, payload, this.selectedFiles, this.attestationFile).subscribe({
-    next: () => {
-      this.fermerCheckout();
-      this.loadInterventions();
-      alert("Check-out effectué avec succès !");
-    },
-    error: (err: any) => {
-      console.error("Erreur lors du check-out", err);
-      alert("Erreur lors de l'enregistrement du check-out.");
-    }
-  });
-}
+    this.technicienService.checkOut(this.checkoutInterventionId, payload, this.selectedFiles, this.attestationFile).subscribe({
+      next: () => {
+        this.fermerCheckout();
+        this.loadInterventions();
+        this.showToast("Enregistré avec succès !", "success");
+      },
+      error: (err: any) => {
+        console.error("Erreur lors du check-out", err);
+        this.showToast("Erreur lors de l'enregistrement du check-out.", "error");
+      }
+    });
+  }
 
   ouvrirModalCreation() {
     this.isEditMode = false;
@@ -301,6 +316,7 @@ loadMateriels() {
         next: () => {
           this.loadInterventions();
           this.fermerModal();
+          this.showToast("Intervention créée avec succès !", "success");
         },
         error: (err: any) => {
           console.error("Erreur technique backend :", err);
@@ -312,6 +328,7 @@ loadMateriels() {
         next: () => {
           this.loadInterventions();
           this.fermerModal();
+          this.showToast("Intervention modifiée avec succès !", "success");
         },
         error: (err: any) => {
           console.error("Erreur technique backend :", err);
@@ -332,7 +349,7 @@ loadMateriels() {
 
   voirDetails(id: number) {
     if (!id || id === 0) {
-      alert("ID d'intervention invalide.");
+      this.showToast("ID d'intervention invalide.", "error");
       return;
     }
     this.technicienService.getInterventionById(id).subscribe({
@@ -343,7 +360,7 @@ loadMateriels() {
       },
       error: (err: any) => {
         console.error("Erreur lors du chargement des détails", err);
-        alert("Impossible de charger les détails de cette intervention (ID " + id + "). Vérifiez qu'elle existe dans la base de données.");
+        this.showToast("Impossible de charger les détails de cette intervention.", "error");
       }
     });
   }
@@ -367,7 +384,7 @@ loadMateriels() {
       },
       error: (err: any) => {
         console.error("Erreur lors de la génération du rapport:", err);
-        alert("Impossible de générer le rapport.");
+        this.showToast("Impossible de générer le rapport.", "error");
       }
     });
   }
@@ -386,10 +403,11 @@ loadMateriels() {
       },
       error: (err: any) => {
         console.error("Erreur lors du téléchargement de l'attestation:", err);
-        alert("Impossible de télécharger l'attestation. Vérifiez votre connexion ou vos droits d'accès.");
+        this.showToast("Impossible de télécharger l'attestation.", "error");
       }
     });
   }
+
   toggleMateriel(list: number[], id: number) {
     const index = list.indexOf(id);
     if (index === -1) {
@@ -402,9 +420,10 @@ loadMateriels() {
   selectEtatMateriel(etat: string) {
     this.checkoutData.etatMateriel = etat;
   }
+
   exporterCSV() {
     if (this.interventions.length === 0) {
-      alert("Aucune donnée à exporter.");
+      this.showToast("Aucune donnée à exporter.", "error");
       return;
     }
     const headers = ['"ID"', '"Mission"', '"Technicien"', '"Date Prevue"', '"Visites"', '"Avancement"', '"Statut"'];
