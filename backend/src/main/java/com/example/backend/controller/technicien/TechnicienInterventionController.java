@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import com.example.backend.dto.technicien.MaterielSimpleDto;
 
 import java.util.List;
 
@@ -45,8 +46,11 @@ public class TechnicienInterventionController {
     }
 
     @GetMapping("/materiels")
-    public ResponseEntity<List<Materiel>> getMaterielsForTechnicien() {
-        return ResponseEntity.ok(materielRepository.findAll());
+    public ResponseEntity<List<MaterielSimpleDto>> getMaterielsForTechnicien() {
+        List<MaterielSimpleDto> result = materielRepository.findAll().stream()
+                .map(m -> new MaterielSimpleDto(m.getIdMateriel(), m.getNom(), m.getReference()))
+                .toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{id}")

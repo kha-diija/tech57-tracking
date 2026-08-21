@@ -286,6 +286,26 @@ public class TechnicienInterventionService {
     }
 
     private void updateInterventionStatus(Intervention intervention) {
-        adminInterventionService.convertToResponse(intervention);
+        List<CheckInOut> visites = intervention.getCheckInOuts();
+
+        boolean visiteEnCours = visites.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+
+        long visitesTerminees = visites.stream()
+                .filter(v -> v.getDateHeureCheckout() != null)
+                .count();
+
+        intervention.setNumeroVisite((int) visitesTerminees);
+
+        if (visiteEnCours) {
+            intervention.setStatut("En cours");
+        } else if (visitesTerminees >= 2) {
+            intervention.setStatut("Exécutée");
+        } else if (visitesTerminees >= 1) {
+            intervention.setStatut("Planifiée");
+        }
+        // Si aucune visite n'a encore eu lieu, on ne touche pas au statut existant
+
+        interventionRepository.save(intervention);
     }
 }
