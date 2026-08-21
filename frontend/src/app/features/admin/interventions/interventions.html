@@ -360,7 +360,7 @@
             <div class="photo-item" *ngFor="let photo of currentDetail?.photos">
               <div class="photo-type" [ngClass]="photo.typePhoto.toLowerCase()">{{ photo.typePhoto }}</div>
               <div class="photo-img-wrapper">
-                <img [src]="photo.cheminFichier" (error)="onImageError($event)" alt="Photo {{ photo.typePhoto }}">
+               <img [src]="getPhotoUrl(photo.cheminFichier)" (error)="onImageError($event)" alt="Photo {{ photo.typePhoto }}">
                 <a [href]="photo.cheminFichier" download class="photo-download-btn" title="Télécharger cette photo">
                   <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon>
                 </a>

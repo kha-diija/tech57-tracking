@@ -988,3 +988,18 @@
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* --- CORRECTION : Champs de saisie dans la modale Checkout --- */
+.checkout-modal .text-input {
+  color: #1a1a1a !important;  /* Texte noir sur fond blanc */
+  background-color: #ffffff !important;
+  border: 1px solid #dfe3ea !important;
+}
+
+.checkout-modal .text-input::placeholder {
+  color: #999 !important;  /* Placeholder gris */
+}
+
+.checkout-modal .text-input:focus {
+  outline: none;
+  border-color: #2563eb !important;
+}
