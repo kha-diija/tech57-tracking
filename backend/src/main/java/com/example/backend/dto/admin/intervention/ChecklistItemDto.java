@@ -6,6 +6,10 @@ public class ChecklistItemDto {
     private Integer quantite;
     private String etatConstate;
     private Boolean conforme;
+    private Integer idMateriel;
+
+    // --- AJOUT DU CHAMP NOM ---
+    private String nom;
 
     public ChecklistItemDto() {}
 
@@ -23,4 +27,11 @@ public class ChecklistItemDto {
 
     public Boolean getConforme() { return conforme; }
     public void setConforme(Boolean conforme) { this.conforme = conforme; }
+
+    public Integer getIdMateriel() { return idMateriel; }
+    public void setIdMateriel(Integer idMateriel) { this.idMateriel = idMateriel; }
+
+    // --- NOUVEAUX GETTER ET SETTER POUR NOM ---
+    public String getNom() { return nom; }
+    public void setNom(String nom) { this.nom = nom; }
 }

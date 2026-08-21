@@ -41,22 +41,22 @@ export const routes: Routes = [
       },
       { path: 'chat-ia', component: ChatIa },
       { path: 'guides', component: Guides },
-      // APRÈS
-{ 
-  path: 'stock', 
-  component: Stock, 
-  canActivate: [roleGuard(['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK', 'TECHNICIEN'])] 
-},
-
-     
+      { 
+        path: 'stock', 
+        component: Stock, 
+        canActivate: [roleGuard(['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK', 'TECHNICIEN'])] 
+      },
       {
         path: 'users',
         component: Users,
         canActivate: [roleGuard(['ADMINISTRATEUR'])]
       },
-      { path: 'guides', component: Guides },
+
       { path: 'ressources', component: Ressources },
-      { path: 'interventions', component: Interventions },
+      
+      // --- SUPPRESSION DE LA ROUTE GLOBALE 'interventions' ---
+      // { path: 'interventions', component: Interventions }, <-- SUPPRIMÉE (Conflit avec l'admin)
+
       { path: 'settings', component: Settings },
 
       // Dashboards et modules spécifiques par rôle (avec Lazy Loading)
@@ -68,7 +68,7 @@ export const routes: Routes = [
       },
       {
         path: 'admin/etablissements',
-        canActivate: [roleGuard(['ADMINISTRATEUR' , 'TECHNICIEN'])],
+        canActivate: [roleGuard(['ADMINISTRATEUR', 'TECHNICIEN'])],
         loadComponent: () =>
           import('./features/admin/Gs-etablissement/gs-etablissement').then((m) => m.GsEtablissement),
       },
@@ -103,17 +103,19 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/technicien/technicien-dashboard').then((m) => m.TechnicienDashboard),
       },
-      // {
-      //   path: 'client/dashboard',
-      //   canActivate: [roleGuard(['OBSERVATEUR'])],
-      //   loadComponent: () =>
-      //     import('./features/client/client-dashboard').then((m) => m.ClientDashboard),
-      // },
+
       {
         path: 'technicien/missions',
         canActivate: [roleGuard(['TECHNICIEN'])],
         loadComponent: () =>
           import('./features/technicien/technicien-mission').then((m) => m.TechnicienMissionComponent),
+      },
+      {
+        path: 'technicien/interventions',
+        canActivate: [roleGuard(['TECHNICIEN'])],
+        // --- CORRECTION ICI : m.TechnicienInterventions (avec un 's') ---
+        loadComponent: () =>
+          import('./features/technicien/interventions').then((m) => m.TechnicienInterventions),
       },
       {
         path: 'client/dashboard',

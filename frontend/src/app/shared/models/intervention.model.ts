@@ -84,3 +84,13 @@ export interface InterventionRequest {
   missionId: number;
   technicienId: number;
 }
+export interface TechnicienInterventionForm {
+  id?: number;
+  missionId: number | null;
+  datePrevue: string;
+  numeroVisite: number;
+  tauxAvancement: number;
+  statut: string;
+  dateDebut?: string;
+  dateFin?: string;
+}
