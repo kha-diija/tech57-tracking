@@ -289,9 +289,15 @@ public class InterventionService {
             response.setPhotos(photoDtos);
         }
 
-        Optional<Attestation> attestationOpt = attestationRepository.findByIntervention(intervention);
-        if (attestationOpt.isPresent()) {
-            Attestation attestation = attestationOpt.get();
+        List<Attestation> attestations = attestationRepository.findByIntervention(intervention);
+        if (attestations != null && !attestations.isEmpty()) {
+            // S'il reste des doublons résiduels en base, on prend la plus récente
+            Attestation attestation = attestations.stream()
+                    .max(java.util.Comparator.comparing(
+                            Attestation::getDateSignature,
+                            java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
+                    .orElse(attestations.get(0));
+
             AttestationDto attDto = new AttestationDto();
             attDto.setId(attestation.getIdAttestation());
             attDto.setNomSignataire(attestation.getNomSignataire());
@@ -332,9 +338,13 @@ public class InterventionService {
             response.setRetoursMateriel(retourDtos);
         }
 
-        Optional<ChecklistEquipement> checklistOpt = checklistEquipementRepository.findByIntervention(intervention);
-        if (checklistOpt.isPresent()) {
-            ChecklistEquipement checklist = checklistOpt.get();
+        List<ChecklistEquipement> checklists = checklistEquipementRepository.findByIntervention(intervention);
+        if (checklists != null && !checklists.isEmpty()) {
+            ChecklistEquipement checklist = checklists.stream()
+                    .max(java.util.Comparator.comparing(
+                            ChecklistEquipement::getDateValidation,
+                            java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
+                    .orElse(checklists.get(0));
             List<ChecklistItem> items = checklistItemRepository.findByChecklist(checklist);
 
             if (items != null && !items.isEmpty()) {
