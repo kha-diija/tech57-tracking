@@ -160,6 +160,7 @@ public class MissionInstallationService {
     }
 
     @Transactional
+
     public void recalculerStatut(Integer idMission) {
         MissionInstallation mission = missionRepository.findById(idMission)
                 .orElseThrow(() -> new RuntimeException("Mission introuvable avec l'ID : " + idMission));
@@ -170,18 +171,28 @@ public class MissionInstallationService {
             return;
         }
 
+        // ✅ RÈGLE 1 : Si TOUTES les interventions sont "Clôturée" → Mission "Terminée"
         boolean toutesCloturees = interventions.stream()
                 .allMatch(i -> "Clôturée".equals(i.getStatut()));
 
-        boolean auMoinsUneEnCours = interventions.stream()
-                .anyMatch(i -> "En cours".equals(i.getStatut()));
-
         if (toutesCloturees) {
-            mission.setStatut("Exécutée");
-        } else if (auMoinsUneEnCours) {
-            mission.setStatut("En cours");
+            mission.setStatut("Terminée");
+            missionRepository.save(mission);
+            return;
         }
 
+        // ✅ RÈGLE 2 : Si TOUTES les interventions sont "Planifiée" → Mission "Planifiée"
+        boolean toutesPlanifiees = interventions.stream()
+                .allMatch(i -> "Planifiée".equals(i.getStatut()));
+
+        if (toutesPlanifiees) {
+            mission.setStatut("Planifiée");
+            missionRepository.save(mission);
+            return;
+        }
+
+        // ✅ RÈGLE 3 : Sinon (au moins une en cours, exécutée, ou mélange) → Mission "En cours"
+        mission.setStatut("En cours");
         missionRepository.save(mission);
     }
 
@@ -197,7 +208,7 @@ public class MissionInstallationService {
                 .orElseThrow(() -> new RuntimeException("Établissement introuvable"));
         mission.setEtablissement(etab);
 
-        // Gestion Admin
+        // Gestion Admin : Si l'admin fournit un id, on l'associe. Sinon, on garde l'admin existant.
         if (dto.getIdAdministrateur() != null) {
             Utilisateur user = utilisateurRepository.findById(dto.getIdAdministrateur())
                     .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
@@ -206,7 +217,11 @@ public class MissionInstallationService {
             } else {
                 mission.setAdministrateur(null);
             }
+        } else if (mission.getIdMission() != null) {
+            // Si on modifie une mission existante et qu'aucun admin n'est fourni, on garde l'admin existant
+            // (ne rien faire)
         } else {
+            // Si création et pas d'admin fourni, on met null (cas technicien)
             mission.setAdministrateur(null);
         }
 

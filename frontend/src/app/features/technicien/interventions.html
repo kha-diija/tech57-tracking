@@ -152,10 +152,12 @@
                     <lucide-icon [img]="icons.Edit" [size]="16"></lucide-icon>
                   </button>
                   
-                  <button class="action-btn" title="Check-in" *ngIf="item.statut === 'Planifiée' || item.statut === 'En cours'" (click)="checkIn(item.id)">
+                                    <!-- Check-in : visible si PAS Clôturée -->
+                  <button class="action-btn" title="Check-in" *ngIf="item.statut !== 'Clôturée'" (click)="checkIn(item.id)">
                     <lucide-icon [img]="icons.Clock" [size]="16"></lucide-icon>
                   </button>
-                  <button class="action-btn" title="Check-out" *ngIf="item.statut === 'En cours' && aUneVisiteEnCours(item)" (click)="ouvrirModalCheckout(item.id)">
+                  <!-- Check-out : visible si PAS Clôturée ET une visite est en cours -->
+                  <button class="action-btn" title="Check-out" *ngIf="item.statut !== 'Clôturée' && aUneVisiteEnCours(item)" (click)="ouvrirModalCheckout(item.id)">
                     <lucide-icon [img]="icons.CheckCircle" [size]="16"></lucide-icon>
                   </button>
                 </div>
@@ -301,13 +303,15 @@
       </section>
 
       <!-- Attestation -->
+           
       <section class="section">
         <span class="section-title">Attestation</span>
         <div class="upload-row">
           <label class="upload-btn wide">
-            <input type="file" hidden accept=".pdf,.png,.jpg,.jpeg" (change)="onAttestationSelected($event)">
+            <!-- ✅ MODIFICATION : Accepter uniquement les images -->
+            <input type="file" hidden accept="image/png, image/jpeg, image/jpg, image/webp, image/gif" (change)="onAttestationSelected($event)">
             <lucide-icon [img]="icons.FileText" [size]="15"></lucide-icon>
-            {{ attestationFile ? attestationFile.name : 'Choisir un fichier signé' }}
+            {{ attestationFile ? attestationFile.name : 'Choisir une image de signature' }}
           </label>
         </div>
         <input type="text" placeholder="Nom du signataire" [(ngModel)]="checkoutData.signataire" class="text-input">
@@ -442,15 +446,17 @@
             </span>
           </div>
 
-          <div class="mt-3 d-flex gap-2">
+                    <div class="mt-3 d-flex gap-2">
+            <!-- Check-in : visible si PAS Clôturée -->
             <button class="btn btn-secondary btn-sm" 
-                    *ngIf="(currentDetail?.statut === 'Planifiée' || currentDetail?.statut === 'En cours') && !aUneVisiteEnCours(currentDetail!)"
+                    *ngIf="currentDetail?.statut !== 'Clôturée' && !aUneVisiteEnCours(currentDetail!)"
                     (click)="checkIn(currentDetail!.id)">
               <lucide-icon [img]="icons.Clock" [size]="14"></lucide-icon> Check-in
             </button>
             
+            <!-- Check-out : visible si PAS Clôturée ET visite en cours -->
             <button class="btn btn-primary btn-sm" 
-                    *ngIf="currentDetail?.statut === 'En cours' && aUneVisiteEnCours(currentDetail!)"
+                    *ngIf="currentDetail?.statut !== 'Clôturée' && aUneVisiteEnCours(currentDetail!)"
                     (click)="ouvrirModalCheckout(currentDetail!.id)">
               <lucide-icon [img]="icons.CheckCircle" [size]="14"></lucide-icon> Check-out
             </button>
@@ -470,7 +476,7 @@
             <div class="photo-item" *ngFor="let photo of currentDetail?.photos">
               <div class="photo-type" [ngClass]="photo.typePhoto.toLowerCase()">{{ photo.typePhoto }}</div>
               <div class="photo-img-wrapper">
-                <img [src]="photo.cheminFichier" (error)="onImageError($event)" alt="Photo">
+                <img [src]="getPhotoUrl(photo.cheminFichier)" (error)="onImageError($event)" alt="Photo">
               </div>
             </div>
           </div>

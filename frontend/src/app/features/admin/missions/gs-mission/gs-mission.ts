@@ -189,20 +189,24 @@ export class GsMission {
     this.showForm.set(true);
   }
 
-  openEditForm(item: MissionInstallation): void {
+ openEditForm(item: MissionInstallation): void {
     this.editingId.set(item.idMission);
     this.editingAdminNomComplet.set(item.adminNomComplet ?? null);
     this.showForm.set(true);
+    
+    // ✅ Correction : Toujours envoyer l'ID de l'admin connecté si la mission n'a pas d'admin
+    const currentUser = this.authService.currentUser();
+    
     this.formModel.set({
       reference: item.reference,
       titre: item.titre,
       statut: item.statut,
       budgetPropose: item.budgetPropose ?? null,
       idEtablissement: item.idEtablissement ?? null,
-      idAdministrateur: item.idAdministrateur ?? null,
+      idAdministrateur: currentUser?.id ?? item.idAdministrateur ?? null,  // ✅ Toujours un admin
       idEquipe: item.idEquipe ?? null
     });
-  }
+}
 
   closeForm(): void {
     this.showForm.set(false);
