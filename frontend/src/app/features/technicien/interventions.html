@@ -222,80 +222,111 @@
 </div>
 
 <!-- ========================================================== -->
-<!-- MODALE CHECK-OUT (AVEC UPLOAD PHOTOS, MATÉRIEL, ATTESTATION ET CHECKLIST DYNAMIQUE) -->
+<!-- MODALE CHECK-OUT (VERSION COMPACTE, CHIPS CLIQUABLES) -->
 <!-- ========================================================== -->
 <div class="modal-backdrop" *ngIf="showCheckoutModal">
-  <div class="modal-content form-modal-content" style="width: 700px;">
-    <h2>Terminer la visite #{{ checkoutInterventionId }}</h2>
-    <p class="text-muted text-sm">Enregistrez les photos, le matériel, l'attestation et la checklist dynamique.</p>
-
-    <div class="form-group mt-3">
-      <label>📸 Photos avant installation</label>
-      <input type="file" multiple (change)="onFileSelected($event, 'Avant')" class="form-control">
-      <small class="text-muted">Sélectionnez une ou plusieurs photos de l'état initial du site.</small>
+  <div class="checkout-modal">
+    <div class="checkout-header">
+      <div>
+        <h2>Terminer la visite <span class="accent">#{{ checkoutInterventionId }}</span></h2>
+      </div>
+      <button class="close-btn" (click)="fermerCheckout()">✕</button>
     </div>
 
-    <div class="form-group mt-3">
-      <label>📸 Photos après installation</label>
-      <input type="file" multiple (change)="onFileSelected($event, 'Après')" class="form-control">
-    </div>
+    <div class="checkout-body">
 
-    <!-- Sélection du matériel sorti (MULTIPLE) -->
-    <div class="form-group mt-3">
-      <label>📦 Matériel sorti / utilisé</label>
-      <select multiple [(ngModel)]="checkoutData.materielSortiIds" class="form-select">
-        <option [ngValue]="null" disabled>Sélectionner le matériel sorti</option>
-        <option *ngFor="let m of materielsList" [value]="m.idMateriel">
-          {{ m.nom }} ({{ m.reference }})
-        </option>
-      </select>
-    </div>
-
-    <!-- Sélection du matériel retourné (MULTIPLE) -->
-    <div class="form-group mt-3">
-      <label>📥 Matériel retourné</label>
-      <select multiple [(ngModel)]="checkoutData.materielRetourIds" class="form-select">
-        <option [ngValue]="null" disabled>Sélectionner le matériel retourné</option>
-        <option *ngFor="let m of materielsList" [value]="m.idMateriel">
-          {{ m.nom }} ({{ m.reference }})
-        </option>
-      </select>
-    </div>
-
-    <!-- Sélection de l'état du matériel retourné -->
-    <div class="form-group mt-3">
-      <label>🔧 État du matériel retourné</label>
-      <select [(ngModel)]="checkoutData.etatMateriel" class="form-select">
-        <option [ngValue]="null" disabled>Sélectionner l'état</option>
-        <option value="Bon état">Bon état</option>
-        <option value="Endommagé">Endommagé</option>
-        <option value="HS">HS (Hors Service)</option>
-      </select>
-    </div>
-
-    <!-- Upload du fichier d'attestation -->
-    <div class="form-group mt-3">
-      <label>📄 Attestation (Signature / PDF)</label>
-      <input type="file" (change)="onAttestationSelected($event)" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
-      <small class="text-muted">Téléchargez l'attestation signée (PDF ou image).</small>
-    </div>
-
-    <!-- Checklist dynamique -->
-    <div class="form-group mt-3">
-      <label>📋 Checklist d'installation (Matériels de la base)</label>
-      <div class="checklist-container">
-        <div class="checklist-item" *ngFor="let item of checkoutChecklist">
-          <label class="checkbox-label">
-            <input type="checkbox" [(ngModel)]="item.conforme">
-            <span class="checkbox-text">{{ item.nom }}</span>
+      <!-- Photos -->
+      <section class="section">
+        <span class="section-title">Photos</span>
+        <div class="upload-row">
+          <label class="upload-btn">
+            <input type="file" multiple hidden (change)="onFileSelected($event, 'Avant')">
+            <lucide-icon [img]="icons.Image" [size]="15"></lucide-icon>
+            Avant
+            <span class="count-badge" *ngIf="getFileCount('Avant') > 0">{{ getFileCount('Avant') }}</span>
+          </label>
+          <label class="upload-btn">
+            <input type="file" multiple hidden (change)="onFileSelected($event, 'Après')">
+            <lucide-icon [img]="icons.Image" [size]="15"></lucide-icon>
+            Après
+            <span class="count-badge" *ngIf="getFileCount('Après') > 0">{{ getFileCount('Après') }}</span>
           </label>
         </div>
-      </div>
+      </section>
+
+      <!-- Matériel sorti -->
+      <section class="section">
+        <span class="section-title">Matériel sorti / utilisé</span>
+        <span class="section-hint">Ce que vous prenez sur ce site pour cette visite.</span>
+        <div class="chip-row">
+          <button type="button" class="chip"
+                  *ngFor="let m of materielsList"
+                  [class.selected]="checkoutData.materielSortiIds.includes(m.idMateriel)"
+                  (click)="toggleMateriel(checkoutData.materielSortiIds, m.idMateriel)">
+            <lucide-icon *ngIf="checkoutData.materielSortiIds.includes(m.idMateriel)" [img]="icons.CheckCircle" [size]="13"></lucide-icon>
+            {{ m.nom }} <span class="ref">{{ m.reference }}</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Matériel retourné -->
+      <section class="section">
+        <span class="section-title">Matériel retourné</span>
+        <span class="section-hint">Ce que vous ramenez à la fin de la visite.</span>
+        <div class="chip-row">
+          <button type="button" class="chip"
+                  *ngFor="let m of materielsList"
+                  [class.selected]="checkoutData.materielRetourIds.includes(m.idMateriel)"
+                  (click)="toggleMateriel(checkoutData.materielRetourIds, m.idMateriel)">
+            <lucide-icon *ngIf="checkoutData.materielRetourIds.includes(m.idMateriel)" [img]="icons.CheckCircle" [size]="13"></lucide-icon>
+            {{ m.nom }} <span class="ref">{{ m.reference }}</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- État -->
+      <section class="section" *ngIf="checkoutData.materielRetourIds.length > 0">
+        <span class="section-title">État du matériel retourné</span>
+        <div class="chip-row">
+          <button type="button" class="chip etat-bon" [class.selected]="checkoutData.etatMateriel === 'Bon état'" (click)="checkoutData.etatMateriel = 'Bon état'">Bon état</button>
+          <button type="button" class="chip etat-endommage" [class.selected]="checkoutData.etatMateriel === 'Endommagé'" (click)="checkoutData.etatMateriel = 'Endommagé'">Endommagé</button>
+          <button type="button" class="chip etat-hs" [class.selected]="checkoutData.etatMateriel === 'HS'" (click)="checkoutData.etatMateriel = 'HS'">HS</button>
+        </div>
+      </section>
+
+      <!-- Attestation -->
+      <section class="section">
+        <span class="section-title">Attestation</span>
+        <div class="upload-row">
+          <label class="upload-btn wide">
+            <input type="file" hidden accept=".pdf,.png,.jpg,.jpeg" (change)="onAttestationSelected($event)">
+            <lucide-icon [img]="icons.FileText" [size]="15"></lucide-icon>
+            {{ attestationFile ? attestationFile.name : 'Choisir un fichier signé' }}
+          </label>
+        </div>
+        <input type="text" placeholder="Nom du signataire" [(ngModel)]="checkoutData.signataire" class="text-input">
+      </section>
+
+      <!-- Checklist -->
+      <section class="section">
+        <span class="section-title">Checklist d'installation</span>
+        <span class="section-hint">Contrôle de conformité du matériel déjà en place chez le client (sans lien avec les sorties/retours ci-dessus).</span>
+        <div class="checklist-row">
+          <button type="button" class="checklist-chip"
+                  *ngFor="let item of checkoutChecklist"
+                  [class.checked]="item.conforme"
+                  (click)="item.conforme = !item.conforme">
+            <lucide-icon [img]="icons.CheckCircle" [size]="13"></lucide-icon>
+            {{ item.nom }}
+          </button>
+        </div>
+      </section>
+
     </div>
 
-    <div class="modal-actions mt-4">
+    <div class="checkout-footer">
       <button class="btn btn-secondary" (click)="fermerCheckout()">Annuler</button>
-      <button class="btn btn-primary" (click)="confirmerCheckout()">Enregistrer & Terminer</button>
+      <button class="btn btn-primary" (click)="confirmerCheckout()">Enregistrer &amp; Terminer</button>
     </div>
   </div>
 </div>

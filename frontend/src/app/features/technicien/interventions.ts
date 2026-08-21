@@ -103,28 +103,33 @@ export class TechnicienInterventions implements OnInit {
     });
   }
 
-  loadMateriels() {
-    this.http.get<any[]>('http://localhost:8080/api/technicien/materiels').subscribe({
-      next: (data) => {
-        this.materielsList = data || [];
-        this.checkoutChecklist = this.materielsList.map(m => ({
-          idMateriel: m.idMateriel,
-          nom: m.nom + ' (' + m.reference + ')',
-          conforme: false
-        }));
-      },
-      error: () => {
-        this.materielsList = [
-          { idMateriel: 1, nom: 'PC Portable', reference: 'PC-002' },
-          { idMateriel: 2, nom: 'Datashow', reference: 'DS-002' }
-        ];
-        this.checkoutChecklist = this.materielsList.map(m => ({
-          idMateriel: m.idMateriel,
-          nom: m.nom + ' (' + m.reference + ')',
-          conforme: false
-        }));
-      }
-    });
+loadMateriels() {
+  this.http.get<any[]>('http://localhost:8080/api/technicien/interventions/materiels').subscribe({
+    next: (data) => {
+      this.materielsList = data || [];
+      this.checkoutChecklist = this.materielsList.map(m => ({
+        idMateriel: m.idMateriel,
+        nom: m.nom + ' (' + m.reference + ')',
+        conforme: false
+      }));
+    },
+    error: () => {
+      this.materielsList = [
+        { idMateriel: 1, nom: 'PC Portable', reference: 'PC-002' },
+        { idMateriel: 2, nom: 'Datashow', reference: 'DS-002' }
+      ];
+      this.checkoutChecklist = this.materielsList.map(m => ({
+        idMateriel: m.idMateriel,
+        nom: m.nom + ' (' + m.reference + ')',
+        conforme: false
+      }));
+    }
+  });
+}
+
+
+  getFileCount(type: 'Avant' | 'Après'): number {
+    return this.selectedFiles.filter(f => f.type === type).length;
   }
 
   get filteredInterventions(): Intervention[] {
@@ -385,7 +390,18 @@ export class TechnicienInterventions implements OnInit {
       }
     });
   }
+  toggleMateriel(list: number[], id: number) {
+    const index = list.indexOf(id);
+    if (index === -1) {
+      list.push(id);
+    } else {
+      list.splice(index, 1);
+    }
+  }
 
+  selectEtatMateriel(etat: string) {
+    this.checkoutData.etatMateriel = etat;
+  }
   exporterCSV() {
     if (this.interventions.length === 0) {
       alert("Aucune donnée à exporter.");
