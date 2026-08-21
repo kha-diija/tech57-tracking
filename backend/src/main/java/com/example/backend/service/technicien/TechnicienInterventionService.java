@@ -7,6 +7,7 @@ import com.example.backend.dto.technicien.Dashboard.MissionSimplifieeDTO;
 import com.example.backend.entity.*;
 import com.example.backend.repository.admin.*;
 import com.example.backend.service.admin.InterventionService;
+import com.example.backend.service.admin.MissionInstallationService;
 import com.example.backend.service.admin.RapportPdfService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ public class TechnicienInterventionService {
 
     private final InterventionService adminInterventionService;
     private final RapportPdfService rapportPdfService;
+    private final MissionInstallationService missionInstallationService; // ✅ AJOUT
 
     public TechnicienInterventionService(InterventionRepository interventionRepository,
                                          CheckInOutRepository checkInOutRepository,
@@ -53,7 +55,8 @@ public class TechnicienInterventionService {
                                          AttestationRepository attestationRepository,
                                          MaterielRepository materielRepository,
                                          InterventionService adminInterventionService,
-                                         RapportPdfService rapportPdfService) {
+                                         RapportPdfService rapportPdfService,
+                                         MissionInstallationService missionInstallationService) { // ✅ AJOUT
         this.interventionRepository = interventionRepository;
         this.checkInOutRepository = checkInOutRepository;
         this.photoRepository = photoRepository;
@@ -68,6 +71,7 @@ public class TechnicienInterventionService {
         this.materielRepository = materielRepository;
         this.adminInterventionService = adminInterventionService;
         this.rapportPdfService = rapportPdfService;
+        this.missionInstallationService = missionInstallationService; // ✅ AJOUT
     }
 
     public List<InterventionResponse> getMesInterventions(Integer technicienId) {
@@ -186,10 +190,38 @@ public class TechnicienInterventionService {
         checkInOutRepository.save(currentVisit);
 
         if (request.getPhotos() != null && !request.getPhotos().isEmpty()) {
+            String uploadDir = "uploads/photos/";
+            java.nio.file.Path uploadPath = java.nio.file.Paths.get(uploadDir);
+            if (!java.nio.file.Files.exists(uploadPath)) {
+                java.nio.file.Files.createDirectories(uploadPath);
+            }
+
             for (int i = 0; i < request.getPhotos().size(); i++) {
-                String type = (request.getPhotoTypes() != null && i < request.getPhotoTypes().size()) ? request.getPhotoTypes().get(i) : "Photo";
+                MultipartFile file = request.getPhotos().get(i);
+                if (file == null || file.isEmpty()) continue;
+
+                String type = (request.getPhotoTypes() != null && i < request.getPhotoTypes().size())
+                        ? request.getPhotoTypes().get(i) : "Photo";
+
+                String originalFilename = file.getOriginalFilename();
+                if (originalFilename == null) originalFilename = "photo";
+
+                String cleanName = originalFilename
+                        .replaceAll("[^a-zA-Z0-9._-]", "_")
+                        .replaceAll("_+", "_")
+                        .toLowerCase();
+
+                if (cleanName.isEmpty() || cleanName.equals("_")) {
+                    cleanName = "photo";
+                }
+
+                String fileName = java.util.UUID.randomUUID() + "_" + cleanName;
+
+                java.nio.file.Path filePath = uploadPath.resolve(fileName);
+                java.nio.file.Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
                 Photo photo = new Photo();
-                photo.setCheminFichier("https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500");
+                photo.setCheminFichier("/uploads/photos/" + fileName);
                 photo.setTypePhoto(type);
                 photo.setIntervention(intervention);
                 photoRepository.save(photo);
@@ -204,7 +236,6 @@ public class TechnicienInterventionService {
             Attestation attestation;
             if (!existing.isEmpty()) {
                 attestation = existing.get(0);
-                // supprime les doublons résiduels s'il y en a
                 for (int i = 1; i < existing.size(); i++) {
                     attestationRepository.delete(existing.get(i));
                 }
@@ -246,17 +277,14 @@ public class TechnicienInterventionService {
                     checklistJson,
                     new com.fasterxml.jackson.core.type.TypeReference<List<ChecklistItemDto>>() {});
 
-            // Réutilise la checklist existante s'il y en a une, plutôt que d'en créer une nouvelle à chaque check-out
             List<ChecklistEquipement> existingChecklists = checklistEquipementRepository.findByIntervention(intervention);
             ChecklistEquipement checklistEquipement;
             if (!existingChecklists.isEmpty()) {
                 checklistEquipement = existingChecklists.get(0);
-                // supprime les doublons résiduels s'il y en a
                 for (int i = 1; i < existingChecklists.size(); i++) {
                     checklistItemRepository.deleteAll(checklistItemRepository.findByChecklist(existingChecklists.get(i)));
                     checklistEquipementRepository.delete(existingChecklists.get(i));
                 }
-                // on repart d'une checklist propre : on supprime ses anciens items avant de reconstruire
                 checklistItemRepository.deleteAll(checklistItemRepository.findByChecklist(checklistEquipement));
             } else {
                 checklistEquipement = new ChecklistEquipement();
@@ -291,6 +319,12 @@ public class TechnicienInterventionService {
         }
 
         updateInterventionStatus(intervention);
+
+        // ✅ AJOUT : Mettre à jour le statut de la mission après le check-out
+        if (intervention.getMission() != null) {
+            missionInstallationService.recalculerStatut(intervention.getMission().getIdMission());
+        }
+
         return adminInterventionService.convertToResponse(intervention);
     }
 
@@ -322,7 +356,6 @@ public class TechnicienInterventionService {
         } else if (visitesTerminees >= 1) {
             intervention.setStatut("Planifiée");
         }
-        // Si aucune visite n'a encore eu lieu, on ne touche pas au statut existant
 
         interventionRepository.save(intervention);
     }

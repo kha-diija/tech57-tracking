@@ -376,8 +376,8 @@ public class InterventionService {
                 .count();
         boolean uneVisiteEnCours = visites.stream()
                 .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
-        double avancement = intervention.getTauxAvancement() != null ? intervention.getTauxAvancement() : 0.0;
 
+        // ✅ CORRECTION : Supprimer la condition d'avancement à 100%
         if (visitesTerminees < 2) {
             throw new IllegalArgumentException(
                     "Impossible de clôturer : au moins 2 visites terminées (check-in + check-out) sont requises.");
@@ -386,12 +386,8 @@ public class InterventionService {
             throw new IllegalArgumentException(
                     "Impossible de clôturer : une visite est encore en cours (pas de check-out).");
         }
-        // --- NOUVEAU : la clôture exige en plus un avancement à 100% ---
-        if (avancement < 100.0) {
-            throw new IllegalArgumentException(
-                    "Impossible de clôturer : l'avancement doit être à 100% (actuellement " + avancement + "%).");
-        }
 
+        // ✅ CORRECTION : On force le statut et l'avancement à 100% à la clôture
         intervention.setStatut("Clôturée");
         intervention.setTauxAvancement(100.0);
 
