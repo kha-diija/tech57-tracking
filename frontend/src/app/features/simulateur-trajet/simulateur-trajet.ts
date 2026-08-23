@@ -59,6 +59,13 @@ export class SimulateurTrajet implements AfterViewInit, OnDestroy {
   typeRoute = signal<TypeRoute>('Autoroute');
   prixCarburant = signal<number>(11.5);
 
+  // Intervalle réaliste du prix du gasoil au Maroc (source: GlobalPetrolPrices,
+  // historique 2016-2026 : min 7.55 DH le 13/04/2020, max 16.57 DH le 04/07/2022 ;
+  // prix courant 2026 ≈ 14-15.5 DH/L). Marge de sécurité pour absorber les fluctuations
+  // futures sans bloquer un usage légitime.
+  readonly PRIX_CARBURANT_MIN = 8;
+  readonly PRIX_CARBURANT_MAX = 18;
+
   resultat = signal<SimulateurTrajetResult | null>(null);
   comparatif = signal<SimulateurTrajetResult[]>([]);
   enChargement = signal(false);
@@ -194,6 +201,24 @@ export class SimulateurTrajet implements AfterViewInit, OnDestroy {
     this.rechercheSubject.next({ texte, cible });
   }
 
+  /** Valide le prix du carburant saisi par rapport à un intervalle réaliste pour le Maroc. */
+  onSaisiePrixCarburant(valeur: number): void {
+    this.prixCarburant.set(valeur);
+
+    if (valeur == null || isNaN(valeur)) {
+      this.erreur.set('Veuillez saisir un prix du carburant valide.');
+      return;
+    }
+
+    if (valeur < this.PRIX_CARBURANT_MIN || valeur > this.PRIX_CARBURANT_MAX) {
+      this.erreur.set(
+        `Le prix du carburant doit être compris entre ${this.PRIX_CARBURANT_MIN} et ${this.PRIX_CARBURANT_MAX} DH/L (prix réaliste au Maroc).`
+      );
+    } else {
+      this.erreur.set(null);
+    }
+  }
+
   choisirSuggestion(suggestion: Suggestion, cible: Cible): void {
     if (cible === 'origine') {
       this.origine.set(suggestion.point);
@@ -318,6 +343,8 @@ export class SimulateurTrajet implements AfterViewInit, OnDestroy {
   peutCalculer(): boolean {
     const o = this.origine();
     const d = this.destination();
-    return !!o && !!d && (o.lat !== d.lat || o.lng !== d.lng) && this.prixCarburant() > 0;
+    const prix = this.prixCarburant();
+    const prixValide = prix != null && !isNaN(prix) && prix >= this.PRIX_CARBURANT_MIN && prix <= this.PRIX_CARBURANT_MAX;
+    return !!o && !!d && (o.lat !== d.lat || o.lng !== d.lng) && prixValide;
   }
 }
