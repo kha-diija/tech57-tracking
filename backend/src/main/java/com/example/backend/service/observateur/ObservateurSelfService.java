@@ -3,7 +3,7 @@ package com.example.backend.service.observateur;
 import com.example.backend.dto.admin.permission.*;
 import com.example.backend.dto.observateur.*;
 import com.example.backend.entity.*;
-import com.example.backend.repository.ObservateurRepository;
+import com.example.backend.repository.ObservateurRepositoryy;
 import com.example.backend.repository.admin.ObservateurDocumentRepository;
 import com.example.backend.repository.admin.ObservateurResourceAssigneeRepository;
 import com.example.backend.repository.admin.ObservateurVideoAssigneeRepository;
@@ -29,17 +29,17 @@ import java.util.stream.Stream;
 @Service
 public class ObservateurSelfService {
 
-    private final ObservateurRepository observateurRepository;
+    private final ObservateurRepositoryy observateurRepositoryy;
     private final ObservateurVideoAssigneeRepository videoAssigneeRepository;
     private final ObservateurResourceAssigneeRepository resourceAssigneeRepository;
     private final ObservateurDocumentRepository documentAssigneeRepository;
 
     public ObservateurSelfService(
-            ObservateurRepository observateurRepository,
+            ObservateurRepositoryy observateurRepositoryy,
             ObservateurVideoAssigneeRepository videoAssigneeRepository,
             ObservateurResourceAssigneeRepository resourceAssigneeRepository,
             ObservateurDocumentRepository documentAssigneeRepository) {
-        this.observateurRepository = observateurRepository;
+        this.observateurRepositoryy = observateurRepositoryy;
         this.videoAssigneeRepository = videoAssigneeRepository;
         this.resourceAssigneeRepository = resourceAssigneeRepository;
         this.documentAssigneeRepository = documentAssigneeRepository;
@@ -47,7 +47,7 @@ public class ObservateurSelfService {
 
     // ⚠️ Hypothèse : Authentication#getName() = email. À adapter si besoin.
     private Observateur resolveObservateur(String email) {
-        return observateurRepository.findByEmail(email)
+        return observateurRepositoryy.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("Observateur introuvable pour : " + email));
     }
 

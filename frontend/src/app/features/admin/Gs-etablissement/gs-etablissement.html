@@ -88,6 +88,7 @@
             <th>Bénéficiaires</th>
             <th>Responsable</th>
             <th>Contact</th>
+            <th>Formateurs</th>
             <th class="etab-table__actions-col">Actions</th>
           </tr>
         </thead>
@@ -129,19 +130,24 @@
                   <lucide-icon [img]="icons.Phone" [size]="12"></lucide-icon>
                   {{ resp.telephone }}
                 </a>
-                
               </div>
+            </td>
+            <td>
+              <button class="badge badge--clickable" (click)="openFormateurModal(etab)" title="Gérer les formateurs">
+                <lucide-icon [img]="icons.GraduationCap" [size]="12"></lucide-icon>
+                {{ etab.nbFormateurs ?? 0 }} formateur(s)
+              </button>
             </td>
             <td>
               <div class="etab-table__row-actions">
                 <button class="icon-btn" title="Modifier" (click)="openEditForm(etab)">
                   <lucide-icon [img]="icons.Pencil" [size]="15"></lucide-icon>
                 </button>
-                
-                <button 
-                  class="icon-btn icon-btn--danger" 
-                  title="Supprimer" 
-                  *ngIf="isAdmin()" 
+
+                <button
+                  class="icon-btn icon-btn--danger"
+                  title="Supprimer"
+                  *ngIf="isAdmin()"
                   (click)="deleteEtablissement(etab)">
                   <lucide-icon [img]="icons.Trash2" [size]="15"></lucide-icon>
                 </button>
@@ -150,7 +156,7 @@
           </tr>
 
           <tr *ngIf="!isLoading() && filteredEtablissements().length === 0">
-            <td colspan="7" class="etab-table__empty">
+            <td colspan="8" class="etab-table__empty">
               Aucun établissement ne correspond à ta recherche.
             </td>
           </tr>
@@ -233,7 +239,6 @@
           <label>Téléphone</label>
           <input type="text" [ngModel]="formModel().telephoneContact" (ngModelChange)="updateField('telephoneContact', $event)" />
         </div>
-        
       </div>
 
       <div class="form-divider">Responsable (optionnel)</div>
@@ -259,7 +264,6 @@
           <label>Téléphone</label>
           <input type="text" [ngModel]="formModel().responsableTelephone" (ngModelChange)="updateField('responsableTelephone', $event)" />
         </div>
-        
       </div>
     </div>
 
@@ -267,6 +271,86 @@
       <button class="btn btn--ghost" (click)="closeForm()">Annuler</button>
       <button class="btn btn--primary" (click)="saveForm()">
         {{ editingId() ? 'Enregistrer les modifications' : "Créer l'établissement" }}
+      </button>
+    </div>
+  </aside>
+
+  <!-- Panneau latéral : gestion des formateurs d'un établissement -->
+  <div class="side-panel-backdrop" *ngIf="formateurModal().isOpen" (click)="closeFormateurModal()"></div>
+
+  <aside class="side-panel" *ngIf="formateurModal().isOpen">
+    <div class="side-panel__header">
+      <h2>Formateurs — {{ formateurModal().etablissement?.designation }}</h2>
+      <button class="icon-btn" (click)="closeFormateurModal()">
+        <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="side-panel__body">
+      <div *ngIf="formateurModal().isLoading" class="text-muted">Chargement...</div>
+
+      <ng-container *ngIf="!formateurModal().isLoading">
+        <div class="formateur-list" *ngIf="formateurModal().formateurs.length > 0; else noFormateur">
+          <div class="formateur-item" *ngFor="let f of formateurModal().formateurs">
+            <div class="formateur-item__info">
+              <span class="formateur-item__name">{{ f.prenom }} {{ f.nom }}</span>
+              <span class="formateur-item__meta" *ngIf="f.telephone">
+                <lucide-icon [img]="icons.Phone" [size]="11"></lucide-icon>
+                {{ f.telephone }}
+              </span>
+              <span class="formateur-item__meta" *ngIf="f.adresse">
+                <lucide-icon [img]="icons.MapPin" [size]="11"></lucide-icon>
+                {{ f.adresse }}
+              </span>
+            </div>
+            <div class="formateur-item__actions">
+              <button class="icon-btn" title="Modifier" (click)="editFormateur(f)">
+                <lucide-icon [img]="icons.Pencil" [size]="14"></lucide-icon>
+              </button>
+              <button class="icon-btn icon-btn--danger" title="Supprimer" (click)="deleteFormateur(f)">
+                <lucide-icon [img]="icons.Trash2" [size]="14"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noFormateur>
+          <p class="text-muted">Aucun formateur enregistré pour cet établissement.</p>
+        </ng-template>
+
+        <div class="form-divider">
+          {{ formateurModal().editingId ? 'Modifier le formateur' : 'Ajouter un formateur' }}
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prénom</label>
+            <input type="text" [ngModel]="formateurModal().form.prenom" (ngModelChange)="updateFormateurField('prenom', $event)" />
+          </div>
+          <div class="form-group">
+            <label>Nom</label>
+            <input type="text" [ngModel]="formateurModal().form.nom" (ngModelChange)="updateFormateurField('nom', $event)" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" [ngModel]="formateurModal().form.telephone" (ngModelChange)="updateFormateurField('telephone', $event)" />
+        </div>
+
+        <div class="form-group">
+          <label>Adresse</label>
+          <input type="text" [ngModel]="formateurModal().form.adresse" (ngModelChange)="updateFormateurField('adresse', $event)" />
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="side-panel__footer">
+      <button class="btn btn--ghost" *ngIf="formateurModal().editingId" (click)="cancelEditFormateur()">
+        Annuler la modification
+      </button>
+      <button class="btn btn--primary" (click)="saveFormateur()">
+        {{ formateurModal().editingId ? 'Enregistrer' : 'Ajouter le formateur' }}
       </button>
     </div>
   </aside>

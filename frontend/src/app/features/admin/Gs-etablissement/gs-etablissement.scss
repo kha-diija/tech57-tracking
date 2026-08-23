@@ -339,6 +339,18 @@
   font-weight: 700;
   background-color: var(--bg-pill-active);
   color: var(--text-muted);
+
+  &--clickable {
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background-color: var(--primary-glow);
+      border-color: rgba(249, 115, 22, 0.35);
+      color: var(--primary);
+    }
+  }
 }
 
 .icon-btn {
@@ -365,7 +377,7 @@
   }
 }
 
-/* Panneau latéral (création / édition) */
+/* Panneau latéral (création / édition / formateurs) */
 .side-panel-backdrop {
   position: fixed;
   inset: 0;
@@ -473,6 +485,51 @@
   color: var(--primary);
   padding-top: 0.5rem;
   border-top: 1px solid var(--border-color);
+}
+
+/* Liste des formateurs (panneau latéral) */
+.formateur-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.formateur-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-app);
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-main);
+  }
+
+  &__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
 }
 
 /* Styles de la modale de confirmation personnalisée */
