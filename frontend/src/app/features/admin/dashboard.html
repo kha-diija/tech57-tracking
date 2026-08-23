@@ -1,4 +1,4 @@
-<div class="dashboard">
+<div class="dashboard" #dashboardContent>
 
   <!-- En-tête -->
   <div class="dashboard__header">
@@ -14,9 +14,16 @@
     </div>
 
     <div class="dashboard__actions">
+      <!-- Bouton CSV existant (ne pas toucher) -->
       <button class="btn btn--ghost" (click)="onExport()">
         <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
-        Exporter
+        Exporter CSV
+      </button>
+      
+      <!-- Nouveau bouton PDF -->
+      <button class="btn btn--primary" (click)="onExportPdf()" [disabled]="isExporting()">
+        <lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon>
+        {{ isExporting() ? 'Export en cours...' : 'Exporter PDF' }}
       </button>
     </div>
   </div>
