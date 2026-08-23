@@ -13,6 +13,10 @@
     </div>
 
     <div class="gs-etab__actions">
+      <button class="btn btn--ghost" (click)="openImportModal()">
+        <lucide-icon [img]="icons.Upload" [size]="16"></lucide-icon>
+        Importer
+      </button>
       <button class="btn btn--ghost" (click)="onExport()">
         <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
         Exporter
@@ -165,6 +169,7 @@
     </div>
   </div>
 
+  <!-- Panneau latéral : création / édition d'un établissement -->
   <div class="side-panel-backdrop" *ngIf="showForm()" (click)="closeForm()"></div>
 
   <aside class="side-panel" *ngIf="showForm()">
@@ -355,6 +360,7 @@
     </div>
   </aside>
 
+  <!-- Modale de confirmation de suppression -->
   <ng-container *ngIf="isAdmin()">
     <div class="side-panel-backdrop" *ngIf="confirmModal().isOpen" (click)="closeConfirmModal()"></div>
 
@@ -378,5 +384,59 @@
       </div>
     </div>
   </ng-container>
+
+  <!-- Modale d'import Excel -->
+  <div class="side-panel-backdrop" *ngIf="importModal().isOpen" (click)="closeImportModal()"></div>
+
+  <div class="custom-modal-container" *ngIf="importModal().isOpen">
+    <div class="custom-modal">
+      <div class="custom-modal__header">
+        <h3>Importer des établissements</h3>
+        <button class="icon-btn" (click)="closeImportModal()">
+          <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="custom-modal__body">
+        <ng-container *ngIf="!importModal().result; else importDone">
+          <div class="form-group">
+            <label>Province concernée</label>
+            <select [ngModel]="importModal().idProvince" (ngModelChange)="onImportProvinceChange($event)">
+              <option [ngValue]="null" disabled>Choisir une province</option>
+              <option *ngFor="let p of importProvinces()" [ngValue]="p.idProvince">{{ p.nom }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Fichier Excel (.xlsx)</label>
+            <input type="file" accept=".xlsx" (change)="onImportFileSelected($event)" />
+          </div>
+
+          <p class="text-muted" *ngIf="importModal().error">{{ importModal().error }}</p>
+        </ng-container>
+
+        <ng-template #importDone>
+          <p>
+            {{ importModal().result?.crees }} créé(s), {{ importModal().result?.misAJour }} mis à jour,
+            {{ importModal().result?.ignores }} ignoré(s) sur {{ importModal().result?.totalLignes }} ligne(s) lues.
+          </p>
+          <ul *ngIf="importModal().result?.erreurs?.length">
+            <li *ngFor="let e of importModal().result?.erreurs">{{ e }}</li>
+          </ul>
+        </ng-template>
+      </div>
+
+      <div class="custom-modal__footer">
+        <button class="btn btn--ghost" (click)="closeImportModal()">Fermer</button>
+        <button
+          class="btn btn--primary"
+          *ngIf="!importModal().result"
+          [disabled]="importModal().isImporting"
+          (click)="submitImport()">
+          {{ importModal().isImporting ? 'Import en cours...' : 'Importer' }}
+        </button>
+      </div>
+    </div>
+  </div>
 
 </div>
