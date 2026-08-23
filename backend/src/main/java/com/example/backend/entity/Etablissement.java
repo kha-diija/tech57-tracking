@@ -46,4 +46,7 @@ public class Etablissement {
 
     @OneToMany(mappedBy = "etablissement", cascade = CascadeType.ALL)
     private List<Materiel> materiels = new ArrayList<>();
+
+    @OneToMany(mappedBy = "etablissement", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Observateur> observateurs = new ArrayList<>();
 }

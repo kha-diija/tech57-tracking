@@ -14,10 +14,11 @@ import {
   Trash2,
   X,
   Phone,
-  Mail,
-  Navigation
+  Navigation,
+  GraduationCap
 } from 'lucide-angular';
 import { EtablissementService } from '../../../shared/services/etablissement.service';
+import { FormateurService } from '../../../shared/services/formateur.service';
 import { LocationService } from '../../../shared/services/location.service';
 import { AuthService } from '../../../shared/services/auth.service';
 import {
@@ -26,7 +27,9 @@ import {
   EtablissementKpi,
   EtablissementRequest,
   Province,
-  Region
+  Region,
+  Formateur,
+  FormateurRequest
 } from '../../../shared/models/etablissement.model';
 
 interface FormModel {
@@ -36,7 +39,6 @@ interface FormModel {
   localisationGps: string;
   nombreBeneficiaires: number;
   telephoneContact: string;
-  emailContact: string;
 
   idRegion: number | null;
   idProvince: number | null;
@@ -47,7 +49,15 @@ interface FormModel {
   responsablePrenom: string;
   responsableFonction: string;
   responsableTelephone: string;
-  responsableEmail: string;
+}
+
+interface FormateurModalState {
+  isOpen: boolean;
+  etablissement: Etablissement | null;
+  formateurs: Formateur[];
+  isLoading: boolean;
+  editingId: number | null;
+  form: FormateurRequest;
 }
 
 @Component({
@@ -59,17 +69,18 @@ interface FormModel {
 })
 export class GsEtablissement {
   private readonly etablissementService = inject(EtablissementService);
+  private readonly formateurService = inject(FormateurService);
   private readonly locationService = inject(LocationService);
   private readonly authService = inject(AuthService);
 
-  // Vérifie si l'utilisateur connecté est un administrateur (ajustez le libellé exact du rôle admin si besoin, ex: 'ADMIN', 'ADMINISTRATEUR')
+  // Vérifie si l'utilisateur connecté est un administrateur
   readonly isAdmin = computed(() => {
-    return this.authService.hasRole('ADMINISTRATEUR') ;
+    return this.authService.hasRole('ADMINISTRATEUR');
   });
 
   readonly icons = {
     Building2, MapPin, Users, UserX, Search, Plus, Download,
-    Pencil, Trash2, X, Phone, Mail, Navigation
+    Pencil, Trash2, X, Phone, Navigation, GraduationCap
   };
 
   readonly typeOptions = ['École', 'Collège', 'Lycée', 'Université', 'Centre de formation', 'Autre'];
@@ -127,6 +138,9 @@ export class GsEtablissement {
   readonly formProvinces = signal<Province[]>([]);
   readonly formCommunes = signal<Commune[]>([]);
 
+  // --- Modale de gestion des formateurs (ex-Observateur côté backend) ---
+  readonly formateurModal = signal<FormateurModalState>(this.emptyFormateurModal());
+
   private emptyForm(): FormModel {
     return {
       reference: '',
@@ -135,7 +149,6 @@ export class GsEtablissement {
       localisationGps: '',
       nombreBeneficiaires: 0,
       telephoneContact: '',
-      emailContact: '',
       idRegion: null,
       idProvince: null,
       idCommune: null,
@@ -143,8 +156,18 @@ export class GsEtablissement {
       responsableNom: '',
       responsablePrenom: '',
       responsableFonction: '',
-      responsableTelephone: '',
-      responsableEmail: ''
+      responsableTelephone: ''
+    };
+  }
+
+  private emptyFormateurModal(): FormateurModalState {
+    return {
+      isOpen: false,
+      etablissement: null,
+      formateurs: [],
+      isLoading: false,
+      editingId: null,
+      form: { nom: '', prenom: '', telephone: '', adresse: '' }
     };
   }
 
@@ -219,7 +242,6 @@ export class GsEtablissement {
       localisationGps: item.localisationGps ?? '',
       nombreBeneficiaires: item.nombreBeneficiaires ?? 0,
       telephoneContact: item.telephoneContact ?? '',
-      emailContact: item.emailContact ?? '',
       idRegion: item.idRegion,
       idProvince: item.idProvince,
       idCommune: item.idCommune,
@@ -227,8 +249,7 @@ export class GsEtablissement {
       responsableNom: item.responsable?.nom ?? '',
       responsablePrenom: item.responsable?.prenom ?? '',
       responsableFonction: item.responsable?.fonction ?? '',
-      responsableTelephone: item.responsable?.telephone ?? '',
-      responsableEmail: item.responsable?.email ?? ''
+      responsableTelephone: item.responsable?.telephone ?? ''
     });
 
     if (item.idRegion) {
@@ -258,7 +279,6 @@ export class GsEtablissement {
       localisationGps: m.localisationGps || undefined,
       nombreBeneficiaires: m.nombreBeneficiaires,
       telephoneContact: m.telephoneContact || undefined,
-      emailContact: m.emailContact || undefined,
       idCommune: m.idCommune,
       responsable: m.responsableNom.trim()
         ? {
@@ -266,8 +286,7 @@ export class GsEtablissement {
             nom: m.responsableNom,
             prenom: m.responsablePrenom,
             fonction: m.responsableFonction || undefined,
-            telephone: m.responsableTelephone || undefined,
-            email: m.responsableEmail || undefined
+            telephone: m.responsableTelephone || undefined
           }
         : null
     };
@@ -377,6 +396,103 @@ export class GsEtablissement {
   }
 
   // ============================================================
+  // --- Formateurs (entité "Observateur" côté backend) ---
+  // ============================================================
+
+  openFormateurModal(etab: Etablissement): void {
+    this.formateurModal.set({
+      isOpen: true,
+      etablissement: etab,
+      formateurs: [],
+      isLoading: true,
+      editingId: null,
+      form: { nom: '', prenom: '', telephone: '', adresse: '' }
+    });
+
+    this.formateurService.getByEtablissement(etab.idEtablissement).subscribe((list) => {
+      this.formateurModal.update((m) => ({ ...m, formateurs: list, isLoading: false }));
+    });
+  }
+
+  closeFormateurModal(): void {
+    this.formateurModal.set(this.emptyFormateurModal());
+  }
+
+  updateFormateurField<K extends keyof FormateurRequest>(field: K, value: FormateurRequest[K]): void {
+    this.formateurModal.update((m) => ({ ...m, form: { ...m.form, [field]: value } }));
+  }
+
+  editFormateur(f: Formateur): void {
+    this.formateurModal.update((m) => ({
+      ...m,
+      editingId: f.idFormateur,
+      form: {
+        nom: f.nom,
+        prenom: f.prenom,
+        telephone: f.telephone ?? '',
+        adresse: f.adresse ?? ''
+      }
+    }));
+  }
+
+  cancelEditFormateur(): void {
+    this.formateurModal.update((m) => ({
+      ...m,
+      editingId: null,
+      form: { nom: '', prenom: '', telephone: '', adresse: '' }
+    }));
+  }
+
+  saveFormateur(): void {
+    const modal = this.formateurModal();
+    const etab = modal.etablissement;
+    if (!etab || !modal.form.nom.trim() || !modal.form.prenom.trim()) return;
+
+    const isCreate = !modal.editingId;
+    const request = modal.editingId
+      ? this.formateurService.update(etab.idEtablissement, modal.editingId, modal.form)
+      : this.formateurService.create(etab.idEtablissement, modal.form);
+
+    request.subscribe(() => {
+      this.formateurService.getByEtablissement(etab.idEtablissement).subscribe((list) => {
+        this.formateurModal.update((m) => ({
+          ...m,
+          formateurs: list,
+          editingId: null,
+          form: { nom: '', prenom: '', telephone: '', adresse: '' }
+        }));
+      });
+
+      if (isCreate) {
+        this.syncEtablissementFormateurCount(etab.idEtablissement, 1);
+      }
+    });
+  }
+
+  deleteFormateur(f: Formateur): void {
+    const etab = this.formateurModal().etablissement;
+    if (!etab) return;
+
+    this.formateurService.delete(etab.idEtablissement, f.idFormateur).subscribe(() => {
+      this.formateurModal.update((m) => ({
+        ...m,
+        formateurs: m.formateurs.filter((x) => x.idFormateur !== f.idFormateur)
+      }));
+      this.syncEtablissementFormateurCount(etab.idEtablissement, -1);
+    });
+  }
+
+  private syncEtablissementFormateurCount(idEtablissement: number, delta: number): void {
+    this.etablissements.update((list) =>
+      list.map((e) =>
+        e.idEtablissement === idEtablissement
+          ? { ...e, nbFormateurs: Math.max(0, (e.nbFormateurs ?? 0) + delta) }
+          : e
+      )
+    );
+  }
+
+  // ============================================================
   // --- Divers ---
   // ============================================================
 
@@ -388,11 +504,11 @@ export class GsEtablissement {
 
   onExport(): void {
     const rows: string[] = [
-      'Référence;Désignation;Région;Province;Commune;Bénéficiaires;Responsable;Téléphone;Email'
+      'Référence;Désignation;Région;Province;Commune;Bénéficiaires;Responsable;Téléphone;Formateurs'
     ];
     this.filteredEtablissements().forEach((e) => {
       rows.push(
-        `${e.reference};${e.designation};${e.regionNom};${e.provinceNom};${e.communeNom};${e.nombreBeneficiaires ?? 0};${e.responsable?.nom ?? ''};${e.responsable?.telephone ?? ''};${e.responsable?.email ?? ''}`
+        `${e.reference};${e.designation};${e.regionNom};${e.provinceNom};${e.communeNom};${e.nombreBeneficiaires ?? 0};${e.responsable?.nom ?? ''};${e.responsable?.telephone ?? ''};${e.nbFormateurs ?? 0}`
       );
     });
 

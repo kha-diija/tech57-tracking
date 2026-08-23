@@ -4,18 +4,9 @@ import com.example.backend.dto.admin.etablissement.*;
 import com.example.backend.entity.Commune;
 import com.example.backend.entity.Etablissement;
 import com.example.backend.entity.Responsable;
-import com.example.backend.repository.admin.CommuneRepository;
-import com.example.backend.repository.admin.EtablissementRepository;
+import com.example.backend.repository.admin.*;
 import com.example.backend.entity.Intervention;
 import com.example.backend.entity.MissionInstallation;
-import com.example.backend.repository.admin.MissionInstallationRepository;
-import com.example.backend.repository.admin.InterventionRepository;
-import com.example.backend.repository.admin.RapportRepository;
-import com.example.backend.repository.admin.PhotoRepository;
-import com.example.backend.repository.admin.AttestationRepository;
-import com.example.backend.repository.admin.ChecklistEquipementRepository;
-import com.example.backend.repository.admin.ChecklistItemRepository; // <-- Import du repository des missions
-import com.example.backend.repository.admin.ResponsableRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +28,8 @@ public class EtablissementService {
     private final ChecklistEquipementRepository checklistEquipementRepository;
     private final ChecklistItemRepository checklistItemRepository;// <-- Ajout de la dépendance
 
+    private final ObservateurRepository observateurRepository;
+
     public EtablissementService(EtablissementRepository etablissementRepository,
                                 CommuneRepository communeRepository,
                                 ResponsableRepository responsableRepository,
@@ -46,7 +39,8 @@ public class EtablissementService {
                                 PhotoRepository photoRepository,
                                 AttestationRepository attestationRepository,
                                 ChecklistEquipementRepository checklistEquipementRepository,
-                                ChecklistItemRepository checklistItemRepository) {
+                                ChecklistItemRepository checklistItemRepository,
+                                ObservateurRepository observateurRepository) {
         this.etablissementRepository = etablissementRepository;
         this.communeRepository = communeRepository;
         this.responsableRepository = responsableRepository;
@@ -57,8 +51,8 @@ public class EtablissementService {
         this.attestationRepository = attestationRepository;
         this.checklistEquipementRepository = checklistEquipementRepository;
         this.checklistItemRepository = checklistItemRepository;
+        this.observateurRepository = observateurRepository;
     }
-
     @Transactional(readOnly = true)
     public List<EtablissementResponse> getAll() {
         return etablissementRepository.findAllWithDetails()
@@ -234,6 +228,7 @@ public class EtablissementService {
             rd.setEmail(e.getResponsable().getEmail());
             r.setResponsable(rd);
         }
+        r.setNbFormateurs((int) observateurRepository.countByEtablissement_IdEtablissement(e.getIdEtablissement()));
 
         return r;
     }
