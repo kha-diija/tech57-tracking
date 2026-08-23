@@ -1,4 +1,4 @@
-<div class="dashboard">
+<div class="dashboard" #dashboardContent>
 
   <!-- En-tête -->
   <div class="dashboard__header">
@@ -13,9 +13,16 @@
       </p>
     </div>
     <div class="dashboard__actions">
+      <!-- Bouton Export Excel existant -->
       <button class="btn btn--ghost" (click)="onExport()">
         <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
-        Exporter
+        Exporter Excel
+      </button>
+      
+      <!-- Bouton Export PDF (CORRIGÉ avec Signal) -->
+      <button class="btn btn--primary" (click)="onExportPdf()" [disabled]="isExportingPdf()">
+        <lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon>
+        {{ isExportingPdf() ? 'Export en cours...' : 'Exporter PDF' }}
       </button>
     </div>
   </div>

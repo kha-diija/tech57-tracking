@@ -899,3 +899,48 @@
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+/* --- Export PDF : état du bouton --- */
+.btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Export PDF : largeur fixe pour la capture --- */
+.dashboard {
+  width: 100%;
+  max-width: 100%;
+}
+/* Masquer les boutons lors de l'export PDF */
+.no-print {
+  display: none !important;
+}/* Style harmonisé des boutons */
+.dashboard__actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dashboard__actions .btn--ghost,
+.dashboard__actions .btn--primary {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.dashboard__actions .btn--ghost:hover,
+.dashboard__actions .btn--primary:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: rgba(249, 115, 22, 0.35);
+  color: var(--primary);
+}
+
+.dashboard__actions .btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
