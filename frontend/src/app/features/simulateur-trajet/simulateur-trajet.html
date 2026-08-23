@@ -97,10 +97,12 @@
         class="trajet__input-simple"
         type="number"
         step="0.1"
-        min="0"
+        [min]="PRIX_CARBURANT_MIN"
+        [max]="PRIX_CARBURANT_MAX"
         [ngModel]="prixCarburant()"
-        (ngModelChange)="prixCarburant.set($event)"
+        (ngModelChange)="onSaisiePrixCarburant($event)"
       />
+      <small class="trajet__hint">Intervalle réaliste : {{ PRIX_CARBURANT_MIN }} – {{ PRIX_CARBURANT_MAX }} DH/L</small>
     </div>
 
     @if (erreur()) {
