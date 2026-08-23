@@ -9,6 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.backend.dto.admin.etablissement.EtablissementImportResult;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -69,6 +72,19 @@ public class EtablissementController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
         } catch (IllegalStateException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+        }
+    }
+    
+    @PostMapping(value = "/import", consumes = "multipart/form-data")
+    public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile file,
+                                         @RequestParam("idProvince") Integer idProvince) {
+        try {
+            EtablissementImportResult result = etablissementService.importFromExcel(file, idProvince);
+            return ResponseEntity.ok(result);
+        } catch (NoSuchElementException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+        } catch (IllegalStateException | IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
         }
     }
 }

@@ -10,6 +10,7 @@ import {
   Search,
   Plus,
   Download,
+  Upload,
   Pencil,
   Trash2,
   X,
@@ -29,7 +30,8 @@ import {
   Province,
   Region,
   Formateur,
-  FormateurRequest
+  FormateurRequest,
+  ImportResult
 } from '../../../shared/models/etablissement.model';
 
 interface FormModel {
@@ -60,6 +62,15 @@ interface FormateurModalState {
   form: FormateurRequest;
 }
 
+interface ImportModalState {
+  isOpen: boolean;
+  selectedFile: File | null;
+  idProvince: number | null;
+  isImporting: boolean;
+  result: ImportResult | null;
+  error: string | null;
+}
+
 @Component({
   selector: 'app-gs-etablissement',
   standalone: true,
@@ -79,7 +90,7 @@ export class GsEtablissement {
   });
 
   readonly icons = {
-    Building2, MapPin, Users, UserX, Search, Plus, Download,
+    Building2, MapPin, Users, UserX, Search, Plus, Download, Upload,
     Pencil, Trash2, X, Phone, Navigation, GraduationCap
   };
 
@@ -141,6 +152,10 @@ export class GsEtablissement {
   // --- Modale de gestion des formateurs (ex-Observateur côté backend) ---
   readonly formateurModal = signal<FormateurModalState>(this.emptyFormateurModal());
 
+  // --- Modale d'import Excel ---
+  readonly importModal = signal<ImportModalState>(this.emptyImportModal());
+  readonly importProvinces = signal<Province[]>([]);
+
   private emptyForm(): FormModel {
     return {
       reference: '',
@@ -168,6 +183,17 @@ export class GsEtablissement {
       isLoading: false,
       editingId: null,
       form: { nom: '', prenom: '', telephone: '', adresse: '' }
+    };
+  }
+
+  private emptyImportModal(): ImportModalState {
+    return {
+      isOpen: false,
+      selectedFile: null,
+      idProvince: null,
+      isImporting: false,
+      result: null,
+      error: null
     };
   }
 
@@ -490,6 +516,56 @@ export class GsEtablissement {
           : e
       )
     );
+  }
+
+  // ============================================================
+  // --- Import Excel ---
+  // ============================================================
+
+  openImportModal(): void {
+    this.importModal.set(this.emptyImportModal());
+    this.importModal.update((m) => ({ ...m, isOpen: true }));
+    if (this.importProvinces().length === 0) {
+      this.locationService.getProvinces().subscribe((provinces) => this.importProvinces.set(provinces));
+    }
+  }
+
+  closeImportModal(): void {
+    this.importModal.set(this.emptyImportModal());
+  }
+
+  onImportFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.importModal.update((m) => ({ ...m, selectedFile: file, error: null }));
+  }
+
+  onImportProvinceChange(idProvince: number | string): void {
+    this.importModal.update((m) => ({ ...m, idProvince: Number(idProvince) || null }));
+  }
+
+  submitImport(): void {
+    const m = this.importModal();
+    if (!m.selectedFile || !m.idProvince) {
+      this.importModal.update((s) => ({ ...s, error: 'Sélectionnez un fichier et une province.' }));
+      return;
+    }
+
+    this.importModal.update((s) => ({ ...s, isImporting: true, error: null }));
+
+    this.etablissementService.importExcel(m.selectedFile, m.idProvince).subscribe({
+      next: (result) => {
+        this.importModal.update((s) => ({ ...s, isImporting: false, result }));
+        this.loadData();
+      },
+      error: () => {
+        this.importModal.update((s) => ({
+          ...s,
+          isImporting: false,
+          error: "Échec de l'import. Vérifiez le fichier et réessayez."
+        }));
+      }
+    });
   }
 
   // ============================================================

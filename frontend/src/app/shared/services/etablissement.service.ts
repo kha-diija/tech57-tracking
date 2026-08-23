@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Etablissement, EtablissementKpi, EtablissementRequest } from '../models/etablissement.model';
+import { Etablissement, EtablissementKpi, EtablissementRequest, ImportResult } from '../models/etablissement.model';
 
 @Injectable({ providedIn: 'root' })
 export class EtablissementService {
@@ -37,4 +37,11 @@ export class EtablissementService {
     }
     return this.http.delete<void>(`${this.apiUrl}/${id}`, { params });
   }
+
+  importExcel(file: File, idProvince: number): Observable<ImportResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const params = new HttpParams().set('idProvince', idProvince);
+  return this.http.post<ImportResult>(`${this.apiUrl}/import`, formData, { params });
+}
 }

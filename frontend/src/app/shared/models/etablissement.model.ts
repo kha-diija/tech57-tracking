@@ -80,3 +80,10 @@ export interface FormateurRequest {
   telephone?: string;
   adresse?: string;
 }
+export interface ImportResult {
+  totalLignes: number;
+  crees: number;
+  misAJour: number;
+  ignores: number;
+  erreurs: string[];
+}
