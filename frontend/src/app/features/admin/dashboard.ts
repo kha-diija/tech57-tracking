@@ -1,6 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { ElementRef, ViewChild } from '@angular/core';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
 import {
@@ -16,6 +19,7 @@ import {
   Plus,
   CheckCircle2,
   MapPin,
+  FileText,
   Clock
 } from 'lucide-angular';
 import { AuthService } from '../../shared/services/auth.service';
@@ -36,6 +40,7 @@ export class Dashboard {
   readonly icons = {
     Briefcase,
     Building2,
+    FileText,
     Users,
     ShieldCheck,
     ArrowUpRight,
@@ -88,6 +93,7 @@ export class Dashboard {
   // État de chargement pour l'export
   readonly isExporting = signal<boolean>(false);
 
+    @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
   kpiIcon(id: string) {
     return this.kpiIconMap[id] || Briefcase;
   }
@@ -116,6 +122,63 @@ export class Dashboard {
       }
     });
   }
+
+   onExportPdf() {
+    this.isExporting.set(true);
+    const element = this.dashboardContent.nativeElement;
+    
+    // ✅ 1. Masquer les boutons temporairement
+    const actionButtons = element.querySelectorAll('.dashboard__actions .btn');
+    const originalDisplays: string[] = [];
+    actionButtons.forEach((btn: any) => {
+      originalDisplays.push(btn.style.display);
+      btn.style.display = 'none';
+    });
+
+    // ✅ 2. Capturer le dashboard SANS les boutons
+    html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#0f1115',
+      logging: false
+    }).then((canvas) => {
+      // ✅ 3. Restaurer les boutons (pour le navigateur)
+      actionButtons.forEach((btn: any, index: number) => {
+        btn.style.display = originalDisplays[index];
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save('dashboard.pdf');
+      this.isExporting.set(false);
+    }).catch((err) => {
+      // ✅ Restaurer les boutons en cas d'erreur
+      actionButtons.forEach((btn: any, index: number) => {
+        btn.style.display = originalDisplays[index];
+      });
+      console.error('Erreur lors de l’export PDF', err);
+      this.isExporting.set(false);
+    });
+}
 
   onNewMission() {
     this.router.navigate(['/admin/missions']);

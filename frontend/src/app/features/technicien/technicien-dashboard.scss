@@ -949,3 +949,34 @@
 .material-bar-fill--orange { background: #f97316; }
 .material-bar-fill--green { background: #22c55e; }
 .material-bar-label { margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted, #9ca3af); }
+/* Style harmonisé des boutons */
+.dashboard__actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dashboard__actions .btn--ghost,
+.dashboard__actions .btn--primary {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.dashboard__actions .btn--ghost:hover,
+.dashboard__actions .btn--primary:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: rgba(249, 115, 22, 0.35);
+  color: var(--primary);
+}
+
+.dashboard__actions .btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
