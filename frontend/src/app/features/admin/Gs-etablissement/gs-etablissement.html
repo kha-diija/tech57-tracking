@@ -129,10 +129,7 @@
                   <lucide-icon [img]="icons.Phone" [size]="12"></lucide-icon>
                   {{ resp.telephone }}
                 </a>
-                <a class="contact-link" *ngIf="resp.email" [href]="'mailto:' + resp.email">
-                  <lucide-icon [img]="icons.Mail" [size]="12"></lucide-icon>
-                  {{ resp.email }}
-                </a>
+                
               </div>
             </td>
             <td>
@@ -236,10 +233,7 @@
           <label>Téléphone</label>
           <input type="text" [ngModel]="formModel().telephoneContact" (ngModelChange)="updateField('telephoneContact', $event)" />
         </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" [ngModel]="formModel().emailContact" (ngModelChange)="updateField('emailContact', $event)" />
-        </div>
+        
       </div>
 
       <div class="form-divider">Responsable (optionnel)</div>
@@ -265,10 +259,7 @@
           <label>Téléphone</label>
           <input type="text" [ngModel]="formModel().responsableTelephone" (ngModelChange)="updateField('responsableTelephone', $event)" />
         </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" [ngModel]="formModel().responsableEmail" (ngModelChange)="updateField('responsableEmail', $event)" />
-        </div>
+        
       </div>
     </div>
 
