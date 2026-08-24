@@ -1,17 +1,22 @@
 package com.example.backend.service.admin;
 
 import com.example.backend.dto.admin.etablissement.*;
-import com.example.backend.entity.Commune;
-import com.example.backend.entity.Etablissement;
-import com.example.backend.entity.Responsable;
+import com.example.backend.entity.*;
 import com.example.backend.repository.admin.*;
-import com.example.backend.entity.Intervention;
-import com.example.backend.entity.MissionInstallation;
+
+// Imports explicites Apache POI
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,9 +31,9 @@ public class EtablissementService {
     private final PhotoRepository photoRepository;
     private final AttestationRepository attestationRepository;
     private final ChecklistEquipementRepository checklistEquipementRepository;
-    private final ChecklistItemRepository checklistItemRepository;// <-- Ajout de la dépendance
-
+    private final ChecklistItemRepository checklistItemRepository;
     private final ObservateurRepository observateurRepository;
+    private final ProvinceRepository provinceRepository;
 
     public EtablissementService(EtablissementRepository etablissementRepository,
                                 CommuneRepository communeRepository,
@@ -40,7 +45,8 @@ public class EtablissementService {
                                 AttestationRepository attestationRepository,
                                 ChecklistEquipementRepository checklistEquipementRepository,
                                 ChecklistItemRepository checklistItemRepository,
-                                ObservateurRepository observateurRepository) {
+                                ObservateurRepository observateurRepository,
+                                ProvinceRepository provinceRepository) {
         this.etablissementRepository = etablissementRepository;
         this.communeRepository = communeRepository;
         this.responsableRepository = responsableRepository;
@@ -52,7 +58,9 @@ public class EtablissementService {
         this.checklistEquipementRepository = checklistEquipementRepository;
         this.checklistItemRepository = checklistItemRepository;
         this.observateurRepository = observateurRepository;
+        this.provinceRepository = provinceRepository;
     }
+
     @Transactional(readOnly = true)
     public List<EtablissementResponse> getAll() {
         return etablissementRepository.findAllWithDetails()
@@ -102,7 +110,6 @@ public class EtablissementService {
         return toResponse(etablissementRepository.findByIdWithDetails(saved.getIdEtablissement()).orElseThrow());
     }
 
-
     /**
      * Suppression sécurisée avec gestion de la cascade et avertissement préalable.
      */
@@ -144,6 +151,154 @@ public class EtablissementService {
         }
 
         etablissementRepository.delete(e);
+    }
+
+    @Transactional
+    public EtablissementImportResult importFromExcel(MultipartFile file, Integer idProvince) {
+        EtablissementImportResult result = new EtablissementImportResult();
+
+        Province province = provinceRepository.findById(idProvince)
+                .orElseThrow(() -> new NoSuchElementException("Province introuvable : " + idProvince));
+
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            int headerRowIndex = -1;
+            Map<String, Integer> colIndex = new HashMap<>();
+
+            for (int r = 0; r <= Math.min(10, sheet.getLastRowNum()); r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) continue;
+                for (Cell cell : row) {
+                    if ("CD_ETAB".equalsIgnoreCase(getCellValueAsString(cell).trim())) {
+                        headerRowIndex = r;
+                        break;
+                    }
+                }
+                if (headerRowIndex != -1) break;
+            }
+
+            if (headerRowIndex == -1) {
+                throw new IllegalStateException("Colonne CD_ETAB introuvable dans le fichier (en-tête non reconnu).");
+            }
+
+            Row headerRow = sheet.getRow(headerRowIndex);
+            for (Cell cell : headerRow) {
+                String val = getCellValueAsString(cell).trim();
+                if (!val.isEmpty()) {
+                    colIndex.put(val.toUpperCase(), cell.getColumnIndex());
+                }
+            }
+
+            int colCommune = colIndex.getOrDefault("LL_COM", -1);
+            int colRef = colIndex.getOrDefault("CD_ETAB", -1);
+            int colNom = colIndex.getOrDefault("NOM_ETABA", -1);
+            int colType = colIndex.getOrDefault("LL_NETAB", -1);
+            int colX = colIndex.getOrDefault("X", -1);
+            int colY = colIndex.getOrDefault("Y", -1);
+            int colEffectifAmi = colIndex.getOrDefault("NBRE D'ÉLÈVES SELON AMI", -1);
+            int colEffectifRealise = colIndex.getOrDefault("NBRE D'ÉLÉVES RÉALISÉS", -1);
+
+            for (int r = headerRowIndex + 1; r <= sheet.getLastRowNum(); r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) continue;
+
+                String reference = colRef >= 0 ? getCellValueAsString(row.getCell(colRef)).trim() : "";
+                if (reference.isEmpty()) continue;
+
+                result.setTotalLignes(result.getTotalLignes() + 1);
+
+                try {
+                    String communeNom = colCommune >= 0 ? getCellValueAsString(row.getCell(colCommune)).trim() : "";
+                    String designation = colNom >= 0 ? getCellValueAsString(row.getCell(colNom)).trim() : "";
+                    String type = colType >= 0 ? getCellValueAsString(row.getCell(colType)).trim() : "";
+                    String x = colX >= 0 ? getCellValueAsString(row.getCell(colX)).trim() : "";
+                    String y = colY >= 0 ? getCellValueAsString(row.getCell(colY)).trim() : "";
+
+                    Integer effectif = colEffectifAmi >= 0 ? getCellValueAsInteger(row.getCell(colEffectifAmi)) : null;
+                    if (effectif == null && colEffectifRealise >= 0) {
+                        effectif = getCellValueAsInteger(row.getCell(colEffectifRealise));
+                    }
+
+                    Commune commune = resolveCommune(communeNom, province);
+
+                    Etablissement e = etablissementRepository.findByReference(reference).orElse(null);
+                    boolean isNew = (e == null);
+                    if (isNew) {
+                        e = new Etablissement();
+                        e.setReference(reference);
+                    }
+
+                    e.setDesignation(designation.isEmpty() ? reference : designation);
+                    e.setType(type.isEmpty() ? "Non précisé" : type);
+                    if (!y.isEmpty() && !x.isEmpty()) {
+                        e.setLocalisationGps(y + "," + x);
+                    }
+                    if (effectif != null) {
+                        e.setNombreBeneficiaires(effectif);
+                    }
+                    e.setCommune(commune);
+
+                    etablissementRepository.save(e);
+
+                    if (isNew) {
+                        result.setCrees(result.getCrees() + 1);
+                    } else {
+                        result.setMisAJour(result.getMisAJour() + 1);
+                    }
+                } catch (Exception rowEx) {
+                    result.setIgnores(result.getIgnores() + 1);
+                    result.getErreurs().add("Ligne " + (r + 1) + " (" + reference + ") : " + rowEx.getMessage());
+                }
+            }
+
+        } catch (IOException ex) {
+            throw new IllegalStateException("Impossible de lire le fichier Excel : " + ex.getMessage());
+        }
+
+        return result;
+    }
+
+    private Commune resolveCommune(String nom, Province province) {
+        if (nom == null || nom.isBlank()) {
+            throw new IllegalArgumentException("Commune manquante");
+        }
+        return communeRepository.findByNomIgnoreCaseAndProvince_IdProvince(nom, province.getIdProvince())
+                .orElseGet(() -> {
+                    Commune c = new Commune();
+                    c.setNom(nom);
+                    c.setCode("AUTO-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+                    c.setProvince(province);
+                    return communeRepository.save(c);
+                });
+    }
+
+    private String getCellValueAsString(Cell cell) {
+        if (cell == null) return "";
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                double d = cell.getNumericCellValue();
+                return (d == Math.floor(d)) ? String.valueOf((long) d) : String.valueOf(d);
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                try { return cell.getStringCellValue(); }
+                catch (Exception e) {
+                    try { return String.valueOf(cell.getNumericCellValue()); }
+                    catch (Exception e2) { return ""; }
+                }
+            default:
+                return "";
+        }
+    }
+
+    private Integer getCellValueAsInteger(Cell cell) {
+        String s = getCellValueAsString(cell).trim();
+        if (s.isEmpty()) return null;
+        try { return (int) Double.parseDouble(s); }
+        catch (NumberFormatException e) { return null; }
     }
 
     // ============================================================
@@ -223,7 +378,7 @@ public class EtablissementService {
             rd.setIdResponsable(e.getResponsable().getIdResponsable());
             rd.setNom(e.getResponsable().getNom());
             rd.setPrenom(e.getResponsable().getPrenom());
-            rd.setFonction(e.getResponsable().getPrenom()); // S'assurer que les getters/setters correspondent
+            rd.setFonction(e.getResponsable().getFonction());
             rd.setTelephone(e.getResponsable().getTelephone());
             rd.setEmail(e.getResponsable().getEmail());
             r.setResponsable(rd);

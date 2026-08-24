@@ -39,4 +39,6 @@ public interface EtablissementRepository extends JpaRepository<Etablissement, In
     // Ajout pour compter les matériels liés
     @Query("SELECT COUNT(m) FROM Materiel m WHERE m.etablissement.idEtablissement = :id")
     long countMaterielsByEtablissementId(@Param("id") Integer id);
+
+    Optional<Etablissement> findByReference(String reference);
 }
