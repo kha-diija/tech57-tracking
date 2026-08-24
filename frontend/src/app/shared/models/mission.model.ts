@@ -18,6 +18,16 @@ export interface MissionInstallation {
 
   idEquipe?: number;
   equipeNom?: string;
+
+  // ✅ NOUVEAU : Matériels proposés pour cette mission
+  materiels?: MissionMateriel[];
+}
+
+export interface MissionMateriel {
+  idMateriel: number;
+  quantite: number;
+  statut?: string;
+  motifRejet?: string;
 }
 
 export interface MissionRequestDTO {
@@ -28,4 +38,7 @@ export interface MissionRequestDTO {
   idEtablissement: number;
   idAdministrateur: number;
   idEquipe?: number | null;
+  
+  // ✅ NOUVEAU : Liste des matériels avec quantités
+  materiels?: MissionMateriel[];
 }

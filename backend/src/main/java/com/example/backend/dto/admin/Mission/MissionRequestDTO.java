@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,4 +30,6 @@ public class MissionRequestDTO {
     private Integer idAdministrateur;
 
     private Integer idEquipe; // Optionnel
+    // ✅ NOUVEAU : Liste des matériels avec quantités
+    private List<MissionMaterielDTO> materiels;
 }

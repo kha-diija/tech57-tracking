@@ -455,3 +455,741 @@
     gap: 10px;
   }
 }
+/* --- NOUVEAUX STYLES POUR LA GESTION DES MATÉRIELS ET VALIDATION --- */
+
+/* Badge PROPOSEE */
+.badge--purple {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* Style pour les matériels dans le tableau */
+.materiel-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+/* Bouton succès (Approuver) */
+.btn--success {
+  background: #22c55e;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #16a34a;
+  }
+}
+
+/* Bouton danger (Rejeter) */
+.btn--danger {
+  background: #ef4444;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #dc2626;
+  }
+}
+
+/* Petits boutons dans le tableau */
+.btn--sm {
+  padding: 4px 8px;
+  font-size: 11px;
+  margin-right: 4px;
+}
+
+/* Champ de saisie du motif (si utilisé) */
+textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #151521;
+  color: white;
+  resize: vertical;
+}
+/* --- NOUVEAU DESIGN POUR LES MATÉRIELS --- */
+
+.materiels-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 250px;
+}
+
+.materiel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.materiel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-green {
+  background-color: #22c55e;
+}
+
+.dot-red {
+  background-color: #ef4444;
+}
+
+.dot-orange {
+  background-color: #f97316;
+}
+
+.materiel-nom {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.materiel-qty {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+/* --- NOUVEAU DESIGN POUR LES MATÉRIELS (LISTE VERTICALE) --- */
+
+.materiels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.materiel-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+}
+
+.materiel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-green {
+  background-color: #22c55e;
+}
+
+.dot-red {
+  background-color: #ef4444;
+}
+
+.dot-orange {
+  background-color: #f97316;
+}
+
+.materiel-nom {
+  flex: 1;
+  color: #e2e8f0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.materiel-qty {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+/* --- MODALE DES MATÉRIELS --- */
+.materiel-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.materiel-count {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.materiel-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.materiel-detail-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.materiel-detail-nom {
+  flex: 1;
+  font-size: 13px;
+  color: #e2e8f0;
+}
+
+.materiel-detail-qty {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.materiel-detail-statut {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.text-green { color: #22c55e; }
+.text-red { color: #ef4444; }
+.text-orange { color: #f97316; }
+/* --- MODALE DES MATÉRIELS (PROPRE) --- */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #1e1e2d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  width: 500px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 14px 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.materiel-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.materiel-detail-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot-green {
+  background-color: #22c55e;
+}
+
+.dot-red {
+  background-color: #ef4444;
+}
+
+.dot-orange {
+  background-color: #f97316;
+}
+
+.materiel-detail-nom {
+  flex: 1;
+  font-size: 13px;
+  color: #e2e8f0;
+}
+
+.materiel-detail-qty {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.materiel-detail-statut {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.text-green { color: #22c55e; }
+.text-red { color: #ef4444; }
+.text-orange { color: #f97316; }
+/* ============================================================
+   MODALE DES MATÉRIELS (CORRIGÉE)
+   ============================================================ */
+
+/* Overlay - prend toute la page */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Conteneur de la modale */
+.modal-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+}
+
+/* Carte de la modale */
+.modal-card {
+  background: #1e1e2d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  width: 520px;
+  max-width: 95vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.25s ease;
+}
+
+/* En-tête */
+.modal-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: #ffffff;
+
+    lucide-icon {
+      color: #f97316;
+    }
+  }
+}
+
+.modal-card__close {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+}
+
+/* Corps */
+.modal-card__body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Infos de la mission */
+.modal-mission-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.modal-mission-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.modal-mission-ref {
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+/* Liste des matériels */
+.modal-materiels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-materiel-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.modal-materiel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &.dot-green {
+    background-color: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+  }
+
+  &.dot-red {
+    background-color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+  }
+
+  &.dot-orange {
+    background-color: #f97316;
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.3);
+  }
+}
+
+.modal-materiel-nom {
+  flex: 1;
+  font-size: 13px;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.modal-materiel-qty {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.modal-materiel-statut {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+
+  &.statut-approuve {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+  }
+
+  &.statut-rejete {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+  }
+
+  &.statut-attente {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.12);
+  }
+}
+
+/* État vide */
+.modal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  color: #64748b;
+  gap: 8px;
+
+  lucide-icon {
+    color: #334155;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+/* Pied */
+.modal-card__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.15);
+
+  .btn--ghost {
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .modal-card {
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 12px;
+  }
+
+  .modal-card__header {
+    padding: 14px 18px;
+
+    h3 {
+      font-size: 15px;
+    }
+  }
+
+  .modal-card__body {
+    padding: 16px 18px;
+  }
+
+  .modal-materiel-item {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+
+  .modal-materiel-nom {
+    flex: 1 1 100%;
+    order: 1;
+  }
+
+  .modal-materiel-qty {
+    order: 2;
+  }
+
+  .modal-materiel-statut {
+    order: 3;
+  }
+
+  .modal-card__footer {
+    padding: 12px 18px;
+  }
+}
+/* ============================================================
+   MODALE DE REJET PERSONNALISÉE
+   ============================================================ */
+
+.modal-card--rejet {
+  width: 480px;
+  max-width: 95vw;
+  
+  .modal-card__header {
+    border-bottom-color: rgba(239, 68, 68, 0.2);
+    
+    h3 {
+      lucide-icon {
+        color: #ef4444 !important;
+      }
+    }
+  }
+}
+
+.modal-rejet-message {
+  font-size: 14px;
+  color: #cbd5e1;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.modal-rejet-champ {
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    
+    .required {
+      color: #ef4444;
+      margin-left: 2px;
+    }
+  }
+  
+  textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #151521;
+    color: #ffffff;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 100px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+    
+    &::placeholder {
+      color: #64748b;
+    }
+    
+    &:focus {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    }
+  }
+}
+
+.modal-rejet-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(249, 115, 22, 0.1);
+  border-radius: 8px;
+  color: #f97316;
+  font-size: 12px;
+  
+  lucide-icon {
+    flex-shrink: 0;
+  }
+}
+
+.modal-card__footer--rejet {
+  .btn--danger {
+    background: #ef4444;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    
+    &:hover:not(:disabled) {
+      background: #dc2626;
+      transform: translateY(-1px);
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .modal-card--rejet {
+    width: 100%;
+  }
+}
