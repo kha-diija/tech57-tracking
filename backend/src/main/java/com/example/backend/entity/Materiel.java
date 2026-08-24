@@ -58,4 +58,6 @@ public class Materiel {
 
     @OneToMany(mappedBy = "materiel", cascade = CascadeType.ALL)
     private List<ControleMateriel> controles = new ArrayList<>();
+    @OneToMany(mappedBy = "materiel", cascade = CascadeType.ALL)
+    private List<MissionMateriel> missions = new ArrayList<>();
 }

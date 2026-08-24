@@ -15,14 +15,19 @@ import {
   X,
   Building2,
   User,
-  Users
+  Users,
+  Eye,
+  Package,
+  AlertTriangle  // ✅ AJOUTÉ pour l'icône d'avertissement
 } from 'lucide-angular';
 import { MissionService } from '../../../../shared/services/mission.service';
 import { EtablissementService } from '../../../../shared/services/etablissement.service';
 import { EquipeTechniqueService } from '../../../../shared/services/equipe-technique.service';
+import { MaterielService } from '../../../../shared/services/materiel.service';
 import { AuthService } from '../../../../shared/services/auth.service';
-import { MissionInstallation, MissionRequestDTO } from '../../../../shared/models/mission.model';
+import { MissionInstallation, MissionRequestDTO, MissionMateriel } from '../../../../shared/models/mission.model';
 import { Etablissement } from '../../../../shared/models/etablissement.model';
+import { Materiel } from '../../../../shared/models/materiel.model';
 
 interface EquipeTechnique {
   idEquipe: number;
@@ -51,18 +56,20 @@ export class GsMission {
   private readonly etablissementService = inject(EtablissementService);
   private readonly equipeService = inject(EquipeTechniqueService);
   private readonly authService = inject(AuthService);
+  private readonly materielService = inject(MaterielService);
 
   readonly icons = {
     Briefcase, Calendar, CheckCircle2, Clock, Search, Plus, Download,
-    Pencil, Trash2, X, Building2, User, Users
+    Pencil, Trash2, X, Building2, User, Users, Eye, Package, AlertTriangle  // ✅ AJOUTÉ
   };
 
-  readonly statutOptions = ['Planifiée', 'En cours', 'Terminée', 'Annulée'];
+  readonly statutOptions = ['PROPOSEE', 'Planifiée', 'En cours', 'Terminée', 'Annulée'];
 
   // Données réactives
   readonly missions = signal<MissionInstallation[]>([]);
   readonly etablissementsList = signal<Etablissement[]>([]);
   readonly equipesList = signal<EquipeTechnique[]>([]);
+  readonly materielsList = signal<Materiel[]>([]);
   readonly isLoading = signal<boolean>(true);
 
   // Filtres & Recherche
@@ -86,11 +93,24 @@ export class GsMission {
     force: false
   });
 
+  // Modale des matériels
+  readonly showMaterielsModal = signal<MissionInstallation | null>(null);
+
+  // ✅ NOUVEAU : Modale de rejet personnalisée
+  readonly showRejetModal = signal<{
+    isOpen: boolean;
+    missionId: number | null;
+    motif: string;
+  }>({
+    isOpen: false,
+    missionId: null,
+    motif: ''
+  });
+
   // Filtrage dynamique
   readonly filteredMissions = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const statut = this.selectedStatutFilter();
-
     return this.missions().filter((m) => {
       const matchesStatut = statut === 'tous' || m.statut === statut;
       const matchesTerm =
@@ -107,7 +127,7 @@ export class GsMission {
   readonly editingId = signal<number | null>(null);
   readonly formModel = signal<MissionFormModel>(this.emptyForm());
 
-  // Responsable de l'établissement sélectionné (affichage informatif seulement)
+  // Responsable de l'établissement sélectionné
   readonly selectedResponsable = computed(() => {
     const idEtab = this.formModel().idEtablissement;
     if (!idEtab) return null;
@@ -131,16 +151,68 @@ export class GsMission {
       : null;
   });
 
-  // Jointure côté client : Récupérer le responsable de l'établissement
+  // Jointure côté client
   getResponsableForEtablissement(idEtablissement: number) {
     return this.etablissementsList().find(e => e.idEtablissement === idEtablissement)?.responsable ?? null;
   }
 
-  // Jointure côté client : Récupérer le nom de l'équipe technique affectée à la mission
   getEquipeNameForMission(idEquipe: number | null | undefined): string {
     if (!idEquipe) return 'Aucune équipe';
     const equipe = this.equipesList().find(eq => eq.idEquipe === idEquipe);
     return equipe ? equipe.nomEquipe : 'Équipe inconnue';
+  }
+
+  getMaterielName(idMateriel: number): string {
+    const materiel = this.materielsList().find(m => m.idMateriel === idMateriel);
+    return materiel ? `${materiel.nom} (${materiel.reference})` : 'Matériel inconnu';
+  }
+
+  // Ouvrir la modale des matériels
+  ouvrirMateriels(mission: MissionInstallation): void {
+    this.showMaterielsModal.set(mission);
+  }
+
+  fermerMateriels(): void {
+    this.showMaterielsModal.set(null);
+  }
+
+  // ✅ NOUVELLES MÉTHODES POUR LA MODALE DE REJET
+  ouvrirRejetModal(missionId: number): void {
+    this.showRejetModal.set({
+      isOpen: true,
+      missionId: missionId,
+      motif: ''
+    });
+  }
+
+  fermerRejetModal(): void {
+    this.showRejetModal.set({
+      isOpen: false,
+      missionId: null,
+      motif: ''
+    });
+  }
+
+  updateMotifRejet(value: string): void {
+    this.showRejetModal.update((m) => ({ ...m, motif: value }));
+  }
+
+  confirmerRejet(): void {
+    const modal = this.showRejetModal();
+    if (!modal.missionId || !modal.motif.trim()) {
+      return;
+    }
+    
+    this.missionService.rejeter(modal.missionId, modal.motif).subscribe({
+      next: () => {
+        this.fermerRejetModal();
+        this.loadData();
+      },
+      error: (err) => {
+        console.error('Erreur lors du rejet', err);
+        this.fermerRejetModal();
+      }
+    });
   }
 
   private emptyForm(): MissionFormModel {
@@ -176,6 +248,27 @@ export class GsMission {
     this.equipeService.getAll().subscribe((data: any) => {
       this.equipesList.set(data);
     });
+
+    this.materielService.getAll().subscribe((data) => {
+      this.materielsList.set(data);
+    });
+  }
+
+  // ✅ Approuver la mission
+  approuverMission(missionId: number): void {
+    this.missionService.approuver(missionId).subscribe({
+      next: () => {
+        this.loadData();
+      },
+      error: (err) => {
+        console.error('Erreur lors de l\'approbation', err);
+      }
+    });
+  }
+
+  // ✅ MODIFIÉ : Rejeter la mission avec modale personnalisée
+  rejeterMission(missionId: number): void {
+    this.ouvrirRejetModal(missionId);
   }
 
   openCreateForm(): void {
@@ -189,12 +282,11 @@ export class GsMission {
     this.showForm.set(true);
   }
 
- openEditForm(item: MissionInstallation): void {
+  openEditForm(item: MissionInstallation): void {
     this.editingId.set(item.idMission);
     this.editingAdminNomComplet.set(item.adminNomComplet ?? null);
     this.showForm.set(true);
     
-    // ✅ Correction : Toujours envoyer l'ID de l'admin connecté si la mission n'a pas d'admin
     const currentUser = this.authService.currentUser();
     
     this.formModel.set({
@@ -203,10 +295,10 @@ export class GsMission {
       statut: item.statut,
       budgetPropose: item.budgetPropose ?? null,
       idEtablissement: item.idEtablissement ?? null,
-      idAdministrateur: currentUser?.id ?? item.idAdministrateur ?? null,  // ✅ Toujours un admin
+      idAdministrateur: currentUser?.id ?? item.idAdministrateur ?? null,
       idEquipe: item.idEquipe ?? null
     });
-}
+  }
 
   closeForm(): void {
     this.showForm.set(false);

@@ -2,11 +2,13 @@ package com.example.backend.controller.admin;
 
 import com.example.backend.dto.admin.Mission.MissionRequestDTO;
 import com.example.backend.dto.admin.Mission.MissionResponseDTO;
+import com.example.backend.security.UserPrincipal;
 import com.example.backend.service.admin.MissionInstallationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -57,6 +59,30 @@ public class MissionInstallationController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
         } catch (RuntimeException ex) {
             // Mission introuvable
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    // ✅ AJOUT : Endpoint pour approuver la mission
+
+    @PutMapping("/{id}/approuver")
+    public ResponseEntity<MissionResponseDTO> approuverMission(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal UserPrincipal principal) { // ✅ Récupérer l'admin connecté
+        MissionResponseDTO updated = missionService.approuverMission(id, principal.getId());
+        return ResponseEntity.ok(updated);
+    }
+
+    // ✅ AJOUT : Endpoint pour rejeter la mission
+    @DeleteMapping("/{id}/rejeter")
+    public ResponseEntity<?> rejeterMission(
+            @PathVariable Integer id,
+            @RequestParam String motif,
+            @AuthenticationPrincipal UserPrincipal principal) { // ✅ Récupérer l'admin connecté
+        try {
+            missionService.rejeterMission(id, motif, principal.getId());
+            return ResponseEntity.ok(Map.of("message", "Mission rejetée avec succès"));
+        } catch (RuntimeException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
         }
     }

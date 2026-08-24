@@ -31,8 +31,6 @@ public class SortieMateriel {
     @Column(name = "retour_traite", nullable = false)
     private Boolean retourTraite = false;
 
-    // Fusion de demandeur + technicienRecepteur : sortie_materiel n'a
-    // qu'une seule colonne id_technicien en base.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_technicien", nullable = false)
     private Technicien technicien;
@@ -41,14 +39,15 @@ public class SortieMateriel {
     @JoinColumn(name = "id_intervention")
     private Intervention intervention;
 
-    // Validé par un Administrateur OU un GestionnaireStock -> Utilisateur générique
+    // ✅ NOUVEAU : Lien avec la mission (pour les missions proposées)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_mission", nullable = true)
+    private MissionInstallation mission;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_validateur")
     private Utilisateur validateur;
 
     @OneToMany(mappedBy = "sortieMateriel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetailSortieMateriel> details = new ArrayList<>();
-
-    // id_materiel / quantite_sortie supprimés : le détail passe désormais
-    // par la liste `details` (table detail_sortie_materiel)
 }
