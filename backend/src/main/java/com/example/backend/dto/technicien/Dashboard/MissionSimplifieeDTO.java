@@ -1,6 +1,8 @@
 package com.example.backend.dto.technicien.Dashboard;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import com.example.backend.dto.admin.Mission.MissionMaterielDTO;
 
 public class MissionSimplifieeDTO {
     private Integer idMission;
@@ -11,6 +13,9 @@ public class MissionSimplifieeDTO {
     private Double budgetPropose;
     private Integer etablissementId;
     private String etablissementDesignation;
+
+    // ✅ NOUVEAU
+    private List<MissionMaterielDTO> materiels;
 
     // Getters et Setters
     public Integer getIdMission() { return idMission; }
@@ -36,4 +41,7 @@ public class MissionSimplifieeDTO {
 
     public String getEtablissementDesignation() { return etablissementDesignation; }
     public void setEtablissementDesignation(String etablissementDesignation) { this.etablissementDesignation = etablissementDesignation; }
+
+    public List<MissionMaterielDTO> getMateriels() { return materiels; }
+    public void setMateriels(List<MissionMaterielDTO> materiels) { this.materiels = materiels; }
 }
