@@ -57,7 +57,6 @@ export class Auth {
 
   onGoogleLogin(): void {
     // À brancher sur l'endpoint OAuth2 Google du backend
-    // (ex: window.location.href = `${environment.apiUrl}/oauth2/authorization/google`;)
     console.info('Connexion Google : à implémenter côté backend (OAuth2).');
   }
 
