@@ -74,7 +74,7 @@ public class EtablissementController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
         }
     }
-    
+
     @PostMapping(value = "/import", consumes = "multipart/form-data")
     public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile file,
                                          @RequestParam("idProvince") Integer idProvince) {
