@@ -216,24 +216,23 @@
       </div>
 
       <!-- Responsable de l'établissement -->
-      <div class="form-group form-group--readonly" *ngIf="formModel().idEtablissement">
-        <label>Responsable de l'établissement</label>
-        <div class="responsable-card" *ngIf="selectedResponsable() as resp; else noResponsable">
-          <div class="responsable-card__row">
-            <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
-            <span>{{ resp.prenom }} {{ resp.nom }}</span>
-            <span class="text-muted" *ngIf="resp.fonction">— {{ resp.fonction }}</span>
-          </div>
-          <div class="responsable-card__row text-muted" *ngIf="resp.telephone || resp.email">
-            <span *ngIf="resp.telephone">{{ resp.telephone }}</span>
-            <span *ngIf="resp.telephone && resp.email"> · </span>
-            <span *ngIf="resp.email">{{ resp.email }}</span>
-          </div>
-        </div>
-        <ng-template #noResponsable>
-          <span class="text-muted">Aucun responsable renseigné pour cet établissement.</span>
-        </ng-template>
-      </div>
+<div class="form-group form-group--readonly" *ngIf="formModel().idEtablissement">
+  <label>Responsable de l'établissement</label>
+  <div class="responsable-card" *ngIf="selectedResponsable() as resp; else noResponsable">
+    <div class="responsable-card__row">
+      <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
+      <span>{{ resp.prenom }} {{ resp.nom }}</span>
+      <span class="text-muted" *ngIf="resp.fonction">— {{ resp.fonction }}</span>
+    </div>
+    <!-- ✅ MODIFICATION : Plus que le téléphone -->
+    <div class="responsable-card__row text-muted" *ngIf="resp.telephone">
+      <span>{{ resp.telephone }}</span>
+    </div>
+  </div>
+  <ng-template #noResponsable>
+    <span class="text-muted">Aucun responsable renseigné pour cet établissement.</span>
+  </ng-template>
+</div>
 
       <div class="form-row">
         <div class="form-group">
