@@ -1,34 +1,23 @@
 package com.example.backend.service.admin;
 
 import com.example.backend.dto.admin.etablissement.*;
-import com.example.backend.entity.Commune;
-import com.example.backend.entity.Etablissement;
-import com.example.backend.entity.Responsable;
+import com.example.backend.entity.*;
 import com.example.backend.repository.admin.*;
-import com.example.backend.entity.Intervention;
-import com.example.backend.entity.MissionInstallation;
+
+// Imports explicites Apache POI
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.example.backend.entity.Province;
-import com.example.backend.repository.admin.ProvinceRepository;
-import org.apache.poi.ss.usermodel.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.backend.dto.admin.etablissement.*;
-
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import static com.itextpdf.text.pdf.PdfName.FORMULA;
-import static java.sql.Types.*;
-import static javax.management.openmbean.SimpleType.STRING;
 
 @Service
 public class EtablissementService {
@@ -42,10 +31,8 @@ public class EtablissementService {
     private final PhotoRepository photoRepository;
     private final AttestationRepository attestationRepository;
     private final ChecklistEquipementRepository checklistEquipementRepository;
-    private final ChecklistItemRepository checklistItemRepository;// <-- Ajout de la dépendance
-
+    private final ChecklistItemRepository checklistItemRepository;
     private final ObservateurRepository observateurRepository;
-
     private final ProvinceRepository provinceRepository;
 
     public EtablissementService(EtablissementRepository etablissementRepository,
@@ -73,6 +60,7 @@ public class EtablissementService {
         this.observateurRepository = observateurRepository;
         this.provinceRepository = provinceRepository;
     }
+
     @Transactional(readOnly = true)
     public List<EtablissementResponse> getAll() {
         return etablissementRepository.findAllWithDetails()
@@ -121,7 +109,6 @@ public class EtablissementService {
         Etablissement saved = etablissementRepository.save(e);
         return toResponse(etablissementRepository.findByIdWithDetails(saved.getIdEtablissement()).orElseThrow());
     }
-
 
     /**
      * Suppression sécurisée avec gestion de la cascade et avertissement préalable.
@@ -217,7 +204,7 @@ public class EtablissementService {
                 if (row == null) continue;
 
                 String reference = colRef >= 0 ? getCellValueAsString(row.getCell(colRef)).trim() : "";
-                if (reference.isEmpty()) continue; // ligne vide, on saute sans erreur
+                if (reference.isEmpty()) continue;
 
                 result.setTotalLignes(result.getTotalLignes() + 1);
 
@@ -289,18 +276,21 @@ public class EtablissementService {
     private String getCellValueAsString(Cell cell) {
         if (cell == null) return "";
         switch (cell.getCellType()) {
-            case STRING: return cell.getStringCellValue();
+            case STRING:
+                return cell.getStringCellValue();
             case NUMERIC:
                 double d = cell.getNumericCellValue();
                 return (d == Math.floor(d)) ? String.valueOf((long) d) : String.valueOf(d);
-            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
             case FORMULA:
                 try { return cell.getStringCellValue(); }
                 catch (Exception e) {
                     try { return String.valueOf(cell.getNumericCellValue()); }
                     catch (Exception e2) { return ""; }
                 }
-            default: return "";
+            default:
+                return "";
         }
     }
 
@@ -310,6 +300,7 @@ public class EtablissementService {
         try { return (int) Double.parseDouble(s); }
         catch (NumberFormatException e) { return null; }
     }
+
     // ============================================================
     // --- Mapping helpers ---
     // ============================================================
@@ -387,7 +378,7 @@ public class EtablissementService {
             rd.setIdResponsable(e.getResponsable().getIdResponsable());
             rd.setNom(e.getResponsable().getNom());
             rd.setPrenom(e.getResponsable().getPrenom());
-            rd.setFonction(e.getResponsable().getPrenom()); // S'assurer que les getters/setters correspondent
+            rd.setFonction(e.getResponsable().getFonction());
             rd.setTelephone(e.getResponsable().getTelephone());
             rd.setEmail(e.getResponsable().getEmail());
             r.setResponsable(rd);
