@@ -11,4 +11,7 @@ import java.util.List;
 public interface SortieMaterielRepository extends JpaRepository<SortieMateriel, Integer> {
     List<SortieMateriel> findByIntervention(Intervention intervention);
     List<SortieMateriel> findByStatut(String statut);
+
+    // ✅ NOUVELLE MÉTHODE
+    List<SortieMateriel> findByMissionIdMission(Integer idMission);
 }
