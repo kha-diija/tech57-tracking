@@ -3,6 +3,7 @@ package com.example.backend.service.gestionnairestock;
 import com.example.backend.dto.gestionnairestock.*;
 import com.example.backend.entity.*;
 import com.example.backend.repository.UtilisateurRepository;
+import com.example.backend.repository.admin.MissionMaterielRepository;
 import com.example.backend.repository.admin.SortieMaterielRepository;
 import com.example.backend.repository.gestionnairestock.GsStockMaterielRepository;
 import com.example.backend.service.NotificationHelperService;
@@ -10,6 +11,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,16 +21,19 @@ public class SortieMaterielGestionService {
     private final SortieMaterielRepository sortieMaterielRepository;
     private final GsStockMaterielRepository stockMaterielRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final MissionMaterielRepository missionMaterielRepository;
     private final NotificationHelperService notificationHelperService;
 
     public SortieMaterielGestionService(
             SortieMaterielRepository sortieMaterielRepository,
             GsStockMaterielRepository stockMaterielRepository,
             UtilisateurRepository utilisateurRepository,
+            MissionMaterielRepository missionMaterielRepository,
             NotificationHelperService notificationHelperService) {
         this.sortieMaterielRepository = sortieMaterielRepository;
         this.stockMaterielRepository = stockMaterielRepository;
         this.utilisateurRepository = utilisateurRepository;
+        this.missionMaterielRepository = missionMaterielRepository;
         this.notificationHelperService = notificationHelperService;
     }
 
@@ -50,11 +55,10 @@ public class SortieMaterielGestionService {
             dto.setTechnicienNom(s.getTechnicien().getNom() + " " + s.getTechnicien().getPrenom());
         }
 
-        if (s.getIntervention() != null) {
-            dto.setInterventionId(s.getIntervention().getIdIntervention());
-            if (s.getIntervention().getMission() != null) {
-                dto.setMissionReference(s.getIntervention().getMission().getReference());
-            }
+        if (s.getMission() != null) {
+            dto.setMissionReference(s.getMission().getReference());
+        } else if (s.getIntervention() != null && s.getIntervention().getMission() != null) {
+            dto.setMissionReference(s.getIntervention().getMission().getReference());
         }
 
         List<SortieMaterielDetailDto> detailDtos = s.getDetails().stream().map(d -> {
@@ -93,7 +97,8 @@ public class SortieMaterielGestionService {
                             "Aucune fiche de stock pour le matériel " + detail.getMateriel().getReference()));
 
             if (stock.getQuantiteDisponible() < detail.getQuantite()) {
-                String refMission = (sortie.getIntervention() != null && sortie.getIntervention().getMission() != null)
+                String refMission = (sortie.getMission() != null) ? sortie.getMission().getReference()
+                        : (sortie.getIntervention() != null && sortie.getIntervention().getMission() != null)
                         ? sortie.getIntervention().getMission().getReference() : "N/A";
 
                 String message = "Alerte Rupture de Stock : Le matériel " + detail.getMateriel().getNom()
@@ -120,8 +125,29 @@ public class SortieMaterielGestionService {
 
         sortie.setStatut("Validée");
         sortie.setValidateur(validateur);
+        SortieMateriel saved = sortieMaterielRepository.save(sortie);
 
-        return toDto(sortieMaterielRepository.save(sortie));
+        // ✅ Mettre à jour les MissionMateriel correspondants à APPROUVE
+        if (sortie.getMission() != null) {
+            List<MissionMateriel> missionMateriels = missionMaterielRepository.findByMission_IdMission(sortie.getMission().getIdMission());
+            for (MissionMateriel mm : missionMateriels) {
+                mm.setStatut("APPROUVE");
+                mm.setDateValidation(LocalDateTime.now());
+            }
+            missionMaterielRepository.saveAll(missionMateriels);
+        }
+
+        // ✅ ENVOYER UNE NOTIFICATION AU TECHNICIEN
+        if (sortie.getTechnicien() != null) {
+            String refMission = sortie.getMission() != null ? sortie.getMission().getReference()
+                    : (sortie.getIntervention() != null && sortie.getIntervention().getMission() != null)
+                    ? sortie.getIntervention().getMission().getReference() : "N/A";
+            String message = "Votre demande de matériel pour la mission " + refMission
+                    + " a été approuvée.";
+            notificationHelperService.envoyerNotification(validateur, sortie.getTechnicien(), message, "SORTIE_APPROUVEE");
+        }
+
+        return toDto(saved);
     }
 
     @Transactional
@@ -139,15 +165,27 @@ public class SortieMaterielGestionService {
         sortie.setStatut("Rejetée");
         sortie.setMotif(request.getMotifRejet());
         sortie.setValidateur(validateur);
-
         SortieMateriel saved = sortieMaterielRepository.save(sortie);
 
+        // ✅ Mettre à jour les MissionMateriel correspondants à REJETE + envoyer notification
+        if (sortie.getMission() != null) {
+            List<MissionMateriel> missionMateriels = missionMaterielRepository.findByMission_IdMission(sortie.getMission().getIdMission());
+            for (MissionMateriel mm : missionMateriels) {
+                mm.setStatut("REJETE");
+                mm.setMotifRejet(request.getMotifRejet());
+                mm.setDateValidation(LocalDateTime.now());
+            }
+            missionMaterielRepository.saveAll(missionMateriels);
+        }
+
+        // ✅ ENVOYER UNE NOTIFICATION AU TECHNICIEN
         if (sortie.getTechnicien() != null) {
-            String refMission = sortie.getIntervention() != null && sortie.getIntervention().getMission() != null
+            String refMission = sortie.getMission() != null ? sortie.getMission().getReference()
+                    : (sortie.getIntervention() != null && sortie.getIntervention().getMission() != null)
                     ? sortie.getIntervention().getMission().getReference() : "N/A";
             String message = "Votre demande de matériel pour la mission " + refMission
                     + " a été rejetée. Motif : " + request.getMotifRejet();
-            notificationHelperService.envoyerNotification(validateur, sortie.getTechnicien(), message, "DEMANDE_REJETEE");
+            notificationHelperService.envoyerNotification(validateur, sortie.getTechnicien(), message, "SORTIE_REJETEE");
         }
 
         return toDto(saved);

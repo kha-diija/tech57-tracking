@@ -61,6 +61,7 @@
             <th>Référence / Titre</th>
             <th>Établissement</th>
             <th>Équipe Technique</th>
+            <th>Matériel Proposé</th>
             <th>Statut</th>
             <th>Budget Proposé</th>
             <th>Date Création</th>
@@ -69,10 +70,10 @@
         </thead>
         <tbody>
           <tr *ngIf="isLoading()">
-            <td colspan="7" class="etab-table__empty">Chargement des missions...</td>
+            <td colspan="8" class="etab-table__empty">Chargement des missions...</td>
           </tr>
           <tr *ngIf="!isLoading() && filteredMissions().length === 0">
-            <td colspan="7" class="etab-table__empty">Aucune mission trouvée pour votre équipe.</td>
+            <td colspan="8" class="etab-table__empty">Aucune mission trouvée pour votre équipe.</td>
           </tr>
           <tr *ngFor="let item of filteredMissions()">
             <td>
@@ -88,13 +89,25 @@
                 Resp: {{ resp.prenom }} {{ resp.nom }}
               </div>
             </td>
-            <!-- Affichage du nom de l'équipe -->
             <td>
               <span class="badge badge--neutral" *ngIf="item.equipeNom; else noTeam">
                 {{ item.equipeNom }}
               </span>
               <ng-template #noTeam>
                 <span class="text-xs text-muted">Aucune équipe</span>
+              </ng-template>
+            </td>
+            <!-- ✅ Colonne Matériel Proposé (avec bouton Voir plus) -->
+            <td>
+              <div class="materiel-summary" *ngIf="item.materiels && item.materiels.length > 0; else noMateriels">
+                <span class="materiel-count">{{ item.materiels.length }} matériel(s)</span>
+                <button type="button" class="btn btn--ghost btn--sm" (click)="ouvrirMateriels(item)">
+                  <lucide-icon [name]="icons.Eye" class="w-3.5 h-3.5"></lucide-icon>
+                  Voir plus
+                </button>
+              </div>
+              <ng-template #noMateriels>
+                <span class="text-xs text-muted">Aucun matériel</span>
               </ng-template>
             </td>
             <td>
@@ -104,7 +117,8 @@
                   'badge--warning': item.statut === 'Planifiée',
                   'badge--info': item.statut === 'En cours',
                   'badge--success': item.statut === 'Terminée',
-                  'badge--danger': item.statut === 'Annulée'
+                  'badge--danger': item.statut === 'Annulée',
+                  'badge--purple': item.statut === 'PROPOSEE'
                 }">
                 {{ item.statut }}
               </span>
@@ -155,7 +169,7 @@
         </div>
 
         <div class="form-group">
-          <label>Titre de la mission *</label>
+          <label>Titre de la mission*</label>
           <input
             type="text"
             [ngModel]="formModel().titre"
@@ -164,23 +178,38 @@
           />
         </div>
 
-        <div class="form-group">
-          <label>Établissement *</label>
-          <select
-            [ngModel]="formModel().idEtablissement"
-            (ngModelChange)="updateField('idEtablissement', +$event)">
-            <option [value]="null" disabled>Sélectionner un établissement</option>
-            <option *ngFor="let etab of etablissementsList()" [value]="etab.idEtablissement">
-              {{ etab.designation }} ({{ etab.reference }})
-            </option>
-          </select>
-          <div *ngIf="selectedResponsable() as resp" class="responsable-card mt-2">
-            <div class="responsable-card__row">
-              <lucide-icon [name]="icons.User" class="w-3.5 h-3.5 text-orange-500"></lucide-icon>
-              <span><strong>Responsable :</strong> {{ resp.prenom }} {{ resp.nom }} ({{ resp.telephone }})</span>
-            </div>
-          </div>
-        </div>
+        <!-- Sélection de la commune -->
+<div class="form-group">
+  <label>Commune</label>
+  <select (change)="onCommuneChange($any($event.target).value ? +$any($event.target).value : null)">
+    <option [value]="null">Sélectionner une commune</option>
+    <option *ngFor="let commune of communesList()" [value]="commune.idCommune">
+      {{ commune.nom }}
+    </option>
+  </select>
+</div>
+
+<!-- Sélection de l'établissement (filtré par commune) -->
+<div class="form-group">
+  <label>Établissement *</label>
+  <select
+    [ngModel]="formModel().idEtablissement"
+    (ngModelChange)="updateField('idEtablissement', +$event)">
+    <option [value]="null" disabled>Sélectionner un établissement</option>
+    <option *ngFor="let etab of etablissementsFiltres()" [value]="etab.idEtablissement">
+      {{ etab.designation }} ({{ etab.reference }})
+    </option>
+  </select>
+  <small class="text-muted" *ngIf="!selectedCommuneId() && etablissementsList().length > 0">
+    Veuillez d'abord sélectionner une commune
+  </small>
+  <div *ngIf="selectedResponsable() as resp" class="responsable-card mt-2">
+    <div class="responsable-card__row">
+      <lucide-icon [name]="icons.User" class="w-3.5 h-3.5 text-orange-500"></lucide-icon>
+      <span><strong>Responsable :</strong> {{ resp.prenom }} {{ resp.nom }} ({{ resp.telephone }})</span>
+    </div>
+  </div>
+</div>
 
         <div class="form-row">
           <div class="form-group">
@@ -202,8 +231,30 @@
           </div>
         </div>
 
+        <!-- ✅ NOUVEAU : Sélecteur de matériels avec quantités -->
+        <div class="form-group">
+          <label>Matériel proposé (avec quantités)</label>
+          
+          <!-- Liste déroulante des matériels disponibles -->
+          <select (change)="addMaterielFromEvent($event)">
+            <option value="">Sélectionner un matériel</option>
+            <option *ngFor="let mat of materielsList()" [value]="mat.idMateriel">
+              {{ mat.nom }} ({{ mat.reference }})
+            </option>
+          </select>
+          
+          <!-- Liste des matériels sélectionnés avec quantités -->
+          <div *ngFor="let mat of selectedMateriels(); let i = index" class="materiel-ligne">
+            <span>{{ getMaterielName(mat.idMateriel) }}</span>
+            <input type="number" min="1" [value]="mat.quantite" (input)="updateQuantiteFromEvent(i, $event)" />
+            <button type="button" (click)="removeMateriel(i)" class="btn btn--danger btn--sm">
+              Retirer
+            </button>
+          </div>
+        </div>
+
         <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-400 mt-4">
-          ℹ️ Cette mission sera automatiquement rattachée à votre équipe technique et une notification instantanée sera envoyée aux administrateurs.
+          ℹ️ Cette mission sera automatiquement rattachée à votre équipe technique. Une notification sera envoyée aux administrateurs pour approbation.
         </div>
       </div>
 
@@ -217,6 +268,31 @@
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ✅ MODALE DES MATÉRIELS -->
+  <div class="modal-backdrop" *ngIf="showMaterielsModal()" (click)="fermerMateriels()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Matériels de la mission : {{ showMaterielsModal()?.titre }}</h3>
+        <button class="icon-btn" (click)="fermerMateriels()">
+          <lucide-icon [name]="icons.X" class="w-4 h-4"></lucide-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="materiel-detail-row" *ngFor="let mat of showMaterielsModal()?.materiels">
+          <span class="materiel-detail-dot" [ngClass]="mat.statut === 'APPROUVE' ? 'dot-green' : mat.statut === 'REJETE' ? 'dot-red' : 'dot-orange'"></span>
+          <span class="materiel-detail-nom">{{ getMaterielName(mat.idMateriel) }}</span>
+          <span class="materiel-detail-qty">Quantité : {{ mat.quantite }}</span>
+          <span class="materiel-detail-statut" [ngClass]="mat.statut === 'APPROUVE' ? 'text-green' : mat.statut === 'REJETE' ? 'text-red' : 'text-orange'">
+            {{ mat.statut }}
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn--ghost" (click)="fermerMateriels()">Fermer</button>
+      </div>
     </div>
   </div>
 </div>
