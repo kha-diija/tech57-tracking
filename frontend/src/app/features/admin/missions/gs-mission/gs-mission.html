@@ -205,15 +205,30 @@
       </div>
 
       <!-- Sélection de l'établissement -->
-      <div class="form-group">
-        <label>Établissement cible</label>
-        <select [ngModel]="formModel().idEtablissement" (ngModelChange)="updateField('idEtablissement', +$event)">
-          <option [ngValue]="null" disabled>Sélectionner un établissement</option>
-          <option *ngFor="let etab of etablissementsList()" [ngValue]="etab.idEtablissement">
-            {{ etab.designation }} ({{ etab.reference }})
-          </option>
-        </select>
-      </div>
+      <!-- Sélection de la commune -->
+<div class="form-group">
+  <label>Commune</label>
+  <select (change)="onCommuneChange($any($event.target).value ? +$any($event.target).value : null)">
+    <option [value]="null">Sélectionner une commune</option>
+    <option *ngFor="let commune of communesList()" [value]="commune.idCommune">
+      {{ commune.nom }}
+    </option>
+  </select>
+</div>
+
+<!-- Sélection de l'établissement (filtré par commune) -->
+<div class="form-group">
+  <label>Établissement cible</label>
+  <select [ngModel]="formModel().idEtablissement" (ngModelChange)="updateField('idEtablissement', +$event)">
+    <option [ngValue]="null" disabled>Sélectionner un établissement</option>
+    <option *ngFor="let etab of etablissementsFiltres()" [ngValue]="etab.idEtablissement">
+      {{ etab.designation }} ({{ etab.reference }})
+    </option>
+  </select>
+  <small class="text-muted" *ngIf="!selectedCommuneId() && etablissementsList().length > 0">
+    Veuillez d'abord sélectionner une commune
+  </small>
+</div>
 
       <!-- Responsable de l'établissement -->
 <div class="form-group form-group--readonly" *ngIf="formModel().idEtablissement">

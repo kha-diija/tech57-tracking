@@ -178,23 +178,38 @@
           />
         </div>
 
-        <div class="form-group">
-          <label>Établissement *</label>
-          <select
-            [ngModel]="formModel().idEtablissement"
-            (ngModelChange)="updateField('idEtablissement', +$event)">
-            <option [value]="null" disabled>Sélectionner un établissement</option>
-            <option *ngFor="let etab of etablissementsList()" [value]="etab.idEtablissement">
-              {{ etab.designation }} ({{ etab.reference }})
-            </option>
-          </select>
-          <div *ngIf="selectedResponsable() as resp" class="responsable-card mt-2">
-            <div class="responsable-card__row">
-              <lucide-icon [name]="icons.User" class="w-3.5 h-3.5 text-orange-500"></lucide-icon>
-              <span><strong>Responsable :</strong> {{ resp.prenom }} {{ resp.nom }} ({{ resp.telephone }})</span>
-            </div>
-          </div>
-        </div>
+        <!-- Sélection de la commune -->
+<div class="form-group">
+  <label>Commune</label>
+  <select (change)="onCommuneChange($any($event.target).value ? +$any($event.target).value : null)">
+    <option [value]="null">Sélectionner une commune</option>
+    <option *ngFor="let commune of communesList()" [value]="commune.idCommune">
+      {{ commune.nom }}
+    </option>
+  </select>
+</div>
+
+<!-- Sélection de l'établissement (filtré par commune) -->
+<div class="form-group">
+  <label>Établissement *</label>
+  <select
+    [ngModel]="formModel().idEtablissement"
+    (ngModelChange)="updateField('idEtablissement', +$event)">
+    <option [value]="null" disabled>Sélectionner un établissement</option>
+    <option *ngFor="let etab of etablissementsFiltres()" [value]="etab.idEtablissement">
+      {{ etab.designation }} ({{ etab.reference }})
+    </option>
+  </select>
+  <small class="text-muted" *ngIf="!selectedCommuneId() && etablissementsList().length > 0">
+    Veuillez d'abord sélectionner une commune
+  </small>
+  <div *ngIf="selectedResponsable() as resp" class="responsable-card mt-2">
+    <div class="responsable-card__row">
+      <lucide-icon [name]="icons.User" class="w-3.5 h-3.5 text-orange-500"></lucide-icon>
+      <span><strong>Responsable :</strong> {{ resp.prenom }} {{ resp.nom }} ({{ resp.telephone }})</span>
+    </div>
+  </div>
+</div>
 
         <div class="form-row">
           <div class="form-group">

@@ -18,15 +18,16 @@ import {
   Users,
   Eye,
   Package,
-  AlertTriangle  // ✅ AJOUTÉ pour l'icône d'avertissement
+  AlertTriangle
 } from 'lucide-angular';
 import { MissionService } from '../../../../shared/services/mission.service';
 import { EtablissementService } from '../../../../shared/services/etablissement.service';
+import { CommuneService } from '../../../../shared/services/commune.service';
 import { EquipeTechniqueService } from '../../../../shared/services/equipe-technique.service';
 import { MaterielService } from '../../../../shared/services/materiel.service';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { MissionInstallation, MissionRequestDTO, MissionMateriel } from '../../../../shared/models/mission.model';
-import { Etablissement } from '../../../../shared/models/etablissement.model';
+import { Etablissement, Commune } from '../../../../shared/models/etablissement.model';
 import { Materiel } from '../../../../shared/models/materiel.model';
 
 interface EquipeTechnique {
@@ -54,13 +55,14 @@ interface MissionFormModel {
 export class GsMission {
   private readonly missionService = inject(MissionService);
   private readonly etablissementService = inject(EtablissementService);
+  private readonly communeService = inject(CommuneService);
   private readonly equipeService = inject(EquipeTechniqueService);
   private readonly authService = inject(AuthService);
   private readonly materielService = inject(MaterielService);
 
   readonly icons = {
     Briefcase, Calendar, CheckCircle2, Clock, Search, Plus, Download,
-    Pencil, Trash2, X, Building2, User, Users, Eye, Package, AlertTriangle  // ✅ AJOUTÉ
+    Pencil, Trash2, X, Building2, User, Users, Eye, Package, AlertTriangle
   };
 
   readonly statutOptions = ['PROPOSEE', 'Planifiée', 'En cours', 'Terminée', 'Annulée'];
@@ -68,6 +70,9 @@ export class GsMission {
   // Données réactives
   readonly missions = signal<MissionInstallation[]>([]);
   readonly etablissementsList = signal<Etablissement[]>([]);
+  readonly communesList = signal<Commune[]>([]);
+  readonly etablissementsFiltres = signal<Etablissement[]>([]);
+  readonly selectedCommuneId = signal<number | null>(null);
   readonly equipesList = signal<EquipeTechnique[]>([]);
   readonly materielsList = signal<Materiel[]>([]);
   readonly isLoading = signal<boolean>(true);
@@ -96,7 +101,7 @@ export class GsMission {
   // Modale des matériels
   readonly showMaterielsModal = signal<MissionInstallation | null>(null);
 
-  // ✅ NOUVEAU : Modale de rejet personnalisée
+  // Modale de rejet personnalisée
   readonly showRejetModal = signal<{
     isOpen: boolean;
     missionId: number | null;
@@ -176,7 +181,7 @@ export class GsMission {
     this.showMaterielsModal.set(null);
   }
 
-  // ✅ NOUVELLES MÉTHODES POUR LA MODALE DE REJET
+  // Méthodes pour la modale de rejet
   ouvrirRejetModal(missionId: number): void {
     this.showRejetModal.set({
       isOpen: true,
@@ -245,6 +250,11 @@ export class GsMission {
       this.etablissementsList.set(data);
     });
 
+    // Charger les communes
+    this.communeService.getAll().subscribe((data) => {
+      this.communesList.set(data);
+    });
+
     this.equipeService.getAll().subscribe((data: any) => {
       this.equipesList.set(data);
     });
@@ -254,7 +264,21 @@ export class GsMission {
     });
   }
 
-  // ✅ Approuver la mission
+  // ✅ Quand la commune change, filtrer les établissements
+  onCommuneChange(idCommune: number | null): void {
+    this.selectedCommuneId.set(idCommune);
+    if (idCommune) {
+      this.etablissementService.getByCommune(idCommune).subscribe((data) => {
+        this.etablissementsFiltres.set(data);
+        // Réinitialiser l'établissement sélectionné
+        this.updateField('idEtablissement', null);
+      });
+    } else {
+      this.etablissementsFiltres.set([]);
+    }
+  }
+
+  // Approuver la mission
   approuverMission(missionId: number): void {
     this.missionService.approuver(missionId).subscribe({
       next: () => {
@@ -266,7 +290,7 @@ export class GsMission {
     });
   }
 
-  // ✅ MODIFIÉ : Rejeter la mission avec modale personnalisée
+  // Rejeter la mission avec modale personnalisée
   rejeterMission(missionId: number): void {
     this.ouvrirRejetModal(missionId);
   }
@@ -279,6 +303,9 @@ export class GsMission {
       ...this.emptyForm(),
       idAdministrateur: currentUser?.id ?? null
     });
+    // Réinitialiser les filtres
+    this.selectedCommuneId.set(null);
+    this.etablissementsFiltres.set([]);
     this.showForm.set(true);
   }
 
@@ -298,6 +325,18 @@ export class GsMission {
       idAdministrateur: currentUser?.id ?? item.idAdministrateur ?? null,
       idEquipe: item.idEquipe ?? null
     });
+
+    // Si l'établissement est déjà sélectionné, charger la commune correspondante
+    if (item.idEtablissement) {
+      const etab = this.etablissementsList().find(e => e.idEtablissement === item.idEtablissement);
+      if (etab) {
+        this.selectedCommuneId.set(etab.idCommune);
+        // Charger les établissements de cette commune
+        this.etablissementService.getByCommune(etab.idCommune).subscribe((data) => {
+          this.etablissementsFiltres.set(data);
+        });
+      }
+    }
   }
 
   closeForm(): void {
