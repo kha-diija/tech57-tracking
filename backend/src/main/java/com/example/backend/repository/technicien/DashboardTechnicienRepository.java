@@ -11,6 +11,11 @@ import java.util.List;
 @Repository
 public interface DashboardTechnicienRepository extends JpaRepository<Intervention, Integer> {
 
-    @Query("SELECT i FROM Intervention i JOIN i.technicien t WHERE t.email = :email")
+    @Query("SELECT DISTINCT i FROM Intervention i " +
+            "LEFT JOIN FETCH i.mission m " +
+            "LEFT JOIN FETCH m.etablissement " +
+            "LEFT JOIN FETCH i.technicien " +
+            "LEFT JOIN FETCH i.checkInOuts " +
+            "WHERE i.technicien.email = :email")
     List<Intervention> findInterventionsByTechnicienEmail(@Param("email") String email);
 }
