@@ -13,6 +13,10 @@
     </div>
 
     <div class="gs-etab__actions">
+      <button class="btn btn--ghost" (click)="openImportModal()">
+        <lucide-icon [img]="icons.Upload" [size]="16"></lucide-icon>
+        Importer
+      </button>
       <button class="btn btn--ghost" (click)="onExport()">
         <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
         Exporter
@@ -88,6 +92,7 @@
             <th>Bénéficiaires</th>
             <th>Responsable</th>
             <th>Contact</th>
+            <th>Formateurs</th>
             <th class="etab-table__actions-col">Actions</th>
           </tr>
         </thead>
@@ -129,22 +134,24 @@
                   <lucide-icon [img]="icons.Phone" [size]="12"></lucide-icon>
                   {{ resp.telephone }}
                 </a>
-                <a class="contact-link" *ngIf="resp.email" [href]="'mailto:' + resp.email">
-                  <lucide-icon [img]="icons.Mail" [size]="12"></lucide-icon>
-                  {{ resp.email }}
-                </a>
               </div>
+            </td>
+            <td>
+              <button class="badge badge--clickable" (click)="openFormateurModal(etab)" title="Gérer les formateurs">
+                <lucide-icon [img]="icons.GraduationCap" [size]="12"></lucide-icon>
+                {{ etab.nbFormateurs ?? 0 }} formateur(s)
+              </button>
             </td>
             <td>
               <div class="etab-table__row-actions">
                 <button class="icon-btn" title="Modifier" (click)="openEditForm(etab)">
                   <lucide-icon [img]="icons.Pencil" [size]="15"></lucide-icon>
                 </button>
-                
-                <button 
-                  class="icon-btn icon-btn--danger" 
-                  title="Supprimer" 
-                  *ngIf="isAdmin()" 
+
+                <button
+                  class="icon-btn icon-btn--danger"
+                  title="Supprimer"
+                  *ngIf="isAdmin()"
                   (click)="deleteEtablissement(etab)">
                   <lucide-icon [img]="icons.Trash2" [size]="15"></lucide-icon>
                 </button>
@@ -153,7 +160,7 @@
           </tr>
 
           <tr *ngIf="!isLoading() && filteredEtablissements().length === 0">
-            <td colspan="7" class="etab-table__empty">
+            <td colspan="8" class="etab-table__empty">
               Aucun établissement ne correspond à ta recherche.
             </td>
           </tr>
@@ -162,6 +169,7 @@
     </div>
   </div>
 
+  <!-- Panneau latéral : création / édition d'un établissement -->
   <div class="side-panel-backdrop" *ngIf="showForm()" (click)="closeForm()"></div>
 
   <aside class="side-panel" *ngIf="showForm()">
@@ -236,10 +244,6 @@
           <label>Téléphone</label>
           <input type="text" [ngModel]="formModel().telephoneContact" (ngModelChange)="updateField('telephoneContact', $event)" />
         </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" [ngModel]="formModel().emailContact" (ngModelChange)="updateField('emailContact', $event)" />
-        </div>
       </div>
 
       <div class="form-divider">Responsable (optionnel)</div>
@@ -265,10 +269,6 @@
           <label>Téléphone</label>
           <input type="text" [ngModel]="formModel().responsableTelephone" (ngModelChange)="updateField('responsableTelephone', $event)" />
         </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" [ngModel]="formModel().responsableEmail" (ngModelChange)="updateField('responsableEmail', $event)" />
-        </div>
       </div>
     </div>
 
@@ -280,6 +280,87 @@
     </div>
   </aside>
 
+  <!-- Panneau latéral : gestion des formateurs d'un établissement -->
+  <div class="side-panel-backdrop" *ngIf="formateurModal().isOpen" (click)="closeFormateurModal()"></div>
+
+  <aside class="side-panel" *ngIf="formateurModal().isOpen">
+    <div class="side-panel__header">
+      <h2>Formateurs — {{ formateurModal().etablissement?.designation }}</h2>
+      <button class="icon-btn" (click)="closeFormateurModal()">
+        <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="side-panel__body">
+      <div *ngIf="formateurModal().isLoading" class="text-muted">Chargement...</div>
+
+      <ng-container *ngIf="!formateurModal().isLoading">
+        <div class="formateur-list" *ngIf="formateurModal().formateurs.length > 0; else noFormateur">
+          <div class="formateur-item" *ngFor="let f of formateurModal().formateurs">
+            <div class="formateur-item__info">
+              <span class="formateur-item__name">{{ f.prenom }} {{ f.nom }}</span>
+              <span class="formateur-item__meta" *ngIf="f.telephone">
+                <lucide-icon [img]="icons.Phone" [size]="11"></lucide-icon>
+                {{ f.telephone }}
+              </span>
+              <span class="formateur-item__meta" *ngIf="f.adresse">
+                <lucide-icon [img]="icons.MapPin" [size]="11"></lucide-icon>
+                {{ f.adresse }}
+              </span>
+            </div>
+            <div class="formateur-item__actions">
+              <button class="icon-btn" title="Modifier" (click)="editFormateur(f)">
+                <lucide-icon [img]="icons.Pencil" [size]="14"></lucide-icon>
+              </button>
+              <button class="icon-btn icon-btn--danger" title="Supprimer" (click)="deleteFormateur(f)">
+                <lucide-icon [img]="icons.Trash2" [size]="14"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noFormateur>
+          <p class="text-muted">Aucun formateur enregistré pour cet établissement.</p>
+        </ng-template>
+
+        <div class="form-divider">
+          {{ formateurModal().editingId ? 'Modifier le formateur' : 'Ajouter un formateur' }}
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prénom</label>
+            <input type="text" [ngModel]="formateurModal().form.prenom" (ngModelChange)="updateFormateurField('prenom', $event)" />
+          </div>
+          <div class="form-group">
+            <label>Nom</label>
+            <input type="text" [ngModel]="formateurModal().form.nom" (ngModelChange)="updateFormateurField('nom', $event)" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" [ngModel]="formateurModal().form.telephone" (ngModelChange)="updateFormateurField('telephone', $event)" />
+        </div>
+
+        <div class="form-group">
+          <label>Adresse</label>
+          <input type="text" [ngModel]="formateurModal().form.adresse" (ngModelChange)="updateFormateurField('adresse', $event)" />
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="side-panel__footer">
+      <button class="btn btn--ghost" *ngIf="formateurModal().editingId" (click)="cancelEditFormateur()">
+        Annuler la modification
+      </button>
+      <button class="btn btn--primary" (click)="saveFormateur()">
+        {{ formateurModal().editingId ? 'Enregistrer' : 'Ajouter le formateur' }}
+      </button>
+    </div>
+  </aside>
+
+  <!-- Modale de confirmation de suppression -->
   <ng-container *ngIf="isAdmin()">
     <div class="side-panel-backdrop" *ngIf="confirmModal().isOpen" (click)="closeConfirmModal()"></div>
 
@@ -303,5 +384,59 @@
       </div>
     </div>
   </ng-container>
+
+  <!-- Modale d'import Excel -->
+  <div class="side-panel-backdrop" *ngIf="importModal().isOpen" (click)="closeImportModal()"></div>
+
+  <div class="custom-modal-container" *ngIf="importModal().isOpen">
+    <div class="custom-modal">
+      <div class="custom-modal__header">
+        <h3>Importer des établissements</h3>
+        <button class="icon-btn" (click)="closeImportModal()">
+          <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="custom-modal__body">
+        <ng-container *ngIf="!importModal().result; else importDone">
+          <div class="form-group">
+            <label>Province concernée</label>
+            <select [ngModel]="importModal().idProvince" (ngModelChange)="onImportProvinceChange($event)">
+              <option [ngValue]="null" disabled>Choisir une province</option>
+              <option *ngFor="let p of importProvinces()" [ngValue]="p.idProvince">{{ p.nom }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Fichier Excel (.xlsx)</label>
+            <input type="file" accept=".xlsx" (change)="onImportFileSelected($event)" />
+          </div>
+
+          <p class="text-muted" *ngIf="importModal().error">{{ importModal().error }}</p>
+        </ng-container>
+
+        <ng-template #importDone>
+          <p>
+            {{ importModal().result?.crees }} créé(s), {{ importModal().result?.misAJour }} mis à jour,
+            {{ importModal().result?.ignores }} ignoré(s) sur {{ importModal().result?.totalLignes }} ligne(s) lues.
+          </p>
+          <ul *ngIf="importModal().result?.erreurs?.length">
+            <li *ngFor="let e of importModal().result?.erreurs">{{ e }}</li>
+          </ul>
+        </ng-template>
+      </div>
+
+      <div class="custom-modal__footer">
+        <button class="btn btn--ghost" (click)="closeImportModal()">Fermer</button>
+        <button
+          class="btn btn--primary"
+          *ngIf="!importModal().result"
+          [disabled]="importModal().isImporting"
+          (click)="submitImport()">
+          {{ importModal().isImporting ? 'Import en cours...' : 'Importer' }}
+        </button>
+      </div>
+    </div>
+  </div>
 
 </div>

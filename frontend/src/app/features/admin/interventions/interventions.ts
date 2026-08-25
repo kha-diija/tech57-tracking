@@ -247,10 +247,21 @@ export class Interventions implements OnInit {
     return 'Meknès, Maroc (Approx.)';
   }
 
-  onImageError(event: any) {
-    event.target.src = 'assets/placeholder.png';
+    getPhotoUrl(chemin: string): string {
+    // Si le chemin est vide ou null → on renvoie une chaîne vide (pas d'image)
+    if (!chemin) return '';
+    
+    // Si c'est déjà une URL complète (http/https) → on la retourne telle quelle
+    if (chemin.startsWith('http')) return chemin;
+    
+    // Sinon, on préfixe avec l'URL du backend
+    return `http://localhost:8080${chemin}`;
   }
 
+  onImageError(event: any) {
+    // Cache simplement l'image si elle ne charge pas (pas de placeholder, pas de boucle)
+    event.target.style.display = 'none';
+  }
   voirDetails(id: number) {
     this.interventionService.getInterventionById(id).subscribe({
       next: (data) => {
