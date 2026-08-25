@@ -33,6 +33,15 @@ export class Dashboard {
   private readonly dashboardService = inject(DashboardService);
   private readonly router = inject(Router);
 
+  // Palette de couleurs personnalisée pour le style du donut
+  private readonly defaultColors = [
+    'rgba(10, 206, 193, 0.95)', // Cyan principal
+    '#3b82f6',                 // Bleu vibrant
+    '#334155',                 // Gris sombre moderne
+    '#a855f7',                 // Violet
+    '#f59e0b'                  // Ambre
+  ];
+
   readonly icons = {
     Briefcase,
     Building2,
@@ -167,6 +176,7 @@ export class Dashboard {
     return Math.round((value / total) * 100);
   }
 
+  // --- CALCUL DYNAMIQUE DU DEGRADÉ DU DONUT (AVEC PALETTE CYAN REFORMATEE) ---
   readonly donutGradient = computed(() => {
     const items = this.materialDistribution();
     const total = this.materialTotal();
@@ -175,13 +185,24 @@ export class Dashboard {
     let cumulativePercent = 0;
     const stops: string[] = [];
 
-    for (const item of items) {
+    // Palette forcée : Cyan principal, Bleu, Gris foncé
+    const forcedColors = [
+      'rgba(10, 206, 193, 0.95)', // Cyan (3412 unités)
+      '#3b82f6',                 // Bleu (412 unités)
+      '#334155'                  // Gris (890 unités)
+    ];
+
+    items.forEach((item, index) => {
+      // FORCE LA NOUVELLE COULEUR (écrase item.color d'origine)
+      const color = forcedColors[index % forcedColors.length];
+      item.color = color; 
+
       const percent = (item.value / total) * 100;
       const start = cumulativePercent;
       const end = cumulativePercent + percent;
-      stops.push(`${item.color} ${start}% ${end}%`);
+      stops.push(`${color} ${start}% ${end}%`);
       cumulativePercent = end;
-    }
+    });
 
     return `conic-gradient(${stops.join(', ')})`;
   });
