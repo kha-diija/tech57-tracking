@@ -1,5 +1,6 @@
 package com.example.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ public class Commune {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_province", nullable = false)
     private Province province;
-
+    @JsonIgnore
     @OneToMany(mappedBy = "commune", cascade = CascadeType.ALL)
     private List<Etablissement> etablissements = new ArrayList<>();
 }

@@ -31,4 +31,16 @@ export class MissionService {
       params: { force: force.toString() }
     });
   }
+
+  // ✅ NOUVELLE MÉTHODE : Approuver la mission
+  approuver(id: number): Observable<MissionInstallation> {
+    return this.http.put<MissionInstallation>(`${this.apiUrl}/${id}/approuver`, {});
+  }
+
+  // ✅ NOUVELLE MÉTHODE : Rejeter la mission
+  rejeter(id: number, motif: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}/rejeter`, {
+      params: { motif: motif }
+    });
+  }
 }

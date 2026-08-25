@@ -55,6 +55,7 @@
             <th>Titre</th>
             <th>Établissement</th>
             <th>Équipe Technique</th>
+            <th>Matériel Proposé</th>
             <th>Responsable Établissement</th>
             <th>Admin Responsable</th>
             <th>Budget Proposé</th>
@@ -82,6 +83,19 @@
                 <lucide-icon [img]="icons.Users" [size]="12"></lucide-icon>
                 {{ getEquipeNameForMission(mission.idEquipe) }}
               </span>
+            </td>
+            <!-- Colonne Matériel Proposé -->
+            <td>
+              <div class="materiel-summary" *ngIf="mission.materiels && mission.materiels.length > 0; else noMateriels">
+                <span class="materiel-count">{{ mission.materiels.length }} matériel(s)</span>
+                <button type="button" class="btn btn--ghost btn--sm" (click)="ouvrirMateriels(mission)">
+                  <lucide-icon [img]="icons.Eye" [size]="14"></lucide-icon>
+                  Voir plus
+                </button>
+              </div>
+              <ng-template #noMateriels>
+                <span class="text-xs text-muted">Aucun matériel</span>
+              </ng-template>
             </td>
             <td>
               <ng-container *ngIf="getResponsableForEtablissement(mission.idEtablissement) as resp; else noResp">
@@ -113,13 +127,24 @@
                 'badge--success': mission.statut === 'Terminée',
                 'badge--warning': mission.statut === 'En cours',
                 'badge--info': mission.statut === 'Planifiée',
-                'badge--danger': mission.statut === 'Annulée'
+                'badge--danger': mission.statut === 'Annulée',
+                'badge--purple': mission.statut === 'PROPOSEE'
               }">
                 {{ mission.statut }}
               </span>
             </td>
             <td>
               <div class="etab-table__row-actions">
+                <!-- Boutons Approuver / Rejeter si PROPOSEE -->
+                <button *ngIf="mission.statut === 'PROPOSEE'" class="btn btn--success btn--sm" (click)="approuverMission(mission.idMission)">
+                  <lucide-icon [img]="icons.CheckCircle2" [size]="15"></lucide-icon>
+                  Approuver
+                </button>
+                <button *ngIf="mission.statut === 'PROPOSEE'" class="btn btn--danger btn--sm" (click)="rejeterMission(mission.idMission)">
+                  <lucide-icon [img]="icons.X" [size]="15"></lucide-icon>
+                  Rejeter
+                </button>
+                
                 <button class="icon-btn" title="Modifier" (click)="openEditForm(mission)">
                   <lucide-icon [img]="icons.Pencil" [size]="15"></lucide-icon>
                 </button>
@@ -131,7 +156,7 @@
           </tr>
 
           <tr *ngIf="!isLoading() && filteredMissions().length === 0">
-            <td colspan="9" class="etab-table__empty">
+            <td colspan="10" class="etab-table__empty">
               Aucune mission d'installation ne correspond à vos critères.
             </td>
           </tr>
@@ -152,7 +177,7 @@
     </div>
 
     <div class="side-panel__body">
-      <!-- Admin créateur de la mission : lecture seule, non modifiable -->
+      <!-- Admin créateur de la mission -->
       <div class="creator-banner" *ngIf="creatorDisplay() as creator">
         <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
         <span *ngIf="editingId() === null">Sera créée par : </span>
@@ -180,35 +205,49 @@
       </div>
 
       <!-- Sélection de l'établissement -->
-      <div class="form-group">
-        <label>Établissement cible</label>
-        <select [ngModel]="formModel().idEtablissement" (ngModelChange)="updateField('idEtablissement', +$event)">
-          <option [ngValue]="null" disabled>Sélectionner un établissement</option>
-          <option *ngFor="let etab of etablissementsList()" [ngValue]="etab.idEtablissement">
-            {{ etab.designation }} ({{ etab.reference }})
-          </option>
-        </select>
-      </div>
+      <!-- Sélection de la commune -->
+<div class="form-group">
+  <label>Commune</label>
+  <select (change)="onCommuneChange($any($event.target).value ? +$any($event.target).value : null)">
+    <option [value]="null">Sélectionner une commune</option>
+    <option *ngFor="let commune of communesList()" [value]="commune.idCommune">
+      {{ commune.nom }}
+    </option>
+  </select>
+</div>
 
-      <!-- Responsable de l'établissement : affichage automatique en lecture seule -->
-      <div class="form-group form-group--readonly" *ngIf="formModel().idEtablissement">
-        <label>Responsable de l'établissement</label>
-        <div class="responsable-card" *ngIf="selectedResponsable() as resp; else noResponsable">
-          <div class="responsable-card__row">
-            <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
-            <span>{{ resp.prenom }} {{ resp.nom }}</span>
-            <span class="text-muted" *ngIf="resp.fonction">— {{ resp.fonction }}</span>
-          </div>
-          <div class="responsable-card__row text-muted" *ngIf="resp.telephone || resp.email">
-            <span *ngIf="resp.telephone">{{ resp.telephone }}</span>
-            <span *ngIf="resp.telephone && resp.email"> · </span>
-            <span *ngIf="resp.email">{{ resp.email }}</span>
-          </div>
-        </div>
-        <ng-template #noResponsable>
-          <span class="text-muted">Aucun responsable renseigné pour cet établissement.</span>
-        </ng-template>
-      </div>
+<!-- Sélection de l'établissement (filtré par commune) -->
+<div class="form-group">
+  <label>Établissement cible</label>
+  <select [ngModel]="formModel().idEtablissement" (ngModelChange)="updateField('idEtablissement', +$event)">
+    <option [ngValue]="null" disabled>Sélectionner un établissement</option>
+    <option *ngFor="let etab of etablissementsFiltres()" [ngValue]="etab.idEtablissement">
+      {{ etab.designation }} ({{ etab.reference }})
+    </option>
+  </select>
+  <small class="text-muted" *ngIf="!selectedCommuneId() && etablissementsList().length > 0">
+    Veuillez d'abord sélectionner une commune
+  </small>
+</div>
+
+      <!-- Responsable de l'établissement -->
+<div class="form-group form-group--readonly" *ngIf="formModel().idEtablissement">
+  <label>Responsable de l'établissement</label>
+  <div class="responsable-card" *ngIf="selectedResponsable() as resp; else noResponsable">
+    <div class="responsable-card__row">
+      <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
+      <span>{{ resp.prenom }} {{ resp.nom }}</span>
+      <span class="text-muted" *ngIf="resp.fonction">— {{ resp.fonction }}</span>
+    </div>
+    <!-- ✅ MODIFICATION : Plus que le téléphone -->
+    <div class="responsable-card__row text-muted" *ngIf="resp.telephone">
+      <span>{{ resp.telephone }}</span>
+    </div>
+  </div>
+  <ng-template #noResponsable>
+    <span class="text-muted">Aucun responsable renseigné pour cet établissement.</span>
+  </ng-template>
+</div>
 
       <div class="form-row">
         <div class="form-group">
@@ -256,6 +295,112 @@
         <button class="btn btn--danger" (click)="executeDelete()">
           Confirmer
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE DES MATÉRIELS -->
+  <div class="modal-overlay" *ngIf="showMaterielsModal()" (click)="fermerMateriels()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-card">
+        <!-- En-tête -->
+        <div class="modal-card__header">
+          <h3>
+            <lucide-icon [img]="icons.Package" [size]="18"></lucide-icon>
+            Matériels de la mission
+          </h3>
+          <button class="modal-card__close" (click)="fermerMateriels()">
+            <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+          </button>
+        </div>
+        
+        <!-- Corps -->
+        <div class="modal-card__body">
+          <div class="modal-mission-info">
+            <span class="modal-mission-title">{{ showMaterielsModal()?.titre }}</span>
+            <span class="modal-mission-ref">{{ showMaterielsModal()?.reference }}</span>
+          </div>
+          
+          <div class="modal-materiels-list">
+            <div class="modal-materiel-item" *ngFor="let mat of showMaterielsModal()?.materiels">
+              <span class="modal-materiel-dot" [ngClass]="{
+                'dot-green': mat.statut === 'APPROUVE',
+                'dot-red': mat.statut === 'REJETE',
+                'dot-orange': mat.statut === 'EN_ATTENTE' || mat.statut === 'PROPOSE'
+              }"></span>
+              <span class="modal-materiel-nom">{{ getMaterielName(mat.idMateriel) }}</span>
+              <span class="modal-materiel-qty">× {{ mat.quantite }}</span>
+              <span class="modal-materiel-statut" [ngClass]="{
+                'statut-approuve': mat.statut === 'APPROUVE',
+                'statut-rejete': mat.statut === 'REJETE',
+                'statut-attente': mat.statut === 'EN_ATTENTE' || mat.statut === 'PROPOSE'
+              }">{{ mat.statut }}</span>
+            </div>
+            
+            <div class="modal-empty" *ngIf="!showMaterielsModal()?.materiels || showMaterielsModal()?.materiels?.length === 0">
+              <lucide-icon [img]="icons.Package" [size]="32"></lucide-icon>
+              <p>Aucun matériel associé à cette mission</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Pied -->
+        <div class="modal-card__footer">
+          <button class="btn btn--ghost" (click)="fermerMateriels()">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ MODALE DE REJET PERSONNALISÉE -->
+  <div class="modal-overlay" *ngIf="showRejetModal().isOpen" (click)="fermerRejetModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-card modal-card--rejet">
+        <!-- En-tête -->
+        <div class="modal-card__header">
+          <h3>
+            <lucide-icon [img]="icons.X" [size]="18" style="color: #ef4444;"></lucide-icon>
+            Rejeter la mission
+          </h3>
+          <button class="modal-card__close" (click)="fermerRejetModal()">
+            <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+          </button>
+        </div>
+        
+        <!-- Corps -->
+        <div class="modal-card__body">
+          <p class="modal-rejet-message">
+            Veuillez indiquer le motif du rejet de cette mission :
+          </p>
+          
+          <div class="modal-rejet-champ">
+            <label for="motifRejet">Motif du rejet <span class="required">*</span></label>
+            <textarea
+              id="motifRejet"
+              rows="4"
+              placeholder="Expliquez la raison du rejet..."
+              [ngModel]="showRejetModal().motif"
+              (ngModelChange)="updateMotifRejet($event)"
+            ></textarea>
+          </div>
+          
+          <div class="modal-rejet-info" *ngIf="!showRejetModal().motif.trim()">
+            <lucide-icon [img]="icons.AlertTriangle" [size]="14" style="color: #f97316;"></lucide-icon>
+            <span>Veuillez saisir un motif pour continuer</span>
+          </div>
+        </div>
+        
+        <!-- Pied -->
+        <div class="modal-card__footer modal-card__footer--rejet">
+          <button class="btn btn--ghost" (click)="fermerRejetModal()">Annuler</button>
+          <button 
+            class="btn btn--danger" 
+            (click)="confirmerRejet()"
+            [disabled]="!showRejetModal().motif.trim()"
+          >
+            Confirmer le rejet
+          </button>
+        </div>
       </div>
     </div>
   </div>

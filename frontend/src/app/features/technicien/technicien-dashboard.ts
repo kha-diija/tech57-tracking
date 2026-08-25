@@ -1,10 +1,12 @@
-import { Component, OnInit, inject, ChangeDetectorRef, signal } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, signal, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { AuthService } from '../../shared/services/auth.service';
 import { TechnicienDashboardService } from '../../shared/services/technicien-dashboard.service';
 import { TechnicienKpiResponse } from '../../shared/models/technicien-dashboard.model';
-import { LucideAngularModule, Download, ArrowUpRight, CheckCircle2, Clock, MapPin, Building, AlertCircle, TrendingUp, PackageMinus, PackagePlus } from 'lucide-angular';
+import { LucideAngularModule, Download, ArrowUpRight, CheckCircle2, Clock, MapPin, Building, AlertCircle, TrendingUp, PackageMinus, PackagePlus, FileText } from 'lucide-angular';
 
 @Component({
   selector: 'app-technicien-dashboard',
@@ -21,9 +23,12 @@ export class TechnicienDashboard implements OnInit {
   kpis: TechnicienKpiResponse | null = null;
   loading = false;
   erreur: string | null = null;
+  isExportingPdf = signal<boolean>(false); // ✅ Signal au lieu de booléen simple
+
+  @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
 
   readonly icons = {
-    Download, ArrowUpRight, CheckCircle2, Clock, MapPin, Building, AlertCircle, TrendingUp, PackageMinus, PackagePlus
+    Download, ArrowUpRight, CheckCircle2, Clock, MapPin, Building, AlertCircle, TrendingUp, PackageMinus, PackagePlus, FileText
   };
 
   prenomTechnicien = signal<string>('Technicien');
@@ -75,7 +80,6 @@ export class TechnicienDashboard implements OnInit {
     }
   }
 
-  // --- Répartition des interventions par statut, pour le donut ---
   get statutRepartition(): { label: string; value: number; color: string }[] {
     if (!this.kpis) return [];
     const planifiees = this.kpis.missionsActuelles.filter(m => m.statut === 'Planifiée').length;
@@ -113,7 +117,6 @@ export class TechnicienDashboard implements OnInit {
     return `conic-gradient(${stops.join(', ')})`;
   }
 
-  // --- Comparaison matériel sorti / rendu ---
   get materielMax(): number {
     if (!this.kpis) return 1;
     return Math.max(this.kpis.quantiteMaterielSortie, this.kpis.quantiteMaterielRendue, 1);
@@ -123,7 +126,7 @@ export class TechnicienDashboard implements OnInit {
     return Math.round((value / this.materielMax) * 100);
   }
 
-  // --- Export Excel ---
+  // ✅ Export Excel (garde l'existant)
   onExport(): void {
     if (!this.kpis) return;
 
@@ -170,5 +173,62 @@ export class TechnicienDashboard implements OnInit {
 
     const fileName = `dashboard-technicien-${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, fileName);
+  }
+
+  // ✅ Export PDF (CORRIGÉ avec Signal)
+  onExportPdf(): void {
+    this.isExportingPdf.set(true); // ✅ Utiliser .set()
+    const element = this.dashboardContent.nativeElement;
+
+    // Masquer les boutons
+    const boutons = element.querySelectorAll('.dashboard__actions .btn');
+    const displaysOriginal: string[] = [];
+    boutons.forEach((btn: any) => {
+      displaysOriginal.push(btn.style.display);
+      btn.style.display = 'none';
+    });
+
+    html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#0f1115',
+      logging: false
+    }).then((canvas) => {
+      // Restaurer les boutons AVANT la création du PDF
+      boutons.forEach((btn: any, index: number) => {
+        btn.style.display = displaysOriginal[index];
+      });
+      this.isExportingPdf.set(false); // ✅ Utiliser .set()
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save('dashboard-technicien.pdf');
+    }).catch((err) => {
+      // Restaurer les boutons en cas d'erreur
+      boutons.forEach((btn: any, index: number) => {
+        btn.style.display = displaysOriginal[index];
+      });
+      this.isExportingPdf.set(false); // ✅ Utiliser .set()
+      console.error('Erreur lors de l’export PDF', err);
+    });
   }
 }
