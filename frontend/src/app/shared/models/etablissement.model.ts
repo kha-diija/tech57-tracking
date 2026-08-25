@@ -63,6 +63,7 @@ export interface Commune {
   nom: string;
   code: string;
   idProvince: number;
+  provinceNom?: string;  // ✅ AJOUT : correspond au DTO
 }
 
 // --- Formateur (= "Observateur" côté backend) ---
