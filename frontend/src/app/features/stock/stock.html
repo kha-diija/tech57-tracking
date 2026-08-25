@@ -14,7 +14,7 @@
         <lucide-icon [img]="icons.Boxes" [size]="18"></lucide-icon>
         <span>Nouveau kit</span>
       </button>
-      <button class="btn btn-primary" (click)="ouvrirCreation('simple')">
+      <button class="btn btn-primary"  *ngIf="!lectureSeule()" (click)="ouvrirCreation('simple')">
         <lucide-icon [img]="icons.Plus" [size]="18"></lucide-icon>
         <span>Nouveau matériel</span>
       </button>

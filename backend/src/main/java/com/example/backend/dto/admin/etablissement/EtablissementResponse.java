@@ -49,4 +49,9 @@ public class EtablissementResponse {
     public void setRegionNom(String regionNom) { this.regionNom = regionNom; }
     public ResponsableDto getResponsable() { return responsable; }
     public void setResponsable(ResponsableDto responsable) { this.responsable = responsable; }
+
+    private Integer nbFormateurs;
+
+    public Integer getNbFormateurs() { return nbFormateurs; }
+    public void setNbFormateurs(Integer nbFormateurs) { this.nbFormateurs = nbFormateurs; }
 }

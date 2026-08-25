@@ -194,7 +194,7 @@ public class InterventionService {
         missionInstallationService.recalculerStatut(idMission);
     }
 
-    private InterventionResponse convertToResponse(Intervention intervention) {
+    public InterventionResponse convertToResponse(Intervention intervention) {
         InterventionResponse response = new InterventionResponse();
         response.setId(intervention.getIdIntervention());
         response.setDatePrevue(intervention.getDatePrevue());
@@ -289,9 +289,15 @@ public class InterventionService {
             response.setPhotos(photoDtos);
         }
 
-        Optional<Attestation> attestationOpt = attestationRepository.findByIntervention(intervention);
-        if (attestationOpt.isPresent()) {
-            Attestation attestation = attestationOpt.get();
+        List<Attestation> attestations = attestationRepository.findByIntervention(intervention);
+        if (attestations != null && !attestations.isEmpty()) {
+            // S'il reste des doublons résiduels en base, on prend la plus récente
+            Attestation attestation = attestations.stream()
+                    .max(java.util.Comparator.comparing(
+                            Attestation::getDateSignature,
+                            java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
+                    .orElse(attestations.get(0));
+
             AttestationDto attDto = new AttestationDto();
             attDto.setId(attestation.getIdAttestation());
             attDto.setNomSignataire(attestation.getNomSignataire());
@@ -332,9 +338,13 @@ public class InterventionService {
             response.setRetoursMateriel(retourDtos);
         }
 
-        Optional<ChecklistEquipement> checklistOpt = checklistEquipementRepository.findByIntervention(intervention);
-        if (checklistOpt.isPresent()) {
-            ChecklistEquipement checklist = checklistOpt.get();
+        List<ChecklistEquipement> checklists = checklistEquipementRepository.findByIntervention(intervention);
+        if (checklists != null && !checklists.isEmpty()) {
+            ChecklistEquipement checklist = checklists.stream()
+                    .max(java.util.Comparator.comparing(
+                            ChecklistEquipement::getDateValidation,
+                            java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
+                    .orElse(checklists.get(0));
             List<ChecklistItem> items = checklistItemRepository.findByChecklist(checklist);
 
             if (items != null && !items.isEmpty()) {
@@ -366,8 +376,8 @@ public class InterventionService {
                 .count();
         boolean uneVisiteEnCours = visites.stream()
                 .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
-        double avancement = intervention.getTauxAvancement() != null ? intervention.getTauxAvancement() : 0.0;
 
+        // ✅ CORRECTION : Supprimer la condition d'avancement à 100%
         if (visitesTerminees < 2) {
             throw new IllegalArgumentException(
                     "Impossible de clôturer : au moins 2 visites terminées (check-in + check-out) sont requises.");
@@ -376,12 +386,8 @@ public class InterventionService {
             throw new IllegalArgumentException(
                     "Impossible de clôturer : une visite est encore en cours (pas de check-out).");
         }
-        // --- NOUVEAU : la clôture exige en plus un avancement à 100% ---
-        if (avancement < 100.0) {
-            throw new IllegalArgumentException(
-                    "Impossible de clôturer : l'avancement doit être à 100% (actuellement " + avancement + "%).");
-        }
 
+        // ✅ CORRECTION : On force le statut et l'avancement à 100% à la clôture
         intervention.setStatut("Clôturée");
         intervention.setTauxAvancement(100.0);
 
