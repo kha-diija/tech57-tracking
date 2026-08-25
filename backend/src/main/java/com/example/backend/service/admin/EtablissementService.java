@@ -75,6 +75,19 @@ public class EtablissementService {
                 .orElseThrow(() -> new NoSuchElementException("Établissement introuvable : " + id));
         return toResponse(e);
     }
+    @Transactional(readOnly = true)
+    public List<EtablissementResponse> getByCommune(Integer idCommune) {
+        // Vérifier que la commune existe
+        communeRepository.findById(idCommune)
+                .orElseThrow(() -> new NoSuchElementException("Commune introuvable avec l'ID : " + idCommune));
+
+        // Récupérer les établissements de cette commune
+        List<Etablissement> etablissements = etablissementRepository.findByCommune_IdCommune(idCommune);
+
+        return etablissements.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
 
     @Transactional(readOnly = true)
     public EtablissementKpiResponse getKpis() {
