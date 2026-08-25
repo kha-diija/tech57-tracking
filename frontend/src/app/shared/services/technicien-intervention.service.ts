@@ -18,7 +18,6 @@ export class TechnicienInterventionService {
     return this.http.get<Intervention>(`${this.apiUrl}/${id}`);
   }
 
-  // --- MÉTHODE AJOUTÉE POUR CRÉER UNE INTERVENTION ---
   createIntervention(data: any): Observable<Intervention> {
     return this.http.post<Intervention>(this.apiUrl, data);
   }
@@ -28,28 +27,32 @@ export class TechnicienInterventionService {
   }
 
   checkOut(id: number, data: any, photos: { file: File, type: string }[], attestationFile: File | null): Observable<Intervention> {
-  const formData = new FormData();
+    const formData = new FormData();
 
-  formData.append('gpsCheckout', data.gpsCheckout || '');
-  formData.append('signataire', data.signataire || '');
+    formData.append('gpsCheckout', data.gpsCheckout || '');
+    
+    // ✅ AJOUT : Bénéficiaires réel
+    if (data.beneficiairesReel) {
+      formData.append('beneficiairesReel', String(data.beneficiairesReel));
+    }
 
-  (data.materielSortiIds || []).forEach((v: number) => formData.append('materielSortiIds', String(v)));
-  (data.materielRetourIds || []).forEach((v: number) => formData.append('materielRetourIds', String(v)));
-  (data.etatsRetours || []).forEach((v: string) => formData.append('etatsRetours', v));
+    (data.materielSortiIds || []).forEach((v: number) => formData.append('materielSortiIds', String(v)));
+    (data.materielRetourIds || []).forEach((v: number) => formData.append('materielRetourIds', String(v)));
+    (data.etatsRetours || []).forEach((v: string) => formData.append('etatsRetours', v));
 
-  formData.append('checklist', JSON.stringify(data.checklist || []));
+    formData.append('checklist', JSON.stringify(data.checklist || []));
 
-  photos.forEach(p => {
-    formData.append('photos', p.file);
-    formData.append('photoTypes', p.type);
-  });
+    photos.forEach(p => {
+      formData.append('photos', p.file);
+      formData.append('photoTypes', p.type);
+    });
 
-  if (attestationFile) {
-    formData.append('attestationFile', attestationFile);
+    if (attestationFile) {
+      formData.append('attestationFile', attestationFile);
+    }
+
+    return this.http.post<Intervention>(`${this.apiUrl}/${id}/check-out`, formData);
   }
-
-  return this.http.post<Intervention>(`${this.apiUrl}/${id}/check-out`, formData);
-}
 
   genererRapport(id: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/rapport/download`, { responseType: 'blob' });

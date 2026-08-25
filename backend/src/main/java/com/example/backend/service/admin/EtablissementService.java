@@ -311,6 +311,7 @@ public class EtablissementService {
         e.setType(request.getType());
         e.setLocalisationGps(request.getLocalisationGps());
         e.setNombreBeneficiaires(request.getNombreBeneficiaires());
+        e.setNombreBeneficiairesReel(request.getNombreBeneficiairesReel());
         e.setTelephoneContact(request.getTelephoneContact());
         e.setEmailContact(request.getEmailContact());
 
@@ -355,6 +356,7 @@ public class EtablissementService {
         r.setType(e.getType());
         r.setLocalisationGps(e.getLocalisationGps());
         r.setNombreBeneficiaires(e.getNombreBeneficiaires());
+        r.setNombreBeneficiairesReel(e.getNombreBeneficiairesReel());
         r.setTelephoneContact(e.getTelephoneContact());
         r.setEmailContact(e.getEmailContact());
 

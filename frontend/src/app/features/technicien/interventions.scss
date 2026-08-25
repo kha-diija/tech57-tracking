@@ -113,6 +113,8 @@
   }
 }
 
+
+
 .card {
   background-color: var(--bg-surface, #1e2128);
   border: 1px solid var(--border-color, #2d313a);
@@ -1001,5 +1003,70 @@
 
 .checkout-modal .text-input:focus {
   outline: none;
-  border-color: #2563eb !important;
+  border-color: #cf790f !important;
+}
+
+
+/* ================================================= */
+/* CHAMP "BÉNÉFICIAIRES RÉEL" (Checkout - 1ère visite) */
+/* ================================================= */
+.checkout-modal {
+  .section.beneficiaires-section {
+    background: #eff6ff;
+    border: 1px solid #f39d57;
+    border-left: 3px solid #f46e20;
+    border-radius: 8px;
+    padding: 10px 14px 12px;
+
+    .section-title {
+      color: #e3622b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      
+    }
+
+    .section-hint {
+      color: #cb722d;
+    }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  input[type="number"].form-input,
+  .form-group input[type="number"] {
+    margin-top: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #d68458;
+    background-color: #ffffff !important;
+    color: #1a1a1a !important;
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.12s ease;
+
+    &::placeholder {
+      color: #b8a894 !important;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #ee9127 !important;
+      box-shadow: 0 0 0 3px rgba(183, 92, 35, 0.12);
+    }
+
+    /* Masque les flèches natives du input number (Chrome/Safari) */
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    -moz-appearance: textfield; /* Firefox */
+  }
 }

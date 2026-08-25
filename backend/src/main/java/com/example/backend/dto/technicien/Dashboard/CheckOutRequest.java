@@ -18,8 +18,8 @@ public class CheckOutRequest {
     private List<Integer> materielRetourIds;
     private List<String> etatsRetours;
 
-    // --- AUTRES DONNÉES ---
-    private String signataire;
+    // ✅ AJOUT : Bénéficiaires réel (seulement à la 1ère visite)
+    private Integer beneficiairesReel;
 
     // --- GETTERS ET SETTERS ---
     public String getGpsCheckout() { return gpsCheckout; }
@@ -43,6 +43,7 @@ public class CheckOutRequest {
     public List<String> getEtatsRetours() { return etatsRetours; }
     public void setEtatsRetours(List<String> etatsRetours) { this.etatsRetours = etatsRetours; }
 
-    public String getSignataire() { return signataire; }
-    public void setSignataire(String signataire) { this.signataire = signataire; }
+    // ✅ AJOUT : Getter et Setter pour bénéficiaires réel
+    public Integer getBeneficiairesReel() { return beneficiairesReel; }
+    public void setBeneficiairesReel(Integer beneficiairesReel) { this.beneficiairesReel = beneficiairesReel; }
 }

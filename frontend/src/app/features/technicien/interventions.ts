@@ -24,6 +24,7 @@ export class TechnicienInterventions implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
 
+  isFirstVisit: boolean = false;
   interventions: Intervention[] = [];
   searchTerm: string = '';
 
@@ -51,18 +52,22 @@ export class TechnicienInterventions implements OnInit {
   showCheckoutModal = false;
   checkoutInterventionId: number | null = null;
 
-  // --- NOUVEAUTÉS POUR LE CHECK-OUT (Tableaux pour le MULTIPLE) ---
-  materielsList: any[] = []; 
-  checkoutData: any = {
-    materielSortiIds: [],     // <-- Tableau d'IDs pour la sélection multiple
-    materielRetourIds: [],    // <-- Tableau d'IDs pour la sélection multiple
+  // --- CHECK-OUT ---
+  materielsList: any[] = [];
+  checkoutData: {
+    materielSortiIds: number[];
+    materielRetourIds: number[];
+    etatMateriel: string;
+    beneficiairesReel: number | null;
+  } = {
+    materielSortiIds: [],
+    materielRetourIds: [],
     etatMateriel: '',
-    signataire: ''
+    beneficiairesReel: null
   };
   selectedFiles: { file: File, type: string }[] = [];
   attestationFile: File | null = null;
 
-  // --- DYNAMISATION DE LA CHECKLIST ---
   checkoutChecklist: { idMateriel: number, nom: string, conforme: boolean }[] = [];
 
   kpis = {
@@ -73,7 +78,6 @@ export class TechnicienInterventions implements OnInit {
     tauxMoyen: 0
   };
 
-  // --- TOAST (remplace les alert()) ---
   toast: { message: string, type: 'success' | 'error' } | null = null;
   private toastTimeout: any = null;
 
@@ -186,14 +190,26 @@ export class TechnicienInterventions implements OnInit {
 
   ouvrirModalCheckout(id: number) {
     this.checkoutInterventionId = id;
-    this.checkoutData = { 
-      materielSortiIds: [], 
-      materielRetourIds: [], 
-      etatMateriel: '', 
-      signataire: '' 
+    this.checkoutData = {
+      materielSortiIds: [],
+      materielRetourIds: [],
+      etatMateriel: '',
+      beneficiairesReel: null
     };
     this.selectedFiles = [];
     this.attestationFile = null;
+
+    this.technicienService.getInterventionById(id).subscribe({
+      next: (intervention) => {
+        // Si c'est la 1ère visite (numeroVisite = 0), on peut remplir le champ
+        this.isFirstVisit = intervention.numeroVisite === 1;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isFirstVisit = false;
+      }
+    });
+
     if (this.checkoutChecklist.length > 0) {
       this.checkoutChecklist = this.checkoutChecklist.map(item => ({ ...item, conforme: false }));
     }
@@ -226,11 +242,11 @@ export class TechnicienInterventions implements OnInit {
 
     const payload = {
       gpsCheckout: "33.8935,-5.5473",
-      signataire: this.checkoutData.signataire,
       materielSortiIds: this.checkoutData.materielSortiIds || [],
       materielRetourIds: this.checkoutData.materielRetourIds || [],
       etatsRetours: this.checkoutData.etatMateriel ? [this.checkoutData.etatMateriel] : [],
-      checklist: this.checkoutChecklist
+      checklist: this.checkoutChecklist,
+      beneficiairesReel: this.checkoutData.beneficiairesReel
     };
 
     this.technicienService.checkOut(this.checkoutInterventionId, payload, this.selectedFiles, this.attestationFile).subscribe({
@@ -338,24 +354,18 @@ export class TechnicienInterventions implements OnInit {
     }
   }
 
-    getCityFromGps(gps?: string): string {
+  getCityFromGps(gps?: string): string {
     if (!gps) return 'Non renseignée';
     return 'Meknès, Maroc (Approx.)';
   }
 
   getPhotoUrl(chemin: string): string {
-    // Si le chemin est vide ou null → on renvoie une chaîne vide (pas d'image)
     if (!chemin) return '';
-    
-    // Si c'est déjà une URL complète (http/https) → on la retourne telle quelle
     if (chemin.startsWith('http')) return chemin;
-    
-    // Sinon, on préfixe avec l'URL du backend
     return `http://localhost:8080${chemin}`;
   }
 
   onImageError(event: any) {
-    // Cache simplement l'image si elle ne charge pas
     event.target.style.display = 'none';
   }
 
