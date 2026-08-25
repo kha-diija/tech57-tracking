@@ -13,6 +13,7 @@ export interface Etablissement {
   type: string;
   localisationGps?: string;
   nombreBeneficiaires?: number;
+  nombreBeneficiairesReel?: number | null; // ✅ AJOUT : aligné sur EtablissementResponse.java
   telephoneContact?: string;
 
   idCommune: number;
@@ -24,7 +25,6 @@ export interface Etablissement {
 
   responsable?: ResponsableDto | null;
   nbFormateurs?: number;
-
 }
 
 export interface EtablissementRequest {
@@ -65,7 +65,6 @@ export interface Commune {
   idProvince: number;
 }
 
-// --- Formateur (= "Observateur" côté backend) ---
 export interface Formateur {
   idFormateur: number;
   nom: string;
@@ -80,6 +79,7 @@ export interface FormateurRequest {
   telephone?: string;
   adresse?: string;
 }
+
 export interface ImportResult {
   totalLignes: number;
   crees: number;

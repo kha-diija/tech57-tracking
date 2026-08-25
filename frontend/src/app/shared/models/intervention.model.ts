@@ -7,7 +7,7 @@ export interface Photo {
 export interface Attestation {
   id: number;
   dateSignature: string;
-  signatureNumerique: string;
+  cheminFichier?: string;
   nomSignataire: string;
   valide: boolean;
 }

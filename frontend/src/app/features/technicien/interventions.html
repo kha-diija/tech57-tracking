@@ -243,6 +243,17 @@
 
     <div class="checkout-body">
 
+     <section class="section beneficiaires-section" *ngIf="isFirstVisit">
+  <span class="section-title">Bénéficiaires réel</span>
+  <span class="section-hint">Nombre réel de bénéficiaires présents sur le site (à remplir lors de la 1ère visite uniquement).</span>
+  <div class="form-group">
+    <input type="number"
+           [(ngModel)]="checkoutData.beneficiairesReel"
+           min="0"
+           placeholder="Nombre de bénéficiaires présents"
+           class="form-input">
+  </div>
+</section>
       <!-- Photos -->
       <section class="section">
         <span class="section-title">Photos</span>
@@ -303,18 +314,16 @@
       </section>
 
       <!-- Attestation -->
-           
       <section class="section">
-        <span class="section-title">Attestation</span>
+        <span class="section-title">Attestation signée</span>
+        <span class="section-hint">Facultatif : uploadez le document signé (PDF ou photo) si vous en avez un. Sinon, l'attestation sera générée automatiquement lors du téléchargement.</span>
         <div class="upload-row">
           <label class="upload-btn wide">
-            <!-- ✅ MODIFICATION : Accepter uniquement les images -->
-            <input type="file" hidden accept="image/png, image/jpeg, image/jpg, image/webp, image/gif" (change)="onAttestationSelected($event)">
+            <input type="file" hidden accept="application/pdf, image/png, image/jpeg, image/jpg, image/webp" (change)="onAttestationSelected($event)">
             <lucide-icon [img]="icons.FileText" [size]="15"></lucide-icon>
-            {{ attestationFile ? attestationFile.name : 'Choisir une image de signature' }}
+            {{ attestationFile ? attestationFile.name : "Uploader l'attestation (optionnel)" }}
           </label>
         </div>
-        <input type="text" placeholder="Nom du signataire" [(ngModel)]="checkoutData.signataire" class="text-input">
       </section>
 
       <!-- Checklist -->
@@ -485,36 +494,47 @@
           </ng-template>
         </div>
 
+        <!-- ========================================================== -->
+        <!-- ATTESTATION : bouton toujours disponible, quelle que soit  -->
+        <!-- la présence d'un fichier signé uploadé. Si aucun fichier   -->
+        <!-- n'a été uploadé, le PDF est généré automatiquement par le  -->
+        <!-- backend au moment du téléchargement.                      -->
+        <!-- ========================================================== -->
         <div class="media-card">
           <div class="media-header">
             <h3 class="section-title"><lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon> Attestation</h3>
           </div>
-          <div *ngIf="currentDetail?.attestation as att; else noAttestation" class="attestation-body">
-            <div class="att-row">
-              <span class="label">Signataire</span>
-              <span class="value">{{ att.nomSignataire || 'Non signé' }}</span>
-            </div>
-            <div class="att-row">
-              <span class="label">Date de signature</span>
-              <span class="value">{{ att.dateSignature ? (att.dateSignature | date:'dd/MM/yyyy HH:mm') : 'En attente' }}</span>
-            </div>
-            <div class="att-row">
-              <span class="label">Validité</span>
-              <span class="value">
-                <span class="badge" [ngClass]="att.valide ? 'badge-success' : 'badge-warning'">
-                  {{ att.valide ? '✅ Validée' : '⏳ En attente' }}
+
+          <div class="attestation-body">
+            <ng-container *ngIf="currentDetail?.attestation as att; else noAttestationInfo">
+              <div class="att-row">
+                <span class="label">Signataire</span>
+                <span class="value">{{ att.nomSignataire || 'Non renseigné' }}</span>
+              </div>
+              <div class="att-row">
+                <span class="label">Date de signature</span>
+                <span class="value">{{ att.dateSignature ? (att.dateSignature | date:'dd/MM/yyyy HH:mm') : 'Générée automatiquement' }}</span>
+              </div>
+              <div class="att-row">
+                <span class="label">Validité</span>
+                <span class="value">
+                  <span class="badge" [ngClass]="att.valide ? 'badge-success' : 'badge-warning'">
+                    {{ att.valide ? '✅ Validée' : '⏳ En attente' }}
+                  </span>
                 </span>
-              </span>
-            </div>
+              </div>
+            </ng-container>
+
+            <ng-template #noAttestationInfo>
+              <p class="text-muted text-sm">Aucun fichier uploadé — le document sera généré automatiquement à partir des données de l'intervention.</p>
+            </ng-template>
+
             <div class="att-actions">
               <button class="btn btn-primary btn-sm" (click)="downloadAttestation(currentDetail?.id!)">
                 <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon> Télécharger le PDF
               </button>
             </div>
           </div>
-          <ng-template #noAttestation>
-            <div class="empty-media text-muted text-sm">Aucune attestation générée.</div>
-          </ng-template>
         </div>
 
         <div class="media-card" *ngIf="currentDetail?.sortiesMateriel?.length || currentDetail?.retoursMateriel?.length || currentDetail?.checklistItems?.length">

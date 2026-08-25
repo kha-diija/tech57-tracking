@@ -7,6 +7,7 @@ public class EtablissementResponse {
     private String type;
     private String localisationGps;
     private Integer nombreBeneficiaires;
+    private Integer nombreBeneficiairesReel;
     private String telephoneContact;
     private String emailContact;
 
@@ -49,6 +50,9 @@ public class EtablissementResponse {
     public void setRegionNom(String regionNom) { this.regionNom = regionNom; }
     public ResponsableDto getResponsable() { return responsable; }
     public void setResponsable(ResponsableDto responsable) { this.responsable = responsable; }
+
+    public Integer getNombreBeneficiairesReel() { return nombreBeneficiairesReel; }
+    public void setNombreBeneficiairesReel(Integer nombreBeneficiairesReel) { this.nombreBeneficiairesReel = nombreBeneficiairesReel; }
 
     private Integer nbFormateurs;
 

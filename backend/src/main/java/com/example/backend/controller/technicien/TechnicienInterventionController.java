@@ -113,11 +113,28 @@ public class TechnicienInterventionController {
     @GetMapping("/{id}/attestation/download")
     public ResponseEntity<byte[]> downloadAttestation(@PathVariable Integer id, @AuthenticationPrincipal UserPrincipal principal) {
         try {
-            byte[] pdf = technicienService.genererAttestation(id);
+            var attestation = technicienService.getAttestationFichier(id);
+
+            // Cas 1 : fichier uploadé → on le sert tel quel
+            if (attestation != null && attestation.getCheminFichier() != null) {
+                java.nio.file.Path path = java.nio.file.Paths.get("." + attestation.getCheminFichier());
+                byte[] fileBytes = java.nio.file.Files.readAllBytes(path);
+                String filename = path.getFileName().toString();
+                MediaType mediaType = filename.toLowerCase().endsWith(".pdf")
+                        ? MediaType.APPLICATION_PDF
+                        : MediaType.IMAGE_JPEG;
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                        .contentType(mediaType)
+                        .body(fileBytes);
+            }
+
+            // Cas 2 : pas de fichier → génération automatique du PDF, sans signature requise
+            byte[] pdfContent = technicienService.genererAttestation(id);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attestation_intervention_" + id + ".pdf\"")
                     .contentType(MediaType.APPLICATION_PDF)
-                    .body(pdf);
+                    .body(pdfContent);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
