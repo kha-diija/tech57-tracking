@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +29,7 @@ public class TechnicienDashboardService {
     private final ChecklistItemRepository checklistItemRepository;
 
     public TechnicienKpiResponseDTO calculerKpisPourTechnicien(String emailTechnicien) {
+        // 1 seule requête avec fetch join pour les interventions
         List<Intervention> interventions = dashboardTechnicienRepository.findInterventionsByTechnicienEmail(emailTechnicien);
 
         long total = interventions.size();
@@ -40,7 +41,56 @@ public class TechnicienDashboardService {
         long quantiteSortie = 0;
         long quantiteRendue = 0;
 
+        // Récupérer les IDs des interventions pour les requêtes groupées
+        List<Integer> interventionIds = interventions.stream()
+                .map(Intervention::getIdIntervention)
+                .collect(Collectors.toList());
+
+        // ⚡ 1 seule requête pour TOUTES les checklists
+        List<ChecklistEquipement> allChecklists = checklistEquipementRepository.findByInterventionIds(interventionIds);
+        Map<Integer, List<ChecklistEquipement>> checklistsByIntervention = allChecklists.stream()
+                .collect(Collectors.groupingBy(
+                        chk -> chk.getIntervention().getIdIntervention()
+                ));
+
+        // Récupérer les IDs des checklists
+        List<Integer> checklistIds = allChecklists.stream()
+                .map(ChecklistEquipement::getIdChecklist)
+                .collect(Collectors.toList());
+
+        // ⚡ 1 seule requête pour TOUS les items de checklist
+        Map<Integer, List<ChecklistItem>> itemsByChecklist = new java.util.HashMap<>();
+        if (!checklistIds.isEmpty()) {
+            itemsByChecklist = checklistItemRepository.findByChecklistIds(checklistIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            item -> item.getChecklist().getIdChecklist()
+                    ));
+        }
+
+        // ⚡ 1 seule requête pour TOUTES les sorties
+        Map<Integer, List<SortieMateriel>> sortiesByIntervention = new java.util.HashMap<>();
+        if (!interventionIds.isEmpty()) {
+            sortiesByIntervention = sortieMaterielRepository.findByInterventionIds(interventionIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            s -> s.getIntervention().getIdIntervention()
+                    ));
+        }
+
+        // ⚡ 1 seule requête pour TOUS les retours
+        Map<Integer, List<RetourMateriel>> retoursByIntervention = new java.util.HashMap<>();
+        if (!interventionIds.isEmpty()) {
+            retoursByIntervention = retourMaterielRepository.findByInterventionIds(interventionIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            r -> r.getIntervention().getIdIntervention()
+                    ));
+        }
+
         for (Intervention it : interventions) {
+            Integer interventionId = it.getIdIntervention();
+
             String statut = InterventionStatutHelper.calculerStatutAffiche(it);
 
             switch (statut) {
@@ -53,7 +103,7 @@ public class TechnicienDashboardService {
             double avancement = it.getTauxAvancement() != null ? it.getTauxAvancement() : 0.0;
             sommeAvancement += avancement;
 
-            // Temps moyen d'installation (basé sur les visites terminées)
+            // Temps moyen d'installation (déjà chargé par fetch join)
             if (it.getCheckInOuts() != null) {
                 for (CheckInOut v : it.getCheckInOuts()) {
                     if (v.getDureeMinutes() != null) {
@@ -63,30 +113,28 @@ public class TechnicienDashboardService {
                 }
             }
 
-            // Anomalies : items de checklist non conformes
-            List<ChecklistEquipement> checklists = checklistEquipementRepository.findByIntervention(it);
+            // ✅ Utiliser les maps pré-chargées pour les checklists
+            List<ChecklistEquipement> checklists = checklistsByIntervention.getOrDefault(interventionId, new ArrayList<>());
             for (ChecklistEquipement chk : checklists) {
-                List<ChecklistItem> items = checklistItemRepository.findByChecklist(chk);
+                List<ChecklistItem> items = itemsByChecklist.getOrDefault(chk.getIdChecklist(), new ArrayList<>());
                 anomalies += items.stream().filter(item -> Boolean.FALSE.equals(item.getConforme())).count();
             }
 
-            // Matériel sorti / rendu (RG-07 / RG-08)
-            List<SortieMateriel> sorties = sortieMaterielRepository.findByIntervention(it);
-            if (sorties != null) {
-                for (SortieMateriel s : sorties) {
-                    if (s.getDetails() != null) {
-                        quantiteSortie += s.getDetails().stream()
-                                .mapToLong(d -> d.getQuantite() != null ? d.getQuantite() : 0)
-                                .sum();
-                    }
+            // ✅ Utiliser les maps pré-chargées pour les sorties
+            List<SortieMateriel> sorties = sortiesByIntervention.getOrDefault(interventionId, new ArrayList<>());
+            for (SortieMateriel s : sorties) {
+                if (s.getDetails() != null) {
+                    quantiteSortie += s.getDetails().stream()
+                            .mapToLong(d -> d.getQuantite() != null ? d.getQuantite() : 0)
+                            .sum();
                 }
             }
-            List<RetourMateriel> retours = retourMaterielRepository.findByIntervention(it);
-            if (retours != null) {
-                quantiteRendue += retours.stream()
-                        .mapToLong(r -> r.getQuantite() != null ? r.getQuantite() : 0)
-                        .sum();
-            }
+
+            // ✅ Utiliser les maps pré-chargées pour les retours
+            List<RetourMateriel> retours = retoursByIntervention.getOrDefault(interventionId, new ArrayList<>());
+            quantiteRendue += retours.stream()
+                    .mapToLong(r -> r.getQuantite() != null ? r.getQuantite() : 0)
+                    .sum();
         }
 
         double tauxAvancementMoyen = total > 0 ? Math.round((sommeAvancement / total) * 10.0) / 10.0 : 0.0;
@@ -94,7 +142,7 @@ public class TechnicienDashboardService {
         double tempsMoyenMinutes = nombreVisitesAvecDuree > 0
                 ? Math.round((sommeDureeMinutes / nombreVisitesAvecDuree) * 10.0) / 10.0 : 0.0;
 
-        // Mapping vers MissionDto (missions actuelles = tout, à filtrer côté front si besoin)
+        // Mapping vers MissionDto
         List<MissionDto> missionsActuelles = interventions.stream().map(i -> {
             MissionDto dto = new MissionDto();
             dto.setId(i.getIdIntervention() != null ? i.getIdIntervention().longValue() : 0L);

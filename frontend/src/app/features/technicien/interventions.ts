@@ -358,6 +358,7 @@ export class TechnicienInterventions implements OnInit {
     // Cache simplement l'image si elle ne charge pas
     event.target.style.display = 'none';
   }
+  
 
   voirDetails(id: number) {
     if (!id || id === 0) {
