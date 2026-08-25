@@ -62,10 +62,10 @@ public class InterventionService {
     }
 
     public List<InterventionResponse> getAll() {
-        List<Intervention> interventions = interventionRepository.findAll();
+        List<Intervention> interventions = interventionRepository.findAllWithMissionAndTechnicien();
         List<InterventionResponse> responses = new ArrayList<>();
         for (Intervention intervention : interventions) {
-            responses.add(convertToResponse(intervention));
+            responses.add(convertToListResponse(intervention));
         }
         return responses;
     }
@@ -155,7 +155,6 @@ public class InterventionService {
                 throw new IllegalArgumentException(
                         "Impossible de clôturer : une visite en cours n'a pas encore de check-out enregistré.");
             }
-            // --- NOUVEAU : la clôture exige en plus un avancement à 100% ---
             if ("Clôturée".equals(statutDemande) && avancementDemande < 100.0) {
                 throw new IllegalArgumentException(
                         "Impossible de clôturer : l'avancement doit être à 100% (actuellement " + avancementDemande + "%).");
@@ -192,6 +191,167 @@ public class InterventionService {
         interventionRepository.deleteById(id);
 
         missionInstallationService.recalculerStatut(idMission);
+    }
+
+    // Version pour la liste du technicien : inclut les checkInOuts mais PAS les autres détails lourds
+    public InterventionResponse convertToTechnicienListResponse(Intervention intervention) {
+        InterventionResponse response = new InterventionResponse();
+        response.setId(intervention.getIdIntervention());
+        response.setDatePrevue(intervention.getDatePrevue());
+        response.setDateDebut(intervention.getDateDebut());
+        response.setDateFin(intervention.getDateFin());
+        response.setLocalisationGps(intervention.getLocalisationGps());
+
+        List<CheckInOut> visites = intervention.getCheckInOuts() != null
+                ? intervention.getCheckInOuts() : new ArrayList<>();
+
+        long visitesTerminees = visites.stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+        boolean uneVisiteEnCours = visites.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+
+        double avancement = intervention.getTauxAvancement() != null ? intervention.getTauxAvancement() : 0.0;
+        boolean travailCommence = !visites.isEmpty() || avancement > 0;
+
+        String statutAffichage;
+        if (!travailCommence) {
+            if (intervention.getDatePrevue() != null && intervention.getDatePrevue().isBefore(LocalDateTime.now())) {
+                statutAffichage = "En retard";
+            } else {
+                statutAffichage = "Planifiée";
+            }
+        } else if (visitesTerminees >= 2 && !uneVisiteEnCours) {
+            statutAffichage = "Exécutée";
+        } else {
+            statutAffichage = "En cours";
+        }
+
+        if ("Clôturée".equals(intervention.getStatut())) {
+            statutAffichage = "Clôturée";
+        }
+
+        double avancementAffiche = avancement;
+        if (!visites.isEmpty() && avancementAffiche <= 0.0) {
+            avancementAffiche = Math.min(95.0, visitesTerminees * 40.0);
+        }
+
+        response.setStatut(statutAffichage);
+        response.setTauxAvancement(avancementAffiche);
+        response.setNumeroVisite(visites.size());
+
+        // ✅ CRUCIAL : Ajouter les checkInOuts pour que l'interface sache si une visite est en cours
+        if (!visites.isEmpty()) {
+            List<CheckInOutDto> checkInOutDtos = visites.stream().map(cio -> {
+                CheckInOutDto dto = new CheckInOutDto();
+                dto.setIdCheckinout(cio.getIdCheckinout());
+                dto.setNumeroVisite(cio.getNumeroVisite());
+                dto.setDateHeureCheckin(cio.getDateHeureCheckin());
+                dto.setDateHeureCheckout(cio.getDateHeureCheckout());
+                dto.setDureeMinutes(cio.getDureeMinutes());
+                dto.setGpsCheckin(cio.getGpsCheckin());
+                dto.setGpsCheckout(cio.getGpsCheckout());
+                return dto;
+            }).collect(Collectors.toList());
+            response.setCheckInOuts(checkInOutDtos);
+        }
+
+        if (intervention.getMission() != null) {
+            response.setMissionId(intervention.getMission().getIdMission());
+            response.setMissionReference(intervention.getMission().getReference());
+        }
+
+        if (intervention.getTechnicien() != null) {
+            response.setTechnicienId(intervention.getTechnicien().getId());
+            response.setTechnicienNom(
+                    intervention.getTechnicien().getNom() + " " + intervention.getTechnicien().getPrenom()
+            );
+        }
+
+        return response;
+    }
+
+    // Version allégée pour la liste/tableau : pas de photos/attestation/sorties/retours/checklist
+    public InterventionResponse convertToListResponse(Intervention intervention) {
+        InterventionResponse response = new InterventionResponse();
+        response.setId(intervention.getIdIntervention());
+        response.setDatePrevue(intervention.getDatePrevue());
+        response.setDateDebut(intervention.getDateDebut());
+        response.setDateFin(intervention.getDateFin());
+        response.setLocalisationGps(intervention.getLocalisationGps());
+
+        List<CheckInOut> visites = intervention.getCheckInOuts() != null
+                ? intervention.getCheckInOuts() : new ArrayList<>();
+
+        long visitesTerminees = visites.stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+        boolean uneVisiteEnCours = visites.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+
+        double avancement = intervention.getTauxAvancement() != null ? intervention.getTauxAvancement() : 0.0;
+        boolean travailCommence = !visites.isEmpty() || avancement > 0;
+
+        String statutAffichage;
+        if (!travailCommence) {
+            if (intervention.getDatePrevue() != null
+                    && intervention.getDatePrevue().isBefore(LocalDateTime.now())) {
+                statutAffichage = "En retard";
+            } else {
+                statutAffichage = "Planifiée";
+            }
+        } else if (visitesTerminees >= 2 && !uneVisiteEnCours) {
+            statutAffichage = "Exécutée";
+        } else {
+            statutAffichage = "En cours";
+        }
+
+        if ("Clôturée".equals(intervention.getStatut())) {
+            statutAffichage = "Clôturée";
+        }
+
+        double avancementAffiche = avancement;
+        if (!visites.isEmpty() && avancementAffiche <= 0.0) {
+            avancementAffiche = Math.min(95.0, visitesTerminees * 40.0);
+        }
+
+        response.setStatut(statutAffichage);
+        response.setTauxAvancement(avancementAffiche);
+        response.setNumeroVisite(visites.size());
+
+        // ✅ AJOUT : Inclure les checkInOuts pour que l'interface du technicien puisse afficher le bouton Check-out
+        if (!visites.isEmpty()) {
+            List<CheckInOutDto> checkInOutDtos = visites.stream().map(cio -> {
+                CheckInOutDto dto = new CheckInOutDto();
+                dto.setIdCheckinout(cio.getIdCheckinout());
+                dto.setNumeroVisite(cio.getNumeroVisite());
+                dto.setDateHeureCheckin(cio.getDateHeureCheckin());
+                dto.setDateHeureCheckout(cio.getDateHeureCheckout());
+                dto.setDureeMinutes(cio.getDureeMinutes());
+                dto.setGpsCheckin(cio.getGpsCheckin());
+                dto.setGpsCheckout(cio.getGpsCheckout());
+                return dto;
+            }).collect(Collectors.toList());
+            response.setCheckInOuts(checkInOutDtos);
+        }
+
+        if (intervention.getMission() != null) {
+            response.setMissionId(intervention.getMission().getIdMission());
+            response.setMissionReference(intervention.getMission().getReference());
+
+            if (intervention.getMission().getEtablissement() != null) {
+                response.setEtablissementDesignation(intervention.getMission().getEtablissement().getDesignation());
+            }
+        }
+
+        if (intervention.getTechnicien() != null) {
+            response.setTechnicienId(intervention.getTechnicien().getId());
+            response.setTechnicienNom(
+                    intervention.getTechnicien().getNom() + " " + intervention.getTechnicien().getPrenom()
+            );
+        }
+
+        return response;
     }
 
     public InterventionResponse convertToResponse(Intervention intervention) {
@@ -234,9 +394,6 @@ public class InterventionService {
             statutAffichage = "Clôturée";
         }
 
-        // --- CORRECTION : l'avancement ne doit jamais rester à 0/null si des visites existent ---
-        // On ne force JAMAIS 100% automatiquement sur "Exécutée" : ça reste un choix
-        // explicite de l'admin/technicien, la clôture réelle exigeant elle 100%.
         double avancementAffiche = avancement;
         if (!visites.isEmpty() && avancementAffiche <= 0.0) {
             avancementAffiche = Math.min(95.0, visitesTerminees * 40.0);
@@ -245,6 +402,22 @@ public class InterventionService {
         response.setStatut(statutAffichage);
         response.setTauxAvancement(avancementAffiche);
         response.setNumeroVisite(visites.size());
+
+        // ✅ AJOUT : Inclure les checkInOuts
+        if (!visites.isEmpty()) {
+            List<CheckInOutDto> checkInOutDtos = visites.stream().map(cio -> {
+                CheckInOutDto dto = new CheckInOutDto();
+                dto.setIdCheckinout(cio.getIdCheckinout());
+                dto.setNumeroVisite(cio.getNumeroVisite());
+                dto.setDateHeureCheckin(cio.getDateHeureCheckin());
+                dto.setDateHeureCheckout(cio.getDateHeureCheckout());
+                dto.setDureeMinutes(cio.getDureeMinutes());
+                dto.setGpsCheckin(cio.getGpsCheckin());
+                dto.setGpsCheckout(cio.getGpsCheckout());
+                return dto;
+            }).collect(Collectors.toList());
+            response.setCheckInOuts(checkInOutDtos);
+        }
 
         if (intervention.getMission() != null) {
             response.setMissionId(intervention.getMission().getIdMission());
@@ -262,21 +435,6 @@ public class InterventionService {
             );
         }
 
-        if (!visites.isEmpty()) {
-            List<CheckInOutDto> checkInOutDtos = visites.stream().map(cio -> {
-                CheckInOutDto dto = new CheckInOutDto();
-                dto.setIdCheckinout(cio.getIdCheckinout());
-                dto.setNumeroVisite(cio.getNumeroVisite());
-                dto.setDateHeureCheckin(cio.getDateHeureCheckin());
-                dto.setDateHeureCheckout(cio.getDateHeureCheckout());
-                dto.setDureeMinutes(cio.getDureeMinutes());
-                dto.setGpsCheckin(cio.getGpsCheckin());
-                dto.setGpsCheckout(cio.getGpsCheckout());
-                return dto;
-            }).collect(Collectors.toList());
-            response.setCheckInOuts(checkInOutDtos);
-        }
-
         List<Photo> photos = photoRepository.findByIntervention(intervention);
         if (photos != null && !photos.isEmpty()) {
             List<PhotoDto> photoDtos = photos.stream().map(p -> {
@@ -291,7 +449,6 @@ public class InterventionService {
 
         List<Attestation> attestations = attestationRepository.findByIntervention(intervention);
         if (attestations != null && !attestations.isEmpty()) {
-            // S'il reste des doublons résiduels en base, on prend la plus récente
             Attestation attestation = attestations.stream()
                     .max(java.util.Comparator.comparing(
                             Attestation::getDateSignature,
@@ -377,7 +534,6 @@ public class InterventionService {
         boolean uneVisiteEnCours = visites.stream()
                 .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
 
-        // ✅ CORRECTION : Supprimer la condition d'avancement à 100%
         if (visitesTerminees < 2) {
             throw new IllegalArgumentException(
                     "Impossible de clôturer : au moins 2 visites terminées (check-in + check-out) sont requises.");
@@ -387,7 +543,6 @@ public class InterventionService {
                     "Impossible de clôturer : une visite est encore en cours (pas de check-out).");
         }
 
-        // ✅ CORRECTION : On force le statut et l'avancement à 100% à la clôture
         intervention.setStatut("Clôturée");
         intervention.setTauxAvancement(100.0);
 
