@@ -43,4 +43,9 @@ public interface EtablissementRepository extends JpaRepository<Etablissement, In
     List<Etablissement> findByCommuneProvinceIdProvince(Integer idProvince);
 
     Optional<Etablissement> findByReference(String reference);
+    @Query("SELECT e FROM Etablissement e " +
+            "LEFT JOIN FETCH e.responsable " +
+            "WHERE e.commune.idCommune = :idCommune " +
+            "ORDER BY e.designation ASC")
+    List<Etablissement> findByCommune_IdCommune(@Param("idCommune") Integer idCommune);
 }

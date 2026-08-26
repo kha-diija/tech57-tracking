@@ -30,7 +30,11 @@ public class EtablissementController {
     public ResponseEntity<List<EtablissementResponse>> getAll() {
         return ResponseEntity.ok(etablissementService.getAll());
     }
-
+    @GetMapping("/commune/{idCommune}")
+    public ResponseEntity<List<EtablissementResponse>> getByCommune(@PathVariable Integer idCommune) {
+        List<EtablissementResponse> etablissements = etablissementService.getByCommune(idCommune);
+        return ResponseEntity.ok(etablissements);
+    }
     @GetMapping("/kpis")
     public ResponseEntity<EtablissementKpiResponse> getKpis() {
         return ResponseEntity.ok(etablissementService.getKpis());
