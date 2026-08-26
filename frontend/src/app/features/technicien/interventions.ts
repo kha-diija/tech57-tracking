@@ -393,6 +393,7 @@ export class TechnicienInterventions implements OnInit {
   onImageError(event: any) {
     event.target.style.display = 'none';
   }
+  
 
   voirDetails(id: number) {
     if (!id || id === 0) {
