@@ -1,6 +1,7 @@
 package com.example.backend.service.technicien;
 
 import com.example.backend.dto.admin.intervention.*;
+import com.example.backend.dto.technicien.Dashboard.AttestationPreviewRequest;
 import com.example.backend.dto.technicien.Dashboard.CheckInRequest;
 import com.example.backend.dto.technicien.Dashboard.CheckOutRequest;
 import com.example.backend.dto.technicien.Dashboard.MissionSimplifieeDTO;
@@ -18,7 +19,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -140,6 +140,55 @@ public class TechnicienInterventionService {
         return rapportPdfService.genererAttestationPdf(interventionId);
     }
 
+    public byte[] genererAttestationPreview(Integer interventionId, Integer technicienId, AttestationPreviewRequest request) throws Exception {
+        Intervention intervention = checkTechnicienAccess(interventionId, technicienId);
+        InterventionResponse base = adminInterventionService.convertToResponse(intervention);
+
+        List<SortieMaterielDto> sortiesPreview = new ArrayList<>();
+        if (request.getMaterielSortiIds() != null) {
+            for (Integer idMat : request.getMaterielSortiIds()) {
+                if (idMat == null) continue;
+                materielRepository.findById(idMat).ifPresent(m -> {
+                    SortieMaterielDto dto = new SortieMaterielDto();
+                    dto.setMaterielReference(m.getReference());
+                    dto.setQuantite(1);
+                    dto.setDateSortie(LocalDateTime.now());
+                    sortiesPreview.add(dto);
+                });
+            }
+        }
+
+        List<RetourMaterielDto> retoursPreview = new ArrayList<>();
+        if (request.getMaterielRetourIds() != null) {
+            List<Integer> ids = request.getMaterielRetourIds();
+            List<String> etats = request.getEtatsRetours();
+            for (int i = 0; i < ids.size(); i++) {
+                Integer idMat = ids.get(i);
+                if (idMat == null) continue;
+                String etat = (etats != null && i < etats.size()) ? etats.get(i) : "Bon état";
+                materielRepository.findById(idMat).ifPresent(m -> {
+                    RetourMaterielDto dto = new RetourMaterielDto();
+                    dto.setMaterielReference(m.getReference());
+                    dto.setQuantite(1);
+                    dto.setEtatMateriel(etat);
+                    dto.setDateRetour(LocalDateTime.now());
+                    retoursPreview.add(dto);
+                });
+            }
+        }
+
+        List<ChecklistItemDto> checklistPreview = new ArrayList<>();
+        if (request.getChecklistJson() != null && !request.getChecklistJson().isBlank()) {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            checklistPreview = mapper.readValue(
+                    request.getChecklistJson(),
+                    new com.fasterxml.jackson.core.type.TypeReference<List<ChecklistItemDto>>() {});
+        }
+
+        return rapportPdfService.genererAttestationPreviewPdf(
+                base, request.getNomSignataire(), sortiesPreview, retoursPreview, checklistPreview);
+    }
+
     @Transactional
     public InterventionResponse updateIntervention(Integer id, Integer technicienId, UpdateInterventionRequest request) {
         Intervention intervention = checkTechnicienAccess(id, technicienId);
@@ -235,7 +284,8 @@ public class TechnicienInterventionService {
             }
         }
 
-        // --- GESTION DE L'ATTESTATION (FICHIER) ---
+        // --- GESTION DE L'ATTESTATION (FICHIER SIGNÉ, TOUJOURS FACULTATIF) ---
+        // On gère d'abord le cas où un fichier est uploadé
         if (request.getAttestationFile() != null && !request.getAttestationFile().isEmpty()) {
             MultipartFile attFile = request.getAttestationFile();
 
@@ -261,7 +311,6 @@ public class TechnicienInterventionService {
             Attestation attestation;
             if (!existing.isEmpty()) {
                 attestation = existing.get(0);
-                // Supprime l'ancien fichier physique s'il existe (remplacement effectif)
                 if (attestation.getCheminFichier() != null) {
                     try {
                         java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get("." + attestation.getCheminFichier()));
@@ -274,17 +323,38 @@ public class TechnicienInterventionService {
                 attestation = new Attestation();
             }
 
+            // Si un nom signataire est fourni dans la requête, on l'utilise, sinon on prend le technicien
+            if (request.getNomSignataire() != null && !request.getNomSignataire().isBlank()) {
+                attestation.setNomSignataire(request.getNomSignataire());
+            } else {
+                attestation.setNomSignataire(technicien.getNom() + " " + technicien.getPrenom());
+            }
             attestation.setIntervention(intervention);
-            attestation.setNomSignataire(technicien.getNom() + " " + technicien.getPrenom());
             attestation.setDateSignature(LocalDateTime.now());
             attestation.setValide(true);
             attestation.setCheminFichier("/uploads/attestations/" + fileName);
             attestationRepository.save(attestation);
+        } else {
+            // Si aucun fichier n'est uploadé, mais qu'un nom signataire est fourni (cas 1ère visite sans upload)
+            if (request.getNomSignataire() != null && !request.getNomSignataire().isBlank()) {
+                List<Attestation> existing = attestationRepository.findByIntervention(intervention);
+                Attestation attestation;
+                if (!existing.isEmpty()) {
+                    attestation = existing.get(0);
+                } else {
+                    attestation = new Attestation();
+                    attestation.setIntervention(intervention);
+                }
+                attestation.setNomSignataire(request.getNomSignataire());
+                attestation.setDateSignature(LocalDateTime.now());
+                attestation.setValide(true);
+                // On conserve l'ancien chemin s'il existe, ou on le laisse null
+                attestationRepository.save(attestation);
+            }
         }
 
-        // ✅ AJOUT : Mettre à jour bénéficiaires réel si c'est la 1ère visite
+        // --- Bénéficiaires réel (1ère visite) ---
         if (request.getBeneficiairesReel() != null && intervention.getCheckInOuts().size() == 1) {
-            // C'est la 1ère visite (1 seul checkInOut après le save)
             intervention.getMission().getEtablissement().setNombreBeneficiairesReel(request.getBeneficiairesReel());
         }
 
@@ -359,7 +429,6 @@ public class TechnicienInterventionService {
 
         updateInterventionStatus(intervention);
 
-        // Mettre à jour le statut de la mission après le check-out
         if (intervention.getMission() != null) {
             missionInstallationService.recalculerStatut(intervention.getMission().getIdMission());
         }

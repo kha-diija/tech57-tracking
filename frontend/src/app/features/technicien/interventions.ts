@@ -59,16 +59,22 @@ export class TechnicienInterventions implements OnInit {
     materielRetourIds: number[];
     etatMateriel: string;
     beneficiairesReel: number | null;
+    nomSignataire: string;
   } = {
     materielSortiIds: [],
     materielRetourIds: [],
     etatMateriel: '',
-    beneficiairesReel: null
+    beneficiairesReel: null,
+    nomSignataire: ''
   };
   selectedFiles: { file: File, type: string }[] = [];
   attestationFile: File | null = null;
 
+  // Checklist avec conforme (boolean)
   checkoutChecklist: { idMateriel: number, nom: string, conforme: boolean }[] = [];
+
+  // Pour la validation du formulaire
+  showValidationErrors: boolean = false;
 
   kpis = {
     total: 0,
@@ -194,14 +200,15 @@ export class TechnicienInterventions implements OnInit {
       materielSortiIds: [],
       materielRetourIds: [],
       etatMateriel: '',
-      beneficiairesReel: null
+      beneficiairesReel: null,
+      nomSignataire: ''
     };
     this.selectedFiles = [];
     this.attestationFile = null;
+    this.showValidationErrors = false;
 
     this.technicienService.getInterventionById(id).subscribe({
       next: (intervention) => {
-        // Si c'est la 1ère visite (numeroVisite = 0), on peut remplir le champ
         this.isFirstVisit = intervention.numeroVisite === 1;
         this.cdr.detectChanges();
       },
@@ -210,15 +217,18 @@ export class TechnicienInterventions implements OnInit {
       }
     });
 
-    if (this.checkoutChecklist.length > 0) {
-      this.checkoutChecklist = this.checkoutChecklist.map(item => ({ ...item, conforme: false }));
-    }
+    this.checkoutChecklist = this.materielsList.map(m => ({
+      idMateriel: m.idMateriel,
+      nom: m.nom + ' (' + m.reference + ')',
+      conforme: false
+    }));
     this.showCheckoutModal = true;
   }
 
   fermerCheckout() {
     this.showCheckoutModal = false;
     this.checkoutInterventionId = null;
+    this.showValidationErrors = false;
   }
 
   onFileSelected(event: any, type: 'Avant' | 'Après') {
@@ -240,6 +250,14 @@ export class TechnicienInterventions implements OnInit {
   confirmerCheckout() {
     if (this.checkoutInterventionId === null) return;
 
+    // Validation : si 1ère visite, nomSignataire obligatoire
+    if (this.isFirstVisit) {
+      this.showValidationErrors = true;
+      if (!this.checkoutData.nomSignataire?.trim()) {
+        return; // blocage
+      }
+    }
+
     const payload = {
       gpsCheckout: "33.8935,-5.5473",
       materielSortiIds: this.checkoutData.materielSortiIds || [],
@@ -249,7 +267,14 @@ export class TechnicienInterventions implements OnInit {
       beneficiairesReel: this.checkoutData.beneficiairesReel
     };
 
-    this.technicienService.checkOut(this.checkoutInterventionId, payload, this.selectedFiles, this.attestationFile).subscribe({
+    // Appel du service avec le nom du signataire si 1ère visite
+    this.technicienService.checkOut(
+      this.checkoutInterventionId,
+      payload,
+      this.selectedFiles,
+      this.attestationFile,
+      this.isFirstVisit ? this.checkoutData.nomSignataire : null
+    ).subscribe({
       next: () => {
         this.fermerCheckout();
         this.loadInterventions();
@@ -409,6 +434,12 @@ export class TechnicienInterventions implements OnInit {
         this.showToast("Impossible de générer le rapport.", "error");
       }
     });
+  }
+
+  visite1Terminee(): boolean {
+    if (!this.currentDetail?.checkInOuts) return false;
+    const visite1 = this.currentDetail.checkInOuts.find(v => v.numeroVisite === 1);
+    return visite1 ? !!visite1.dateHeureCheckout : false;
   }
 
   downloadAttestation(id: number) {

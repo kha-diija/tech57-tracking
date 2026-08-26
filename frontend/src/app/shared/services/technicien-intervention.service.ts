@@ -26,12 +26,12 @@ export class TechnicienInterventionService {
     return this.http.post<Intervention>(`${this.apiUrl}/${id}/check-in`, { gpsCheckin });
   }
 
-  checkOut(id: number, data: any, photos: { file: File, type: string }[], attestationFile: File | null): Observable<Intervention> {
+  // ✅ Ajout du paramètre nomSignataire
+  checkOut(id: number, data: any, photos: { file: File, type: string }[], attestationFile: File | null, nomSignataire: string | null = null): Observable<Intervention> {
     const formData = new FormData();
 
     formData.append('gpsCheckout', data.gpsCheckout || '');
-    
-    // ✅ AJOUT : Bénéficiaires réel
+
     if (data.beneficiairesReel) {
       formData.append('beneficiairesReel', String(data.beneficiairesReel));
     }
@@ -41,6 +41,11 @@ export class TechnicienInterventionService {
     (data.etatsRetours || []).forEach((v: string) => formData.append('etatsRetours', v));
 
     formData.append('checklist', JSON.stringify(data.checklist || []));
+
+    // ✅ Ajout du nom du signataire si présent
+    if (nomSignataire) {
+      formData.append('nomSignataire', nomSignataire);
+    }
 
     photos.forEach(p => {
       formData.append('photos', p.file);
@@ -60,6 +65,16 @@ export class TechnicienInterventionService {
 
   downloadAttestation(id: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/attestation/download`, { responseType: 'blob' });
+  }
+
+  telechargerAttestationPreview(id: number, data: {
+    nomSignataire: string | null;
+    materielSortiIds: number[];
+    materielRetourIds: number[];
+    etatsRetours: string[];
+    checklistJson: string;
+  }): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/${id}/attestation/preview`, data, { responseType: 'blob' });
   }
 
   updateIntervention(id: number, data: any): Observable<Intervention> {
