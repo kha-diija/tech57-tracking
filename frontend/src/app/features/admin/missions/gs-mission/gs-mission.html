@@ -199,11 +199,9 @@
             <span>{{ resp.prenom }} {{ resp.nom }}</span>
             <span class="text-muted" *ngIf="resp.fonction">— {{ resp.fonction }}</span>
           </div>
-          <div class="responsable-card__row text-muted" *ngIf="resp.telephone || resp.email">
-            <span *ngIf="resp.telephone">{{ resp.telephone }}</span>
-            <span *ngIf="resp.telephone && resp.email"> · </span>
-            <span *ngIf="resp.email">{{ resp.email }}</span>
-          </div>
+         <div class="responsable-card__row text-muted" *ngIf="resp.telephone">
+             <span>{{ resp.telephone }}</span>
+        </div>
         </div>
         <ng-template #noResponsable>
           <span class="text-muted">Aucun responsable renseigné pour cet établissement.</span>

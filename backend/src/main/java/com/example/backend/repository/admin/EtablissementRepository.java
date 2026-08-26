@@ -40,5 +40,7 @@ public interface EtablissementRepository extends JpaRepository<Etablissement, In
     @Query("SELECT COUNT(m) FROM Materiel m WHERE m.etablissement.idEtablissement = :id")
     long countMaterielsByEtablissementId(@Param("id") Integer id);
 
+    List<Etablissement> findByCommuneProvinceIdProvince(Integer idProvince);
+
     Optional<Etablissement> findByReference(String reference);
 }

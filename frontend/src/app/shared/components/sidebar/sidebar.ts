@@ -19,7 +19,8 @@ import {
   PanelLeft,
   Sparkles,
   Route,
-  BookOpen
+  BookOpen,
+  TrendingUp
 } from 'lucide-angular';
 import { UserRole } from '../../models/auth.model';
 
@@ -55,8 +56,10 @@ export class Sidebar {
     { label: 'Tableau de bord', route: '/admin/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
     { label: 'Tableau de bord', route: '/client/dashboard', icon: LayoutDashboard, roles: ['OBSERVATEUR'] },
     { label: 'Tableau de bord', route: '/gestionnaire/dashboard', icon: LayoutDashboard, roles: ['GESTIONNAIRE_STOCK'] },
+    { label: 'Tableau de bord', route: '/partenaire/dashboard', icon: LayoutDashboard, roles: ['PARTENAIRE'] },
     { label: 'Mes ressources', route: '/observateur/ressources', icon: BookOpen, roles: ['OBSERVATEUR'] },
     { label: 'Établissements', route: '/admin/etablissements', icon: Building2, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
+    { label: 'Avancement établissements', route: '/partenaire/avancement', icon: TrendingUp, roles: ['PARTENAIRE'] },
     { label: 'Simulateur de trajet', route: '/admin/simulateur-trajet', icon: Route, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
     { label: 'Missions', route: '/admin/missions', icon: Briefcase, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
     { label: 'Stock & Matériel', route: '/stock', icon: Package, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK', 'TECHNICIEN'] },
@@ -67,7 +70,7 @@ export class Sidebar {
     { label: 'Assistant IA', route: '/chat-ia', icon: Bot, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
     // { label: 'Gestion des ressources', route: '/admin/ressources', icon: PackageSearch, roles: ['ADMINISTRATEUR'] },
     { label: 'Gestion et suivi des interventions', route: '/admin/interventions', icon: ClipboardList, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
-    { label: 'Paramètres', route: '/settings', icon: Settings, roles: ['ADMINISTRATEUR', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] }
+    { label: 'Paramètres', route: '/settings', icon: Settings, roles: ['ADMINISTRATEUR', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK', 'PARTENAIRE'] }
   ];
 
   // Adapter dynamiquement les routes selon le rôle de l'utilisateur
@@ -88,6 +91,8 @@ export class Sidebar {
             route = '/observateur/dashboard';
           } else if (role === 'GESTIONNAIRE_STOCK') {
             route = '/stock/dashboard';
+          } else if (role === 'PARTENAIRE') {
+            route = '/partenaire/dashboard';
           } else {
             route = '/admin/dashboard';
           }
