@@ -97,19 +97,25 @@
   padding: 8px 16px;
   border-radius: 6px;
   border: none;
-  background: #f97316;
+  /* Dégradé palette (bleu foncé → turquoise → jaune) */
+  background: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
   color: #fff;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 8px rgba(35, 58, 110, 0.3);
 
-  &:hover {
-    background-color: #ea580c;
+  &:hover:not(:disabled) {
+    background: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
+    box-shadow: 0 6px 12px rgba(35, 58, 110, 0.4);
+    transform: translateY(-1px);
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
   }
 }
 
@@ -222,7 +228,7 @@
     outline: none;
 
     &:focus {
-      border-color: #f97316;
+      border-color: #69AFB1; /* turquoise */
     }
 
     option {
@@ -231,6 +237,7 @@
     }
   }
 }
+
 .btn-action {
   padding: 6px 12px;
   border-radius: 6px;
@@ -246,24 +253,26 @@
     color: var(--text-main, #ffffff);
   }
 
-  // Bouton "Gérer les accès" — orange plein
+  // Bouton "Gérer les accès" — avec dégradé palette
   &.btn-manage-access {
-    background-color: #f97316;
+    background: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
     color: #fff;
-    border-color: #f97316;
+    border-color: transparent;
     font-weight: 600;
+    box-shadow: 0 2px 6px rgba(35, 58, 110, 0.3);
 
     &:hover {
-      background-color: #ea580c;
-      border-color: #ea580c;
+      background: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
+      box-shadow: 0 4px 10px rgba(35, 58, 110, 0.4);
+      transform: translateY(-1px);
     }
 
     &:active {
-      background-color: #c2410c;
-      border-color: #c2410c;
+      background: linear-gradient(to right, #1a2a4f 0%, #4a8a8b 60%, #d09e1e 100%);
     }
   }
 }
+
 .upload-tabs {
   display: flex;
   gap: 8px;
@@ -279,8 +288,8 @@
     border-bottom: 2px solid transparent;
 
     &.active {
-      color: #f97316;
-      border-bottom-color: #f97316;
+      color: #69AFB1; /* turquoise */
+      border-bottom-color: #69AFB1;
     }
   }
 }
@@ -308,7 +317,7 @@
     outline: none;
 
     &:focus {
-      border-color: #f97316;
+      border-color: #69AFB1; /* turquoise */
     }
   }
 
@@ -323,9 +332,9 @@
 }
 
 .alert-success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(186, 212, 57, 0.15); /* vert citron */
+  color: #BAD439;
+  border: 1px solid rgba(186, 212, 57, 0.2);
   padding: 10px 14px;
   border-radius: 8px;
   margin-bottom: 12px;
