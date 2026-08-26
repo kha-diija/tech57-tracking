@@ -2,26 +2,19 @@ package com.example.backend.service.admin;
 
 import com.example.backend.dto.admin.Mission.MissionRequestDTO;
 import com.example.backend.dto.admin.Mission.MissionResponseDTO;
-import com.example.backend.entity.Administrateur;
-import com.example.backend.entity.Etablissement;
-import com.example.backend.entity.EquipeTechnique;
-import com.example.backend.entity.Intervention;
-import com.example.backend.entity.MissionInstallation;
-import com.example.backend.entity.Utilisateur;
-import com.example.backend.repository.admin.EtablissementRepository;
-import com.example.backend.repository.admin.InterventionRepository;
-import com.example.backend.repository.admin.MissionInstallationRepository;
-import com.example.backend.repository.admin.EquipeTechniqueRepository;
-import com.example.backend.repository.admin.RapportRepository;
-import com.example.backend.repository.admin.PhotoRepository;
-import com.example.backend.repository.admin.AttestationRepository;
-import com.example.backend.repository.admin.ChecklistEquipementRepository;
+import com.example.backend.dto.admin.Mission.MissionMaterielDTO;
+import com.example.backend.entity.*;
+import com.example.backend.repository.admin.*;
 import com.example.backend.repository.UtilisateurRepository;
+import com.example.backend.repository.admin.SortieMaterielRepository;
+import com.example.backend.repository.admin.MissionMaterielRepository;
 import com.example.backend.service.NotificationHelperService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,6 +50,19 @@ public class MissionInstallationService {
 
     @Autowired
     private NotificationHelperService notificationHelperService;
+
+    // ✅ NOUVEAUX AUTOWIRED
+    @Autowired
+    private MaterielRepository materielRepository;
+
+    @Autowired
+    private MissionMaterielRepository missionMaterielRepository;
+
+    @Autowired
+    private SortieMaterielRepository sortieMaterielRepository;
+
+    @Autowired
+    private TechnicienRepository technicienRepository;
 
     @Transactional
     public List<MissionResponseDTO> getAllMissions() {
@@ -105,18 +111,28 @@ public class MissionInstallationService {
 
         dto.setIdEquipe(equipe.getIdEquipe());
 
-        if (dto.getStatut() == null || dto.getStatut().isEmpty()) {
-            dto.setStatut("Planifiée");
+        // ✅ Le statut est TOUJOURS PROPOSEE quand un technicien crée une mission
+        dto.setStatut("PROPOSEE");
+
+        // Créer la mission avec les matériels
+        MissionInstallation mission = new MissionInstallation();
+        mapDtoToEntity(dto, mission);
+
+        // ✅ Sauvegarder la mission
+        MissionInstallation savedMission = missionRepository.save(mission);
+
+        // ✅ Générer automatiquement une SortieMateriel
+        if (dto.getMateriels() != null && !dto.getMateriels().isEmpty()) {
+            creerSortieMaterielAutomatically(savedMission, dto.getMateriels(), technicien);
         }
 
-        MissionResponseDTO createdMission = createMission(dto);
-
+        // ✅ Envoyer une notification aux admins
         String message = "Le technicien " + technicien.getPrenom() + " " + technicien.getNom() +
-                " a créé une nouvelle mission : \"" + dto.getTitre() + "\" pour son équipe (" + equipe.getNomEquipe() + ").";
+                " a proposé une nouvelle mission : \"" + dto.getTitre() + "\" pour son équipe (" + equipe.getNomEquipe() + ").";
 
-        notificationHelperService.notifierTousLesAdmins(technicien, message, "MISSION_CREEE");
+        notificationHelperService.notifierTousLesAdmins(technicien, message, "MISSION_PROPOSEE");
 
-        return createdMission;
+        return new MissionResponseDTO(savedMission);
     }
 
     @Transactional
@@ -125,6 +141,12 @@ public class MissionInstallationService {
                 .orElseThrow(() -> new RuntimeException("Mission introuvable avec l'ID : " + id));
 
         mapDtoToEntity(dto, mission);
+
+        // ✅ Supprimer les anciens matériels si on modifie
+        if (dto.getMateriels() != null) {
+            missionMaterielRepository.deleteByMission_IdMission(id);
+            mission.getMateriels().clear();
+        }
 
         MissionInstallation updated = missionRepository.save(mission);
         return new MissionResponseDTO(updated);
@@ -160,7 +182,6 @@ public class MissionInstallationService {
     }
 
     @Transactional
-
     public void recalculerStatut(Integer idMission) {
         MissionInstallation mission = missionRepository.findById(idMission)
                 .orElseThrow(() -> new RuntimeException("Mission introuvable avec l'ID : " + idMission));
@@ -171,7 +192,6 @@ public class MissionInstallationService {
             return;
         }
 
-        // ✅ RÈGLE 1 : Si TOUTES les interventions sont "Clôturée" → Mission "Terminée"
         boolean toutesCloturees = interventions.stream()
                 .allMatch(i -> "Clôturée".equals(i.getStatut()));
 
@@ -181,7 +201,6 @@ public class MissionInstallationService {
             return;
         }
 
-        // ✅ RÈGLE 2 : Si TOUTES les interventions sont "Planifiée" → Mission "Planifiée"
         boolean toutesPlanifiees = interventions.stream()
                 .allMatch(i -> "Planifiée".equals(i.getStatut()));
 
@@ -191,9 +210,65 @@ public class MissionInstallationService {
             return;
         }
 
-        // ✅ RÈGLE 3 : Sinon (au moins une en cours, exécutée, ou mélange) → Mission "En cours"
         mission.setStatut("En cours");
         missionRepository.save(mission);
+    }
+
+
+    // ✅ Dans approuverMission()
+    @Transactional
+    public MissionResponseDTO approuverMission(Integer idMission, Integer idAdmin) {
+        MissionInstallation mission = missionRepository.findById(idMission)
+                .orElseThrow(() -> new RuntimeException("Mission introuvable"));
+
+        mission.setStatut("Planifiée");
+        MissionInstallation updated = missionRepository.save(mission);
+
+        // ✅ Récupérer l'admin connecté
+        Utilisateur admin = utilisateurRepository.findById(idAdmin)
+                .orElseThrow(() -> new RuntimeException("Admin introuvable"));
+
+        // ✅ Envoyer une notification au technicien avec l'admin comme expéditeur
+        if (updated.getEquipe() != null && !updated.getEquipe().getMembres().isEmpty()) {
+            Technicien technicien = updated.getEquipe().getMembres().get(0);
+            String message = "Votre mission '" + updated.getTitre() + "' a été approuvée.";
+            notificationHelperService.envoyerNotification(admin, technicien, message, "MISSION_APPROUVEE");
+        }
+
+        return new MissionResponseDTO(updated);
+    }
+
+    @Transactional
+    public void rejeterMission(Integer idMission, String motif, Integer idAdmin) {
+        MissionInstallation mission = missionRepository.findById(idMission)
+                .orElseThrow(() -> new RuntimeException("Mission introuvable"));
+
+        // Récupérer l'admin connecté
+        Utilisateur admin = utilisateurRepository.findById(idAdmin)
+                .orElseThrow(() -> new RuntimeException("Admin introuvable"));
+
+        // Récupérer le technicien (via l'équipe)
+        Technicien technicien = null;
+        if (mission.getEquipe() != null && !mission.getEquipe().getMembres().isEmpty()) {
+            technicien = mission.getEquipe().getMembres().get(0);
+        }
+
+        // Supprimer les sorties et matériels
+        List<SortieMateriel> sorties = sortieMaterielRepository.findByMissionIdMission(idMission);
+        for (SortieMateriel sortie : sorties) {
+            sortie.getDetails().clear();
+            sortieMaterielRepository.save(sortie);
+            sortieMaterielRepository.delete(sortie);
+        }
+
+        missionMaterielRepository.deleteByMission_IdMission(idMission);
+        missionRepository.delete(mission);
+
+        // Envoyer une notification avec l'admin comme expéditeur
+        if (technicien != null) {
+            String message = "Votre mission '" + mission.getTitre() + "' a été rejetée. Motif : " + motif;
+            notificationHelperService.envoyerNotification(admin, technicien, message, "MISSION_REJETEE");
+        }
     }
 
     private void mapDtoToEntity(MissionRequestDTO dto, MissionInstallation mission) {
@@ -208,7 +283,7 @@ public class MissionInstallationService {
                 .orElseThrow(() -> new RuntimeException("Établissement introuvable"));
         mission.setEtablissement(etab);
 
-        // Gestion Admin : Si l'admin fournit un id, on l'associe. Sinon, on garde l'admin existant.
+        // Gestion Admin
         if (dto.getIdAdministrateur() != null) {
             Utilisateur user = utilisateurRepository.findById(dto.getIdAdministrateur())
                     .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
@@ -218,22 +293,66 @@ public class MissionInstallationService {
                 mission.setAdministrateur(null);
             }
         } else if (mission.getIdMission() != null) {
-            // Si on modifie une mission existante et qu'aucun admin n'est fourni, on garde l'admin existant
-            // (ne rien faire)
+            // On garde l'admin existant
         } else {
-            // Si création et pas d'admin fourni, on met null (cas technicien)
             mission.setAdministrateur(null);
         }
 
-        // Gestion Équipe : on ne modifie que si une nouvelle équipe est fournie
+        // Gestion Équipe
         if (dto.getIdEquipe() != null) {
             EquipeTechnique equipe = equipeTechniqueRepository.findById(dto.getIdEquipe())
-                    .orElseThrow(() -> new RuntimeException("Équipe technique introuvable avec l'ID : " + dto.getIdEquipe()));
+                    .orElseThrow(() -> new RuntimeException("Équipe technique introuvable"));
             mission.setEquipe(equipe);
         } else if (mission.getIdMission() == null) {
-            // Si création et pas d'équipe, on met null
             mission.setEquipe(null);
         }
-        // Si modification et dto.getIdEquipe() est null, on ne fait rien (on garde l'équipe actuelle)
+
+        // ✅ GESTION DES MATÉRIELS
+        if (dto.getMateriels() != null && !dto.getMateriels().isEmpty()) {
+            for (MissionMaterielDTO materielDTO : dto.getMateriels()) {
+                Materiel materiel = materielRepository.findById(materielDTO.getIdMateriel())
+                        .orElseThrow(() -> new RuntimeException("Matériel introuvable avec ID : " + materielDTO.getIdMateriel()));
+
+                MissionMateriel missionMateriel = new MissionMateriel();
+                missionMateriel.setMission(mission);
+                missionMateriel.setMateriel(materiel);
+                missionMateriel.setQuantite(materielDTO.getQuantite() != null ? materielDTO.getQuantite() : 1);
+                missionMateriel.setStatut("PROPOSE");
+
+                mission.getMateriels().add(missionMateriel);
+            }
+        }
+    }
+
+    // ✅ MÉTHODE POUR CRÉER UNE SORTIE AUTOMATIQUEMENT
+    private void creerSortieMaterielAutomatically(MissionInstallation mission, List<MissionMaterielDTO> materiels, Utilisateur technicien) {
+        try {
+            SortieMateriel sortie = new SortieMateriel();
+            sortie.setDateSortie(LocalDateTime.now());
+            sortie.setStatut("En attente");
+            sortie.setMission(mission);
+            sortie.setLieuIntervention(mission.getEtablissement() != null ? mission.getEtablissement().getDesignation() : null);
+
+            // Trouver le Technicien
+            if (technicien instanceof Technicien) {
+                sortie.setTechnicien((Technicien) technicien);
+            }
+
+            // Ajouter les détails de sortie
+            for (MissionMaterielDTO materielDTO : materiels) {
+                Materiel materiel = materielRepository.findById(materielDTO.getIdMateriel())
+                        .orElseThrow(() -> new RuntimeException("Matériel introuvable"));
+
+                DetailSortieMateriel detail = new DetailSortieMateriel();
+                detail.setSortieMateriel(sortie);
+                detail.setMateriel(materiel);
+                detail.setQuantite(materielDTO.getQuantite() != null ? materielDTO.getQuantite() : 1);
+                sortie.getDetails().add(detail);
+            }
+
+            sortieMaterielRepository.save(sortie);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

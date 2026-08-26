@@ -3,6 +3,8 @@ package com.example.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "mission_installation")
@@ -40,6 +42,9 @@ public class MissionInstallation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_equipe")
     private EquipeTechnique equipe;
+    // ✅ NOUVELLE RELATION : Matériels associés à la mission
+    @OneToMany(mappedBy = "mission", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MissionMateriel> materiels = new ArrayList<>();
 
     // sortiesMateriel / retoursMateriel supprimés : pas de colonne
     // id_mission dans sortie_materiel / retour_materiel. Le lien passe
