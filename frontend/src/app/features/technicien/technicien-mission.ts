@@ -19,10 +19,11 @@ import {
 } from 'lucide-angular';
 import { TechnicienMissionService } from '../../shared/services/technicien-mission.service';
 import { EtablissementService } from '../../shared/services/etablissement.service';
+import { CommuneService } from '../../shared/services/commune.service';
 import { MaterielService } from '../../shared/services/materiel.service';
 import { AuthService } from '../../shared/services/auth.service';
 import { MissionInstallation, MissionRequestDTO, MissionMateriel } from '../../shared/models/mission.model';
-import { Etablissement } from '../../shared/models/etablissement.model';
+import { Etablissement, Commune } from '../../shared/models/etablissement.model';
 import { Materiel } from '../../shared/models/materiel.model';
 
 interface MissionFormModel {
@@ -44,6 +45,7 @@ interface MissionFormModel {
 export class TechnicienMissionComponent {
   private readonly techMissionService = inject(TechnicienMissionService);
   private readonly etablissementService = inject(EtablissementService);
+  private readonly communeService = inject(CommuneService);
   private readonly materielService = inject(MaterielService);
   private readonly authService = inject(AuthService);
 
@@ -57,6 +59,9 @@ export class TechnicienMissionComponent {
   // Données réactives
   readonly missions = signal<MissionInstallation[]>([]);
   readonly etablissementsList = signal<Etablissement[]>([]);
+  readonly communesList = signal<Commune[]>([]);
+  readonly etablissementsFiltres = signal<Etablissement[]>([]);
+  readonly selectedCommuneId = signal<number | null>(null);
   readonly materielsList = signal<Materiel[]>([]);
   readonly isLoading = signal<boolean>(true);
 
@@ -64,7 +69,7 @@ export class TechnicienMissionComponent {
   readonly searchTerm = signal<string>('');
   readonly selectedStatutFilter = signal<string>('tous');
 
-  // ✅ Filtrage dynamique
+  // Filtrage dynamique
   readonly filteredMissions = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const statut = this.selectedStatutFilter();
@@ -88,7 +93,7 @@ export class TechnicienMissionComponent {
   // Matériels sélectionnés avec quantités
   readonly selectedMateriels = signal<MissionMateriel[]>([]);
 
-  // ✅ NOUVEAU : Modale des matériels
+  // Modale des matériels
   readonly showMaterielsModal = signal<MissionInstallation | null>(null);
 
   readonly selectedResponsable = computed(() => {
@@ -138,16 +143,35 @@ export class TechnicienMissionComponent {
     this.etablissementService.getAll().subscribe((data) => {
       this.etablissementsList.set(data);
     });
+
+    // Charger les communes
+    this.communeService.getAll().subscribe((data) => {
+      this.communesList.set(data);
+    });
   }
 
-  // ✅ Charger la liste des matériels
+  // Charger la liste des matériels
   private loadMateriels(): void {
     this.materielService.getAll().subscribe((data) => {
       this.materielsList.set(data);
     });
   }
 
-  // ✅ Ouvrir la modale des matériels
+  // ✅ Quand la commune change, filtrer les établissements
+  onCommuneChange(idCommune: number | null): void {
+    this.selectedCommuneId.set(idCommune);
+    if (idCommune) {
+      this.etablissementService.getByCommune(idCommune).subscribe((data) => {
+        this.etablissementsFiltres.set(data);
+        // Réinitialiser l'établissement sélectionné
+        this.updateField('idEtablissement', null);
+      });
+    } else {
+      this.etablissementsFiltres.set([]);
+    }
+  }
+
+  // Ouvrir la modale des matériels
   ouvrirMateriels(item: MissionInstallation): void {
     this.showMaterielsModal.set(item);
   }
@@ -156,7 +180,7 @@ export class TechnicienMissionComponent {
     this.showMaterielsModal.set(null);
   }
 
-  // ✅ Ajouter un matériel à la sélection
+  // Ajouter un matériel à la sélection
   addMateriel(idMateriel: number) {
     if (!idMateriel) return;
     
@@ -166,7 +190,7 @@ export class TechnicienMissionComponent {
     this.selectedMateriels.update(list => [...list, { idMateriel, quantite: 1 }]);
   }
 
-  // ✅ Ajouter un matériel à partir d'un événement
+  // Ajouter un matériel à partir d'un événement
   addMaterielFromEvent(event: any) {
     const value = event.target.value;
     if (value) {
@@ -174,7 +198,7 @@ export class TechnicienMissionComponent {
     }
   }
 
-  // ✅ Mettre à jour la quantité à partir d'un événement
+  // Mettre à jour la quantité à partir d'un événement
   updateQuantiteFromEvent(index: number, event: any) {
     const value = event.target.value;
     if (value) {
@@ -182,18 +206,18 @@ export class TechnicienMissionComponent {
     }
   }
 
-  // ✅ Retirer un matériel de la sélection
+  // Retirer un matériel de la sélection
   removeMateriel(index: number) {
     this.selectedMateriels.update(list => list.filter((_, i) => i !== index));
   }
 
-  // ✅ Changer la quantité d'un matériel
+  // Changer la quantité d'un matériel
   updateQuantite(index: number, quantite: number) {
     if (quantite < 1) return;
     this.selectedMateriels.update(list => list.map((m, i) => i === index ? { ...m, quantite } : m));
   }
 
-  // ✅ Récupérer le nom d'un matériel par son ID
+  // Récupérer le nom d'un matériel par son ID
   getMaterielName(idMateriel: number): string {
     const materiel = this.materielsList().find(m => m.idMateriel === idMateriel);
     return materiel ? `${materiel.nom} (${materiel.reference})` : 'Matériel inconnu';
@@ -202,6 +226,8 @@ export class TechnicienMissionComponent {
   openCreateForm(): void {
     this.editingId.set(null);
     this.selectedMateriels.set([]);
+    this.selectedCommuneId.set(null);
+    this.etablissementsFiltres.set([]);
     const currentUser = this.authService.currentUser();
     this.formModel.set({
       ...this.emptyForm(),
@@ -224,6 +250,17 @@ export class TechnicienMissionComponent {
       idEtablissement: item.idEtablissement ?? null,
       idAdministrateur: item.idAdministrateur ?? null
     });
+
+    // Si l'établissement est déjà sélectionné, charger la commune correspondante
+    if (item.idEtablissement) {
+      const etab = this.etablissementsList().find(e => e.idEtablissement === item.idEtablissement);
+      if (etab) {
+        this.selectedCommuneId.set(etab.idCommune);
+        this.etablissementService.getByCommune(etab.idCommune).subscribe((data) => {
+          this.etablissementsFiltres.set(data);
+        });
+      }
+    }
   }
 
   closeForm(): void {

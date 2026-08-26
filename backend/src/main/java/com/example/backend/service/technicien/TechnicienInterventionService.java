@@ -74,9 +74,9 @@ public class TechnicienInterventionService {
     }
 
     public List<InterventionResponse> getMesInterventions(Integer technicienId) {
-        List<Intervention> interventions = interventionRepository.findByTechnicienId(technicienId);
+        List<Intervention> interventions = interventionRepository.findByTechnicienIdWithMissionAndCheckIns(technicienId);
         return interventions.stream()
-                .map(adminInterventionService::convertToResponse)
+                .map(adminInterventionService::convertToListResponse)  // ← Utilise convertToListResponse
                 .collect(Collectors.toList());
     }
 
@@ -403,6 +403,8 @@ public class TechnicienInterventionService {
             checklistEquipement.setDateValidation(LocalDateTime.now());
             checklistEquipement = checklistEquipementRepository.save(checklistEquipement);
 
+            Materiel materielParDefaut = null;
+
             for (ChecklistItemDto dto : checklistItems) {
                 ChecklistItem item = new ChecklistItem();
                 item.setChecklist(checklistEquipement);
@@ -418,8 +420,11 @@ public class TechnicienInterventionService {
                     materiel = materielRepository.findByReference(dto.getMaterielReference()).orElse(null);
                 }
                 if (materiel == null) {
-                    materiel = materielRepository.findAll().stream().findFirst()
-                            .orElseThrow(() -> new IllegalStateException("Aucun matériel disponible en base pour associer à l'élément de checklist."));
+                    if (materielParDefaut == null) {
+                        materielParDefaut = materielRepository.findAll().stream().findFirst()
+                                .orElseThrow(() -> new IllegalStateException("Aucun matériel disponible en base pour associer à l'élément de checklist."));
+                    }
+                    materiel = materielParDefaut;
                 }
 
                 item.setMateriel(materiel);

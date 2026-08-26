@@ -7,7 +7,7 @@ import { Etablissement, EtablissementKpi, EtablissementRequest, ImportResult } f
 @Injectable({ providedIn: 'root' })
 export class EtablissementService {
   private readonly http = inject(HttpClient);
-  // Modification ici : suppression de "/admin" pour correspondre au nouveau contrôleur Spring Boot
+  
   private readonly apiUrl = `${environment.apiUrl}/etablissements`;
 
   getAll(): Observable<Etablissement[]> {
@@ -20,6 +20,11 @@ export class EtablissementService {
 
   getById(id: number): Observable<Etablissement> {
     return this.http.get<Etablissement>(`${this.apiUrl}/${id}`);
+  }
+
+  // ✅ NOUVELLE MÉTHODE : Récupérer les établissements par commune
+  getByCommune(idCommune: number): Observable<Etablissement[]> {
+    return this.http.get<Etablissement[]>(`${this.apiUrl}/commune/${idCommune}`);
   }
 
   create(payload: EtablissementRequest): Observable<Etablissement> {
@@ -39,9 +44,9 @@ export class EtablissementService {
   }
 
   importExcel(file: File, idProvince: number): Observable<ImportResult> {
-  const formData = new FormData();
-  formData.append('file', file);
-  const params = new HttpParams().set('idProvince', idProvince);
-  return this.http.post<ImportResult>(`${this.apiUrl}/import`, formData, { params });
-}
+    const formData = new FormData();
+    formData.append('file', file);
+    const params = new HttpParams().set('idProvince', idProvince);
+    return this.http.post<ImportResult>(`${this.apiUrl}/import`, formData, { params });
+  }
 }
