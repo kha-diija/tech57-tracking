@@ -144,19 +144,15 @@
 
               <td>
                 <div class="actions-cell">
-                  <!-- Détails & Check-in/out -->
                   <button class="action-btn" title="Détails & Check-in" (click)="voirDetails(item.id)">
                     <lucide-icon [img]="icons.Eye" [size]="16"></lucide-icon>
                   </button>
                   <button class="action-btn" title="Modifier" (click)="modifier(item.id)">
                     <lucide-icon [img]="icons.Edit" [size]="16"></lucide-icon>
                   </button>
-                  
-                                    <!-- Check-in : visible si PAS Clôturée -->
                   <button class="action-btn" title="Check-in" *ngIf="item.statut !== 'Clôturée'" (click)="checkIn(item.id)">
                     <lucide-icon [img]="icons.Clock" [size]="16"></lucide-icon>
                   </button>
-                  <!-- Check-out : visible si PAS Clôturée ET une visite est en cours -->
                   <button class="action-btn" title="Check-out" *ngIf="item.statut !== 'Clôturée' && aUneVisiteEnCours(item)" (click)="ouvrirModalCheckout(item.id)">
                     <lucide-icon [img]="icons.CheckCircle" [size]="16"></lucide-icon>
                   </button>
@@ -230,7 +226,7 @@
 </div>
 
 <!-- ========================================================== -->
-<!-- MODALE CHECK-OUT (VERSION COMPACTE, CHIPS CLIQUABLES) -->
+<!-- MODALE CHECK-OUT -->
 <!-- ========================================================== -->
 <div class="modal-backdrop" *ngIf="showCheckoutModal">
   <div class="checkout-modal">
@@ -243,17 +239,19 @@
 
     <div class="checkout-body">
 
-     <section class="section beneficiaires-section" *ngIf="isFirstVisit">
-  <span class="section-title">Bénéficiaires réel</span>
-  <span class="section-hint">Nombre réel de bénéficiaires présents sur le site (à remplir lors de la 1ère visite uniquement).</span>
-  <div class="form-group">
-    <input type="number"
-           [(ngModel)]="checkoutData.beneficiairesReel"
-           min="0"
-           placeholder="Nombre de bénéficiaires présents"
-           class="form-input">
-  </div>
-</section>
+      <!-- Bénéficiaires réel (1ère visite) -->
+      <section class="section beneficiaires-section" *ngIf="isFirstVisit">
+        <span class="section-title">Bénéficiaires réel</span>
+        <span class="section-hint">Nombre réel de bénéficiaires présents sur le site (à remplir lors de la 1ère visite uniquement).</span>
+        <div class="form-group">
+          <input type="number"
+                 [(ngModel)]="checkoutData.beneficiairesReel"
+                 min="0"
+                 placeholder="Nombre de bénéficiaires présents"
+                 class="form-input">
+        </div>
+      </section>
+
       <!-- Photos -->
       <section class="section">
         <span class="section-title">Photos</span>
@@ -313,23 +311,50 @@
         </div>
       </section>
 
-      <!-- Attestation -->
+      <!-- ========================================================= -->
+      <!-- SECTION ATTESTATION                                       -->
+      <!-- ========================================================= -->
       <section class="section">
-        <span class="section-title">Attestation signée</span>
-        <span class="section-hint">Facultatif : uploadez le document signé (PDF ou photo) si vous en avez un. Sinon, l'attestation sera générée automatiquement lors du téléchargement.</span>
-        <div class="upload-row">
+        <span class="section-title">Attestation</span>
+        <span class="section-hint" *ngIf="!isFirstVisit">L'attestation est facultative pour les visites suivantes.</span>
+        <span class="section-hint" *ngIf="isFirstVisit">Le nom du signataire est obligatoire pour la première visite.</span>
+
+        <!-- 1. Champ "Nom du signataire" : UNIQUEMENT pour la 1ère visite -->
+        <div class="form-group" *ngIf="isFirstVisit">
+          <label for="signataire" class="form-label required">Nom du signataire</label>
+          <input id="signataire"
+                 type="text"
+                 [(ngModel)]="checkoutData.nomSignataire"
+                 placeholder="Nom complet du signataire"
+                 class="form-input"
+                 required>
+          <div class="text-danger text-sm" *ngIf="showValidationErrors && !checkoutData.nomSignataire?.trim()">
+            Ce champ est obligatoire pour la première visite.
+          </div>
+        </div>
+
+        <!-- 2. Upload de l'attestation signée : UNIQUEMENT pour les visites ≠ 1ère, accepte PDF -->
+        <div class="upload-row" style="margin-top: 8px;" *ngIf="!isFirstVisit">
           <label class="upload-btn wide">
-            <input type="file" hidden accept="application/pdf, image/png, image/jpeg, image/jpg, image/webp" (change)="onAttestationSelected($event)">
+            <input type="file" 
+                   hidden 
+                   accept="application/pdf" 
+                   (change)="onAttestationSelected($event)">
             <lucide-icon [img]="icons.FileText" [size]="15"></lucide-icon>
-            {{ attestationFile ? attestationFile.name : "Uploader l'attestation (optionnel)" }}
+            {{ attestationFile ? attestationFile.name : "Uploader l'attestation signée (optionnel)" }}
           </label>
+        </div>
+
+        <!-- Message pour la 1ère visite (pas d'upload) -->
+        <div class="text-muted text-sm mt-2" *ngIf="isFirstVisit">
+          ⚠️ Pour la première visite, seule la saisie du signataire est requise. Vous pourrez uploader le document signé lors des prochaines visites.
         </div>
       </section>
 
-      <!-- Checklist -->
+      <!-- Checklist d'installation : chips -->
       <section class="section">
         <span class="section-title">Checklist d'installation</span>
-        <span class="section-hint">Contrôle de conformité du matériel déjà en place chez le client (sans lien avec les sorties/retours ci-dessus).</span>
+        <span class="section-hint">Vérification de la conformité du matériel déjà présent sur site.</span>
         <div class="checklist-row">
           <button type="button" class="checklist-chip"
                   *ngFor="let item of checkoutChecklist"
@@ -455,15 +480,12 @@
             </span>
           </div>
 
-                    <div class="mt-3 d-flex gap-2">
-            <!-- Check-in : visible si PAS Clôturée -->
+          <div class="mt-3 d-flex gap-2">
             <button class="btn btn-secondary btn-sm" 
                     *ngIf="currentDetail?.statut !== 'Clôturée' && !aUneVisiteEnCours(currentDetail!)"
                     (click)="checkIn(currentDetail!.id)">
               <lucide-icon [img]="icons.Clock" [size]="14"></lucide-icon> Check-in
             </button>
-            
-            <!-- Check-out : visible si PAS Clôturée ET visite en cours -->
             <button class="btn btn-primary btn-sm" 
                     *ngIf="currentDetail?.statut !== 'Clôturée' && aUneVisiteEnCours(currentDetail!)"
                     (click)="ouvrirModalCheckout(currentDetail!.id)">
@@ -494,12 +516,7 @@
           </ng-template>
         </div>
 
-        <!-- ========================================================== -->
-        <!-- ATTESTATION : bouton toujours disponible, quelle que soit  -->
-        <!-- la présence d'un fichier signé uploadé. Si aucun fichier   -->
-        <!-- n'a été uploadé, le PDF est généré automatiquement par le  -->
-        <!-- backend au moment du téléchargement.                      -->
-        <!-- ========================================================== -->
+        <!-- ATTESTATION : bouton visible uniquement si visite n°1 terminée -->
         <div class="media-card">
           <div class="media-header">
             <h3 class="section-title"><lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon> Attestation</h3>
@@ -529,10 +546,13 @@
               <p class="text-muted text-sm">Aucun fichier uploadé — le document sera généré automatiquement à partir des données de l'intervention.</p>
             </ng-template>
 
-            <div class="att-actions">
+            <div class="att-actions" *ngIf="visite1Terminee()">
               <button class="btn btn-primary btn-sm" (click)="downloadAttestation(currentDetail?.id!)">
                 <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon> Télécharger le PDF
               </button>
+            </div>
+            <div class="att-actions" *ngIf="!visite1Terminee()">
+              <span class="text-muted text-sm">L'attestation sera disponible après la fin de la première visite.</span>
             </div>
           </div>
         </div>
