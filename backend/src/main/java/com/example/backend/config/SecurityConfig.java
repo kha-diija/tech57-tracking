@@ -99,6 +99,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/observateur/**").hasAnyRole("OBSERVATEUR", "ADMINISTRATEUR")
                         .requestMatchers("/api/gestionnaire-stock/**").hasAnyRole("GESTIONNAIRE_STOCK", "ADMINISTRATEUR")
                         .requestMatchers("/api/stock/**").hasAnyRole("GESTIONNAIRE_STOCK", "ADMINISTRATEUR")
+                        .requestMatchers("/api/partenaire/**").hasRole("PARTENAIRE")
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
