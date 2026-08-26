@@ -32,6 +32,7 @@
   <nav class="sidebar__nav">
     <a
       *ngFor="let item of navItems()"
+      
       [routerLink]="item.route"
       routerLinkActive="sidebar__link--active"
       class="sidebar__link"
@@ -49,7 +50,7 @@
   </nav>
 
   <!-- Carte IA -->
-  <div class="sidebar__ai-card" *ngIf="!collapsed">
+  <!-- <div class="sidebar__ai-card" *ngIf="!collapsed">
     <div class="sidebar__ai-header">
       <lucide-icon [img]="icons.Sparkles" [size]="16" class="sidebar__ai-icon"></lucide-icon>
       <span>ASSISTANT IA</span>
@@ -60,5 +61,5 @@
     <button class="sidebar__ai-btn" [routerLink]="'/chat-ia'">
       Ouvrir l'assistant
     </button>
-  </div>
+  </div> -->
 </aside>
