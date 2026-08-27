@@ -324,7 +324,7 @@ showMessage(message: string, type: 'success' | 'error'): void {
     color: white;
     ${type === 'success' 
       ? 'background: linear-gradient(135deg, #20c15b, #16a34a); border: 1px solid #4ade80;' 
-      : 'background: linear-gradient(135deg, #ef4444, #d40909); border: 1px solid #f87171;'}
+      : 'background: linear-gradient(135deg, #d54a4a, #d40909); border: 1px solid #f87171;'}
   `;
 
   document.body.appendChild(div);
