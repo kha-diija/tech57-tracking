@@ -1,22 +1,4 @@
-/* ============================================================
-   interventions.scss
-   Composant : Interventions (Gestion et Suivi des interventions)
-   Palette : #233A6E (bleu foncé), #FEBE29 (jaune/orange),
-             #BAD439 (vert citron), #69AFB1 (bleu turquoise)
-   ============================================================ */
-
-:root {
-  --color-primary: #233A6E;      /* bleu foncé */
-  --color-secondary: #69AFB1;    /* bleu turquoise */
-  --color-accent: #FEBE29;       /* jaune/orange */
-  --color-success: #BAD439;      /* vert citron */
-  --color-danger: #ef4444;       /* rouge (conservé pour alertes) */
-  --color-bg-surface: #1e2128;
-  --color-border: #2d313a;
-  --color-text-main: #ffffff;
-  --color-text-muted: #a0aec0;
-}
-
+/* --- STYLES GLOBAUX EXISTANTS --- */
 .interventions-container {
   padding: 1.5rem;
   animation: fadeIn 0.3s ease;
@@ -27,11 +9,11 @@
   .page-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--color-text-main, #ffffff);
+    color: var(--text-main, #ffffff);
     margin: 0 0 0.4rem 0;
   }
   .page-subtitle {
-    color: var(--color-text-muted, #a0aec0);
+    color: var(--text-muted, #a0aec0);
     font-size: 0.9rem;
     margin: 0;
   }
@@ -50,22 +32,16 @@
   border: none;
   
   &-primary {
-    /* Dégradé inspiré de la palette (bleu foncé → turquoise → jaune) */
-    background: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+    background-color: #f97316;
     color: white;
-    box-shadow: 0 4px 12px rgba(35, 58, 110, 0.4);
-    &:hover {
-      background: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
-      box-shadow: 0 6px 16px rgba(35, 58, 110, 0.5);
-      transform: translateY(-1px);
-    }
+    &:hover { background-color: #ea580c; }
   }
   
   &-secondary {
-    background: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.1);
     color: #e2e8f0;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    &:hover { background: rgba(255, 255, 255, 0.15); }
+    &:hover { background-color: rgba(255, 255, 255, 0.15); }
   }
   
   &-sm {
@@ -82,8 +58,8 @@
 }
 
 .kpi-card {
-  background-color: var(--color-bg-surface, #1e2128);
-  border: 1px solid var(--color-border, #2d313a);
+  background-color: var(--bg-surface, #1e2128);
+  border: 1px solid var(--border-color, #2d313a);
   border-radius: 12px;
   padding: 1.5rem;
   display: flex;
@@ -98,31 +74,30 @@
     align-items: center;
     justify-content: center;
     
-    &.blue { background: rgba(105, 175, 177, 0.2); color: #69AFB1; }      /* turquoise */
-    &.orange { background: rgba(254, 190, 41, 0.2); color: #FEBE29; }      /* jaune */
-    &.green { background: rgba(186, 212, 57, 0.2); color: #BAD439; }       /* vert citron */
-    &.purple { background: rgba(35, 58, 110, 0.2); color: #233A6E; }       /* bleu foncé */
-    &.red { background: rgba(239, 68, 68, 0.2); color: #ef4444; }          /* rouge (alerte) */
+    &.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    &.orange { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+    &.green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    &.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
   }
 
   .kpi-content {
     display: flex;
     flex-direction: column;
-    .kpi-label { font-size: 0.85rem; color: var(--color-text-muted, #a0aec0); margin-bottom: 0.25rem; }
+    .kpi-label { font-size: 0.85rem; color: var(--text-muted, #a0aec0); margin-bottom: 0.25rem; }
     .kpi-value { font-size: 1.5rem; font-weight: 700; color: #fff; }
   }
 }
 
 .toolbar {
   padding: 1.25rem;
-  border-bottom: 1px solid var(--color-border, #2d313a);
+  border-bottom: 1px solid var(--border-color, #2d313a);
   
   .search-box {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--color-border, #2d313a);
+    border: 1px solid var(--border-color, #2d313a);
     padding: 0.5rem 1rem;
     border-radius: 8px;
     width: 300px;
@@ -133,14 +108,14 @@
       font-size: 0.875rem;
       width: 100%;
       outline: none;
-      &::placeholder { color: var(--color-text-muted, #a0aec0); }
+      &::placeholder { color: var(--text-muted, #a0aec0); }
     }
   }
 }
 
 .card {
-  background-color: var(--color-bg-surface, #1e2128);
-  border: 1px solid var(--color-border, #2d313a);
+  background-color: var(--bg-surface, #1e2128);
+  border: 1px solid var(--border-color, #2d313a);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -148,8 +123,7 @@
 .mt-4 { margin-top: 1.5rem; }
 .text-sm { font-size: 0.875rem; }
 .text-xs { font-size: 0.75rem; }
-.text-orange { color: #FEBE29; }
-.text-danger { color: #ef4444; }
+.text-orange { color: #f97316; }
 
 .table-responsive {
   width: 100%;
@@ -165,42 +139,42 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    color: var(--color-text-muted, #a0aec0);
-    border-bottom: 1px solid var(--color-border, #2d313a);
+    color: var(--text-muted, #a0aec0);
+    border-bottom: 1px solid var(--border-color, #2d313a);
     background-color: rgba(0, 0, 0, 0.2);
   }
   td {
     padding: 1.25rem;
     font-size: 0.875rem;
-    color: var(--color-text-main, #e2e8f0);
-    border-bottom: 1px solid var(--color-border, #2d313a);
+    color: var(--text-main, #e2e8f0);
+    border-bottom: 1px solid var(--border-color, #2d313a);
     vertical-align: middle;
   }
   tbody tr:hover { background-color: rgba(255, 255, 255, 0.02); }
 }
 
 .mission-badge {
-  background: rgba(105, 175, 177, 0.2);
-  color: #69AFB1;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
   padding: 0.25rem 0.6rem;
   border-radius: 6px;
   font-weight: 600;
   font-size: 0.8rem;
-  border: 1px solid rgba(105, 175, 177, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .visit-badge {
-  background: rgba(35, 58, 110, 0.2);
-  color: #233A6E;
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
   padding: 0.25rem 0.6rem;
   border-radius: 6px;
   font-weight: 600;
   font-size: 0.8rem;
-  border: 1px solid rgba(35, 58, 110, 0.3);
+  border: 1px solid rgba(139, 92, 246, 0.3);
   &.valid {
-    background: rgba(186, 212, 57, 0.2);
-    color: #BAD439;
-    border-color: rgba(186, 212, 57, 0.3);
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.3);
   }
 }
 
@@ -216,7 +190,7 @@
   overflow: hidden;
   .progress-bar {
     height: 100%;
-    background: #BAD439; /* vert citron */
+    background: #10b981;
     border-radius: 6px;
   }
 }
@@ -226,11 +200,10 @@
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
-  &-warning { background: rgba(254, 190, 41, 0.2); color: #FEBE29; border: 1px solid rgba(254, 190, 41, 0.25); }
-  &-success { background: rgba(186, 212, 57, 0.2); color: #BAD439; border: 1px solid rgba(186, 212, 57, 0.25); }
-  &-blue { background: rgba(105, 175, 177, 0.2); color: #69AFB1; border: 1px solid rgba(105, 175, 177, 0.25); }
+  &-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+  &-success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+  &-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
   &-gray { background: rgba(100, 100, 100, 0.2); color: #a0aec0; border: 1px solid rgba(100, 100, 100, 0.3); }
-  &-danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
 }
 
 .actions-cell {
@@ -241,8 +214,8 @@
 
 .action-btn {
   background: transparent;
-  border: 1px solid var(--color-border, #2d313a);
-  color: var(--color-text-muted, #a0aec0);
+  border: 1px solid var(--border-color, #2d313a);
+  color: var(--text-muted, #a0aec0);
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 8px;
@@ -253,7 +226,7 @@
   transition: all 0.2s;
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
-    color: var(--color-text-main, #ffffff);
+    color: var(--text-main, #ffffff);
   }
   &.delete-btn:hover {
     background-color: rgba(239, 68, 68, 0.15);
@@ -269,7 +242,7 @@
 .gap-2 { gap: 0.5rem; }
 .gap-3 { gap: 1rem; }
 .fw-bold { font-weight: 600; }
-.text-muted { color: var(--color-text-muted, #a0aec0); }
+.text-muted { color: var(--text-muted, #a0aec0); }
 .text-right { text-align: right; }
 
 @keyframes fadeIn {
@@ -277,10 +250,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ========================================================= */
-/* MODALES (Formulaire, Détails, Suppression, Clôture)       */
-/* ========================================================= */
-
+/* --- STYLES DES MODALES (Formulaire) --- */
 .modal-backdrop {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
@@ -293,8 +263,8 @@
 }
 
 .modal-content.form-modal-content {
-  background: var(--color-bg-surface, #1e2128);
-  border: 1px solid var(--color-border, #2d313a);
+  background: var(--bg-surface, #1e2128);
+  border: 1px solid var(--border-color, #2d313a);
   padding: 2rem;
   border-radius: 12px;
   width: 450px;
@@ -307,16 +277,16 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    label { font-size: 0.85rem; color: var(--color-text-muted, #a0aec0); }
-    input, select {
+    label { font-size: 0.85rem; color: var(--text-muted, #a0aec0); }
+    input {
       background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--color-border, #2d313a);
+      border: 1px solid var(--border-color, #2d313a);
       padding: 0.6rem 1rem;
       border-radius: 8px;
       color: #fff;
       font-size: 0.875rem;
       outline: none;
-      &:focus { border-color: #69AFB1; }
+      &:focus { border-color: #f97316; }
     }
   }
   .modal-actions {
@@ -328,30 +298,20 @@
 
 .form-select {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--color-border, #2d313a);
+  border: 1px solid var(--border-color, #2d313a);
   padding: 0.6rem 1rem;
   border-radius: 8px;
   color: #fff;
   font-size: 0.875rem;
   outline: none;
   width: 100%;
-  &:focus { border-color: #69AFB1; }
+  &:focus { border-color: #f97316; }
   option { background: #1e2128; color: #fff; }
 }
 
-.form-error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  padding: 0.6rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-/* ---- MODALE DÉTAILS (moderne) ---- */
+/* ================================================= */
+/* NOUVEAUX STYLES : MODALE DE DÉTAILS MODERNE */
+/* ================================================= */
 .detail-modal-backdrop {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
@@ -364,8 +324,8 @@
 }
 
 .detail-modal-wrapper {
-  background: var(--color-bg-surface, #1e2128);
-  border: 1px solid var(--color-border, #2d313a);
+  background: var(--bg-surface, #1e2128);
+  border: 1px solid var(--border-color, #2d313a);
   border-radius: 16px;
   width: 900px;
   max-width: 95%;
@@ -381,14 +341,14 @@
     justify-content: space-between;
     align-items: flex-start;
     padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--color-border, #2d313a);
+    border-bottom: 1px solid var(--border-color, #2d313a);
     background: rgba(0, 0, 0, 0.1);
 
     h2 { margin: 0; font-weight: 600; font-size: 1.25rem; }
     .close-btn-detail {
       background: transparent;
-      border: 1px solid var(--color-border, #2d313a);
-      color: var(--color-text-muted);
+      border: 1px solid var(--border-color, #2d313a);
+      color: var(--text-muted);
       width: 2.25rem; height: 2.25rem;
       border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
@@ -417,9 +377,12 @@
     }
   }
 
+  /* ================================================= */
+  /* PIED DE PAGE DE LA MODALE DE DÉTAILS AVEC BOUTONS */
+  /* ================================================= */
   .detail-modal-footer {
     padding: 1.25rem 2rem;
-    border-top: 1px solid var(--color-border, #2d313a);
+    border-top: 1px solid var(--border-color, #2d313a);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -429,15 +392,17 @@
       gap: 1rem;
     }
 
+    /* On s'assure que le bouton Fermer reste bien à droite */
     .btn-secondary {
       margin-left: auto !important;
     }
   }
 }
 
+/* --- CARTES D'INFORMATIONS (Gauche) --- */
 .info-card {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border, #2d313a);
+  border: 1px solid var(--border-color, #2d313a);
   border-radius: 10px;
   padding: 1.25rem;
 
@@ -453,7 +418,7 @@
       
       &.full-width { grid-column: span 2; }
       
-      .label { font-size: 0.75rem; color: var(--color-text-muted, #a0aec0); text-transform: uppercase; letter-spacing: 0.5px; }
+      .label { font-size: 0.75rem; color: var(--text-muted, #a0aec0); text-transform: uppercase; letter-spacing: 0.5px; }
       .value { font-size: 0.9rem; color: #fff; }
 
       .location-box {
@@ -473,7 +438,7 @@
           display: flex;
           align-items: center;
           gap: 0.4rem;
-          color: #FEBE29; /* jaune */
+          color: #f97316;
           font-weight: 600;
         }
       }
@@ -481,9 +446,10 @@
   }
 }
 
+/* --- CARTES MÉDIAS (Droite) --- */
 .media-card {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border, #2d313a);
+  border: 1px solid var(--border-color, #2d313a);
   border-radius: 10px;
   padding: 1.25rem;
 
@@ -521,8 +487,8 @@
         border-radius: 4px;
         letter-spacing: 0.5px;
         
-        &.avant { background: rgba(105, 175, 177, 0.3); color: #69AFB1; }
-        &.apres { background: rgba(186, 212, 57, 0.3); color: #BAD439; }
+        &.avant { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        &.apres { background: rgba(16, 185, 129, 0.2); color: #10b981; }
       }
 
       .photo-img-wrapper {
@@ -570,7 +536,7 @@
       padding: 0.4rem 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
-      .label { font-size: 0.8rem; color: var(--color-text-muted, #a0aec0); }
+      .label { font-size: 0.8rem; color: var(--text-muted, #a0aec0); }
       .value { font-size: 0.9rem; font-weight: 500; }
     }
     
@@ -579,6 +545,7 @@
     }
   }
 
+  /* --- NOUVEAUX STYLES POUR LE SUIVI DU MATÉRIEL --- */
   .stock-section {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
@@ -588,7 +555,6 @@
       font-size: 0.85rem;
       font-weight: 500;
       margin: 0 0 0.5rem 0;
-      color: #FEBE29;
     }
 
     .mini-table {
@@ -598,7 +564,7 @@
 
       th {
         text-align: left;
-        color: var(--color-text-muted, #a0aec0);
+        color: var(--text-muted, #a0aec0);
         font-weight: 500;
         padding: 0.25rem 0.5rem 0.25rem 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -621,7 +587,7 @@
   }
 }
 
-/* ---- MODALE SUPPRESSION ---- */
+/* --- MODALE DE SUPPRESSION --- */
 .delete-modal {
   max-width: 420px;
   text-align: center;
@@ -656,47 +622,63 @@
 }
 .delete-actions .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.15) !important; }
 
-/* ---- MODALE CONFIRMATION CLÔTURE ---- */
+/* --- NOUVEAUX STYLES : MODALE DE CONFIRMATION CLÔTURE --- */
 .confirm-modal {
   max-width: 420px;
   text-align: center;
   padding: 2.5rem 2rem 2rem 2rem !important;
 }
+
 .confirm-icon-wrapper {
   display: flex;
   justify-content: center;
   margin-bottom: 1.25rem;
 }
+
 .confirm-icon {
-  color: #FEBE29; /* jaune */
-  background: rgba(254, 190, 41, 0.1);
+  color: #f97316; /* Orange TECH-57 */
+  background: rgba(249, 115, 22, 0.1);
   padding: 16px;
   border-radius: 50%;
   width: 80px;
   height: 80px;
 }
+
 .confirm-modal h2 {
   color: #ffffff;
   font-size: 1.25rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
+
 .confirm-description {
   color: #a0aec0;
   font-size: 0.95rem;
   line-height: 1.5;
   margin-bottom: 2rem;
 }
+
 .confirm-description strong {
   color: #e2e8f0;
 }
+
 .confirm-actions {
   display: flex;
   justify-content: center !important;
   gap: 1rem !important;
   margin-top: 0 !important;
 }
-
+.badge-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+.text-danger {
+  color: #ef4444;
+}
+.kpi-icon-wrapper.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
 .visite-row {
   display: flex;
   align-items: center;
@@ -704,4 +686,15 @@
   flex-wrap: wrap;
   padding: 0.5rem 0;
   border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.form-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
