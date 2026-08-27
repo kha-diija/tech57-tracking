@@ -3,6 +3,7 @@ package com.example.backend.controller.technicien;
 import com.example.backend.dto.admin.intervention.CreateInterventionRequest;
 import com.example.backend.dto.admin.intervention.InterventionResponse;
 import com.example.backend.dto.admin.intervention.UpdateInterventionRequest;
+import com.example.backend.dto.technicien.Dashboard.AttestationPreviewRequest;
 import com.example.backend.dto.technicien.Dashboard.CheckInRequest;
 import com.example.backend.dto.technicien.Dashboard.CheckOutRequest;
 import com.example.backend.dto.technicien.Dashboard.MissionSimplifieeDTO;
@@ -86,8 +87,6 @@ public class TechnicienInterventionController {
         return ResponseEntity.ok(technicienService.checkIn(id, principal.getId(), request));
     }
 
-    // --- CORRECTION : Utilisation de @RequestBody au lieu de @RequestPart ---
-    // APRÈS
     @PostMapping(value = "/{id}/check-out", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<InterventionResponse> checkOut(
             @PathVariable Integer id,
@@ -113,9 +112,44 @@ public class TechnicienInterventionController {
     @GetMapping("/{id}/attestation/download")
     public ResponseEntity<byte[]> downloadAttestation(@PathVariable Integer id, @AuthenticationPrincipal UserPrincipal principal) {
         try {
-            byte[] pdf = technicienService.genererAttestation(id);
+            var attestation = technicienService.getAttestationFichier(id);
+
+            // Cas 1 : fichier uploadé → on le sert tel quel
+            if (attestation != null && attestation.getCheminFichier() != null) {
+                java.nio.file.Path path = java.nio.file.Paths.get("." + attestation.getCheminFichier());
+                byte[] fileBytes = java.nio.file.Files.readAllBytes(path);
+                String filename = path.getFileName().toString();
+                MediaType mediaType = filename.toLowerCase().endsWith(".pdf")
+                        ? MediaType.APPLICATION_PDF
+                        : MediaType.IMAGE_JPEG;
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                        .contentType(mediaType)
+                        .body(fileBytes);
+            }
+
+            // Cas 2 : pas de fichier → génération automatique du PDF, sans signature requise
+            byte[] pdfContent = technicienService.genererAttestation(id);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attestation_intervention_" + id + ".pdf\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdfContent);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // ✅ NOUVEAU : génère un PDF "attestation à signer" à partir des données
+    // actuellement saisies dans le modal de checkout (pas encore persistées).
+    @PostMapping(value = "/{id}/attestation/preview", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<byte[]> downloadAttestationPreview(
+            @PathVariable Integer id,
+            @RequestBody AttestationPreviewRequest request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        try {
+            byte[] pdf = technicienService.genererAttestationPreview(id, principal.getId(), request);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attestation_a_signer_intervention_" + id + ".pdf\"")
                     .contentType(MediaType.APPLICATION_PDF)
                     .body(pdf);
         } catch (Exception e) {
