@@ -1,7 +1,4 @@
-// ===== Fichier : gs-etablissement.scss (page des missions technicien) =====
-// Palette : #233A6E (bleu foncé), #FEBE29 (jaune/orange),
-//           #BAD439 (vert citron), #69AFB1 (bleu turquoise)
-
+/* Thème sombre global pour la page des missions technicien */
 .gs-etab {
   padding: 28px;
   max-width: 1600px;
@@ -22,14 +19,14 @@
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
-    color: #69AFB1; // Bleu turquoise (palette)
+    color: #f97316; // Orange caractéristique de l'app
     letter-spacing: 0.5px;
     margin-bottom: 8px;
 
     &-dot {
       width: 6px;
       height: 6px;
-      background-color: #69AFB1;
+      background-color: #f97316;
       border-radius: 50%;
     }
   }
@@ -59,7 +56,7 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
-  background: #1e1e2d;
+  background: #1e1e2d; // Fond sombre des blocs
   padding: 14px 20px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -98,10 +95,6 @@
     font-size: 14px;
     outline: none;
     cursor: pointer;
-
-    &:focus {
-      border-color: #69AFB1;
-    }
   }
 
   &__count {
@@ -154,7 +147,7 @@
 
   &__ref {
     font-weight: 600;
-    color: #69AFB1; // Turquoise
+    color: #f97316; // Référence en orange
   }
 
   &__name {
@@ -198,7 +191,7 @@
   font-family: monospace;
 }
 
-/* Badges de statuts adaptés au thème sombre avec la palette */
+/* Badges de statuts adaptés au thème sombre */
 .badge {
   display: inline-block;
   padding: 5px 12px;
@@ -206,24 +199,24 @@
   font-size: 12px;
   font-weight: 500;
 
-  &--info {
-    background: rgba(105, 175, 177, 0.2);
-    color: #69AFB1;
-    border: 1px solid rgba(105, 175, 177, 0.3);
+  &--info { 
+    background: rgba(14, 165, 233, 0.15); 
+    color: #38bdf8; 
+    border: 1px solid rgba(14, 165, 233, 0.3);
   }
-  &--warning {
-    background: rgba(254, 190, 41, 0.2);
-    color: #FEBE29;
-    border: 1px solid rgba(254, 190, 41, 0.3);
+  &--warning { 
+    background: rgba(245, 158, 11, 0.15); 
+    color: #fbbf24; 
+    border: 1px solid rgba(245, 158, 11, 0.3);
   }
-  &--success {
-    background: rgba(186, 212, 57, 0.2);
-    color: #BAD439;
-    border: 1px solid rgba(186, 212, 57, 0.3);
+  &--success { 
+    background: rgba(34, 197, 94, 0.15); 
+    color: #4ade80; 
+    border: 1px solid rgba(34, 197, 94, 0.3);
   }
-  &--danger {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
+  &--danger { 
+    background: rgba(239, 68, 68, 0.15); 
+    color: #f87171; 
     border: 1px solid rgba(239, 68, 68, 0.3);
   }
 }
@@ -242,14 +235,12 @@
   transition: all 0.2s ease;
 
   &--primary {
-    // Dégradé palette : bleu foncé → turquoise → jaune
-    background: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+    background: #f97316; // Bouton orange principal
     color: white;
-    box-shadow: 0 4px 12px rgba(35, 58, 110, 0.35);
-    &:hover {
-      background: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    &:hover { 
+      background: #ea580c; 
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(35, 58, 110, 0.45);
     }
   }
 
@@ -257,7 +248,7 @@
     background: rgba(255, 255, 255, 0.06);
     color: #cbd5e1;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    &:hover {
+    &:hover { 
       background: rgba(255, 255, 255, 0.1);
       color: white;
     }
@@ -314,12 +305,7 @@
     justify-content: space-between;
     align-items: center;
 
-    h2 {
-      font-size: 18px;
-      margin: 0;
-      color: #ffffff;
-      font-weight: 600;
-    }
+    h2 { font-size: 18px; margin: 0; color: #ffffff; font-weight: 600; }
   }
 
   &__body {
@@ -349,8 +335,7 @@
     margin-bottom: 6px;
   }
 
-  input,
-  select {
+  input, select {
     width: 100%;
     padding: 11px 14px;
     border-radius: 10px;
@@ -361,8 +346,8 @@
     color: white;
 
     &:focus {
-      border-color: #69AFB1; // Turquoise
-      box-shadow: 0 0 0 3px rgba(105, 175, 177, 0.15);
+      border-color: #f97316;
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
     }
   }
 }
