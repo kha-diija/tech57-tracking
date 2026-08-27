@@ -1193,3 +1193,44 @@ textarea {
     width: 100%;
   }
 }
+// Message popup
+.message-popup {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: slideDown 0.3s ease;
+  color: #fff;
+
+  &--success {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border: 1px solid #4ade80;
+  }
+
+  &--error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: 1px solid #f87171;
+  }
+
+  &--info {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: 1px solid #60a5fa;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
