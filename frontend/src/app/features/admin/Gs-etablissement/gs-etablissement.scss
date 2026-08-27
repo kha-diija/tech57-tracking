@@ -1,70 +1,4 @@
-/* ============================================================
-   Fichier : gs-etablissement.scss
-   Composant : GsEtablissement
-   Thème : adapté aux nouvelles couleurs
-   Bouton principal : Dégradé Bleu foncé → Jaune (dominante bleue)
-   ============================================================ */
-
 .gs-etab {
-  // ---------- Surcharge des variables globales (mode sombre) ----------
-  --bg-app: #0b0c10;
-  --bg-surface: #1a1f2e;
-  --bg-surface-hover: #28344a;
-  --bg-pill-active: rgba(105, 175, 177, 0.15);
-  --border-color: #2d3a4f;
-  --text-main: #ffffff;
-  --text-muted: #94a3b8;
-
-  // Couleurs de la charte
-  --primary: #69AFB1;           // Bleu turquoise (pour liens, icônes)
-  --primary-glow: rgba(105, 175, 177, 0.30);
-  --secondary: #233A6E;         // Bleu foncé (dominante du bouton)
-  --accent-green: #BAD439;      // Vert citron (pour badges)
-  --accent-yellow: #FEBE29;     // Jaune (accent du bouton)
-
-  // ★★★ DÉGRADÉ 3 COULEURS VERTICAL (identique en clair/sombre) ★★★
---btn-gradient: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
---btn-gradient-hover: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
---btn-shadow: 0 8px 20px rgba(35, 58, 110, 0.45);
-
-  // Cartes AI (optionnel)
-  --ai-card-bg: linear-gradient(135deg, #1e2a4a 0%, #14203a 100%);
-  --ai-card-border: rgba(105, 175, 177, 0.35);
-  --ai-card-title: #69AFB1;
-  --ai-card-text: #ffffff;
-  --ai-btn-bg: var(--btn-gradient);
-  --ai-btn-text: #ffffff;
-
-  // ---------- Mode clair ----------
-  &.light-mode {
-    --bg-app: #f8fafc;
-    --bg-surface: #ffffff;
-    --bg-surface-hover: #f1f5f9;
-    --bg-pill-active: rgba(105, 175, 177, 0.12);
-    --border-color: #e2e8f0;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-
-    --primary: #69AFB1;
-    --primary-glow: rgba(105, 175, 177, 0.20);
-    --secondary: #233A6E;
-    --accent-green: #BAD439;
-    --accent-yellow: #FEBE29;
-
-    // Même dégradé en mode clair pour cohérence
-    --btn-gradient: linear-gradient(to bottom, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
-    --btn-gradient-hover: linear-gradient(to bottom, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
-    --btn-shadow: 0 8px 20px rgba(35, 58, 110, 0.30);
-
-    --ai-card-bg: linear-gradient(135deg, #f0f7f7 0%, #e3f0ef 100%);
-    --ai-card-border: rgba(105, 175, 177, 0.25);
-    --ai-card-title: #233A6E;
-    --ai-card-text: #334155;
-    --ai-btn-bg: #233A6E;
-    --ai-btn-text: #ffffff;
-  }
-
-  // ---------- Structure ----------
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -118,7 +52,7 @@
   }
 }
 
-// ---------- Boutons ----------
+/* Boutons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -136,35 +70,26 @@
     border-color: var(--border-color);
     color: var(--text-main);
 
-    &:hover {
-      background-color: var(--bg-surface-hover);
-    }
+    &:hover { background-color: var(--bg-surface-hover); }
   }
 
-  // ★★★ BOUTON PRINCIPAL AVEC LE NOUVEAU DÉGRADÉ ★★★
   &--primary {
-    background: var(--btn-gradient);
+    background: linear-gradient(135deg, var(--primary) 0%, #ff4500 100%);
     color: #ffffff;
-    box-shadow: var(--btn-shadow);
+    box-shadow: 0 8px 20px var(--primary-glow);
 
-    &:hover {
-      background: var(--btn-gradient-hover);
-      box-shadow: 0 8px 24px rgba(35, 58, 110, 0.55);
-      transform: translateY(-1px);
-    }
+    &:hover { filter: brightness(1.08); }
   }
 
   &--danger {
     background: #ef4444;
     color: #ffffff;
 
-    &:hover {
-      background: #dc2626;
-    }
+    &:hover { background: #dc2626; }
   }
 }
 
-// ---------- KPI ----------
+/* KPI */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -187,7 +112,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    border-color: rgba(105, 175, 177, 0.4);
+    border-color: rgba(249, 115, 22, 0.35);
   }
 
   &__top {
@@ -223,58 +148,56 @@
   }
 }
 
-// ---------- Barre d'outils ----------
+/* Barre d'outils : recherche + filtre région */
 .toolbar {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
 
-  &__search {
+.toolbar__search {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.6rem 0.875rem;
+  color: var(--text-muted);
+
+  input {
     flex: 1;
-    min-width: 240px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 0.6rem 0.875rem;
-    color: var(--text-muted);
-
-    input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: var(--text-main);
-      font-size: 0.85rem;
-
-      &::placeholder {
-        color: var(--text-muted);
-      }
-    }
-  }
-
-  &__select {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 0.6rem 0.875rem;
+    background: transparent;
+    border: none;
+    outline: none;
     color: var(--text-main);
     font-size: 0.85rem;
-    cursor: pointer;
-    min-width: 200px;
-  }
 
-  &__count {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    white-space: nowrap;
+    &::placeholder { color: var(--text-muted); }
   }
 }
 
-// ---------- Panel & tableau ----------
+.toolbar__select {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.6rem 0.875rem;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.toolbar__count {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Panel + tableau */
 .panel {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
@@ -319,9 +242,7 @@
 
   tbody tr {
     transition: background 0.15s;
-    &:hover {
-      background: rgba(105, 175, 177, 0.04);
-    }
+    &:hover { background: rgba(255, 255, 255, 0.02); }
   }
 
   &__actions-col {
@@ -389,9 +310,7 @@
   padding: 0;
   width: fit-content;
 
-  &:hover {
-    text-decoration: underline;
-  }
+  &:hover { text-decoration: underline; }
 }
 
 .contact-link {
@@ -402,9 +321,7 @@
   font-size: 0.75rem;
   text-decoration: none;
 
-  &:hover {
-    color: var(--primary);
-  }
+  &:hover { color: var(--primary); }
 }
 
 .text-muted {
@@ -420,9 +337,20 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
-  background-color: rgba(186, 212, 57, 0.18);
-  color: #BAD439;
-  border: 1px solid rgba(186, 212, 57, 0.25);
+  background-color: var(--bg-pill-active);
+  color: var(--text-muted);
+
+  &--clickable {
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background-color: var(--primary-glow);
+      border-color: rgba(249, 115, 22, 0.35);
+      color: var(--primary);
+    }
+  }
 }
 
 .icon-btn {
@@ -449,7 +377,7 @@
   }
 }
 
-// ---------- Panneau latéral ----------
+/* Panneau latéral (création / édition / formateurs) */
 .side-panel-backdrop {
   position: fixed;
   inset: 0;
@@ -559,7 +487,52 @@
   border-top: 1px solid var(--border-color);
 }
 
-// ---------- Modale de confirmation ----------
+/* Liste des formateurs (panneau latéral) */
+.formateur-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.formateur-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-app);
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-main);
+  }
+
+  &__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+}
+
+/* Styles de la modale de confirmation personnalisée */
 .custom-modal-container {
   position: fixed;
   top: 0;
@@ -616,7 +589,6 @@
   }
 }
 
-// ---------- Animations ----------
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
