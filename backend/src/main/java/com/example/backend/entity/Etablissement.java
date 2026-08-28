@@ -30,9 +30,6 @@ public class Etablissement {
     @Column(name = "nombre_beneficiaires")
     private Integer nombreBeneficiaires;
 
-    @Column(name = "nombre_beneficiaires_reel")
-    private Integer nombreBeneficiairesReel;
-
     @Column(name = "telephone_contact", length = 30)
     private String telephoneContact;
 

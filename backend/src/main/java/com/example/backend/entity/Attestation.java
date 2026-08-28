@@ -25,9 +25,6 @@ public class Attestation {
     @Column(nullable = false)
     private Boolean valide = false;
 
-    @Column(name = "chemin_fichier", length = 255) // ✅ AJOUT
-    private String cheminFichier;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_intervention", nullable = false, unique = true)
     private Intervention intervention;
