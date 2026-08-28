@@ -1,10 +1,3 @@
-/* ============================================================
-   settings-container.scss
-   Composant : Settings (Paramètres)
-   Palette : #233A6E (bleu foncé), #FEBE29 (jaune/orange),
-             #BAD439 (vert citron), #69AFB1 (bleu turquoise)
-   ============================================================ */
-
 .settings-container {
   padding: 2rem;
   color: #e2e8f0;
@@ -45,7 +38,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #69AFB1; /* Bleu turquoise (palette) */
+  color: #f97316; /* Couleur Orange Tech-57 */
 }
 
 .icon-title h2 {
@@ -84,12 +77,12 @@
 }
 
 .form-group input:focus {
-  border-color: #69AFB1; /* Bleu turquoise */
-  box-shadow: 0 0 0 2px rgba(105, 175, 177, 0.2);
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
 }
 
 .form-group input.invalid {
-  border-color: #ef4444; /* Rouge (alerte, hors palette) */
+  border-color: #ef4444;
 }
 
 .error-text {
@@ -105,9 +98,9 @@
 }
 
 .alert-success {
-  background-color: rgba(186, 212, 57, 0.15); /* Vert citron */
-  border: 1px solid #BAD439;
-  color: #BAD439;
+  background-color: rgba(34, 197, 94, 0.1);
+  border: 1px solid #22c55e;
+  color: #4ade80;
 }
 
 .alert-danger {
@@ -123,8 +116,7 @@
 }
 
 .btn-primary {
-  /* Dégradé inspiré de la palette (bleu foncé → turquoise → jaune) */
-  background: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+  background-color: #f97316; /* Orange Tech-57 */
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -132,21 +124,16 @@
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 10px rgba(35, 58, 110, 0.3);
+  transition: background-color 0.2s ease;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
-  box-shadow: 0 6px 14px rgba(35, 58, 110, 0.4);
-  transform: translateY(-1px);
+  background-color: #ea580c;
 }
 
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
 }
 
 .input-wrapper {
@@ -195,20 +182,8 @@
   transition: background-color 0.25s ease;
 }
 
-/* Exemple de couleurs pour les barres de force (optionnel, selon le niveau) */
-.strength-bars .bar.weak {
-  background-color: #ef4444;
-}
-.strength-bars .bar.medium {
-  background-color: #FEBE29;
-}
-.strength-bars .bar.strong {
-  background-color: #BAD439;
-}
-
 .strength-label {
   font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
-  color: #94a3b8;
 }

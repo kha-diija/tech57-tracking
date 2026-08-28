@@ -90,6 +90,7 @@
             <th>Désignation</th>
             <th>Localisation</th>
             <th>Bénéficiaires</th>
+            <th>Bénéf. réel</th>
             <th>Responsable</th>
             <th>Contact</th>
             <th>Formateurs</th>
@@ -114,12 +115,24 @@
                 </button>
               </div>
             </td>
+           
+
             <td>
-              <span class="badge">
-                <lucide-icon [img]="icons.Users" [size]="12"></lucide-icon>
-                {{ etab.nombreBeneficiaires ?? 0 | number }}
-              </span>
-            </td>
+  <span class="badge">
+    <lucide-icon [img]="icons.Users" [size]="12"></lucide-icon>
+    {{ etab.nombreBeneficiaires ?? 0 | number }}
+  </span>
+</td>
+<td>
+  <span class="badge badge--success" *ngIf="etab.nombreBeneficiairesReel != null; else noBeneficiairesReel">
+    <lucide-icon [img]="icons.CheckCircle" [size]="12"></lucide-icon>
+    {{ etab.nombreBeneficiairesReel | number }}
+  </span>
+  <ng-template #noBeneficiairesReel>
+    <span class="text-muted">—</span>
+  </ng-template>
+</td>
+
             <td>
               <span *ngIf="etab.responsable as resp; else noResp">
                 {{ resp.prenom }} {{ resp.nom }}
@@ -160,7 +173,7 @@
           </tr>
 
           <tr *ngIf="!isLoading() && filteredEtablissements().length === 0">
-            <td colspan="8" class="etab-table__empty">
+            <td colspan="9" class="etab-table__empty">
               Aucun établissement ne correspond à ta recherche.
             </td>
           </tr>
@@ -236,6 +249,8 @@
         <label>Bénéficiaires</label>
         <input type="number" [ngModel]="formModel().nombreBeneficiaires" (ngModelChange)="updateField('nombreBeneficiaires', +$event)" />
       </div>
+
+      
 
       <div class="form-divider">Contact de l'établissement</div>
 

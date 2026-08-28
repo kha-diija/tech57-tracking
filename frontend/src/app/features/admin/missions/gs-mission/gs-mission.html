@@ -216,23 +216,38 @@
   </select>
 </div>
 
-      <!-- Responsable de l'établissement : affichage automatique en lecture seule -->
-      <div class="form-group form-group--readonly" *ngIf="formModel().idEtablissement">
-        <label>Responsable de l'établissement</label>
-        <div class="responsable-card" *ngIf="selectedResponsable() as resp; else noResponsable">
-          <div class="responsable-card__row">
-            <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
-            <span>{{ resp.prenom }} {{ resp.nom }}</span>
-            <span class="text-muted" *ngIf="resp.fonction">— {{ resp.fonction }}</span>
-          </div>
-         <div class="responsable-card__row text-muted" *ngIf="resp.telephone">
-             <span>{{ resp.telephone }}</span>
-        </div>
-        </div>
-        <ng-template #noResponsable>
-          <span class="text-muted">Aucun responsable renseigné pour cet établissement.</span>
-        </ng-template>
-      </div>
+<!-- Sélection de l'établissement (filtré par commune) -->
+<div class="form-group">
+  <label>Établissement cible</label>
+  <select [ngModel]="formModel().idEtablissement" (ngModelChange)="updateField('idEtablissement', +$event)">
+    <option [ngValue]="null" disabled>Sélectionner un établissement</option>
+    <option *ngFor="let etab of etablissementsFiltres()" [ngValue]="etab.idEtablissement">
+      {{ etab.designation }} ({{ etab.reference }})
+    </option>
+  </select>
+  <small class="text-muted" *ngIf="!selectedCommuneId() && etablissementsList().length > 0">
+    Veuillez d'abord sélectionner une commune
+  </small>
+</div>
+
+      <!-- Responsable de l'établissement -->
+<div class="form-group form-group--readonly" *ngIf="formModel().idEtablissement">
+  <label>Responsable de l'établissement</label>
+  <div class="responsable-card" *ngIf="selectedResponsable() as resp; else noResponsable">
+    <div class="responsable-card__row">
+      <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
+      <span>{{ resp.prenom }} {{ resp.nom }}</span>
+      <span class="text-muted" *ngIf="resp.fonction">— {{ resp.fonction }}</span>
+    </div>
+    <!-- ✅ MODIFICATION : Plus que le téléphone -->
+    <div class="responsable-card__row text-muted" *ngIf="resp.telephone">
+      <span>{{ resp.telephone }}</span>
+    </div>
+  </div>
+  <ng-template #noResponsable>
+    <span class="text-muted">Aucun responsable renseigné pour cet établissement.</span>
+  </ng-template>
+</div>
 
       <div class="form-row">
         <div class="form-group">
