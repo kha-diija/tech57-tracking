@@ -147,6 +147,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/gestionnaire/retours/retours').then((m) => m.RetoursStock),
       },
+            {
+        path: 'partenaire',
+        canActivate: [roleGuard(['PARTENAIRE'])], // adaptez au nom réel de votre guard
+        children: [
+          { path: 'dashboard', loadComponent: () => import('./features/partenaire/dash/dash').then(m => m.Dash) },
+          { path: 'avancement', loadComponent: () => import('./features/partenaire/avancementByEtablissement/avancement-by-etablissement').then(m => m.AvancementByEtablissement) },
+        ]
+      },
 
     ],
   },
