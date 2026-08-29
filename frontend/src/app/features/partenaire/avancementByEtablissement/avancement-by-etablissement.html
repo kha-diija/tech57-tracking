@@ -1,0 +1,37 @@
+<div class="dashboard">
+  <div class="dashboard__header">
+    <div>
+      <span class="dashboard__eyebrow">
+        <span class="dashboard__eyebrow-dot"></span>
+        PARTENAIRE
+      </span>
+      <h1 class="dashboard__title">Avancement des établissements</h1>
+      <p class="dashboard__subtitle" *ngIf="nomProvince()">
+        Province de {{ nomProvince() }}
+      </p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p *ngIf="isLoading()">Chargement...</p>
+    <p *ngIf="errorMessage() as msg">{{ msg }}</p>
+
+    <ul class="mission-list" *ngIf="!isLoading() && !errorMessage()">
+      <li class="mission-list__item" *ngFor="let e of etablissements()">
+        <div class="mission-list__meta">
+          <span class="mission-list__code">{{ e.commune }}</span>
+          <span class="badge" [class.badge--success]="e.pourcentageAvancement >= 70">
+            {{ e.pourcentageAvancement | number:'1.0-0' }}%
+          </span>
+        </div>
+        <p class="mission-list__title">{{ e.designation }}</p>
+        <div class="progress-bar">
+          <div class="progress-bar__fill" [style.width.%]="e.pourcentageAvancement"></div>
+        </div>
+        <p class="mission-list__tech" style="margin-top:0.5rem;">
+          {{ e.nombreBeneficiaires }} bénéficiaires · {{ e.nombreMateriels }} matériels
+        </p>
+      </li>
+    </ul>
+  </div>
+</div>
