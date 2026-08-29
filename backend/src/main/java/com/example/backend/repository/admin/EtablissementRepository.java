@@ -46,4 +46,6 @@ public interface EtablissementRepository extends JpaRepository<Etablissement, In
             "WHERE e.commune.idCommune = :idCommune " +
             "ORDER BY e.designation ASC")
     List<Etablissement> findByCommune_IdCommune(@Param("idCommune") Integer idCommune);
+
+    List<Etablissement> findByCommuneProvinceIdProvince(Integer idProvince);
 }
