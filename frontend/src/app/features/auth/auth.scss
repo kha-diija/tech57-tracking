@@ -9,17 +9,6 @@
 /* ============================================================
    ROOT
    ============================================================ */
-/* ============================================================
-   TECH-57 — MODERN LOGIN
-   Clean / Premium / Corporate
-   ============================================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
-
-
-/* ============================================================
-   ROOT
-   ============================================================ */
 
 :host {
   --navy: #233a6e;
@@ -41,8 +30,6 @@
   --accent-yellow-dark: #e0a800;
 
   display: block;
-
-  font-family: 'Inter', sans-serif;
 
   font-family: 'Inter', sans-serif;
 }
@@ -104,7 +91,6 @@
 .auth-card {
   position: relative;
 
-
   width: 100%;
 
   box-sizing: border-box;
@@ -131,31 +117,6 @@
   transition:
     box-shadow 0.3s ease,
     transform 0.3s ease;
-
-  box-sizing: border-box;
-
-  padding: 44px 42px 38px;
-
-  border-radius: 24px;
-
-  background:
-    linear-gradient(
-      145deg,
-      rgba(105, 175, 177, 0.13),
-      rgba(105, 175, 177, 0.07)
-    );
-
-  border: 1px solid rgba(105, 175, 177, 0.24);
-
-  box-shadow:
-    0 20px 50px rgba(35, 58, 110, 0.07);
-
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-
-  transition:
-    box-shadow 0.3s ease,
-    transform 0.3s ease;
 }
 
 
@@ -164,18 +125,7 @@
 
   box-shadow:
     0 25px 60px rgba(35, 58, 110, 0.10);
-
-.auth-card:hover {
-  transform: translateY(-2px);
-
-  box-shadow:
-    0 25px 60px rgba(35, 58, 110, 0.10);
 }
-
-
-/* ============================================================
-   HEADER
-   ============================================================ */
 
 
 /* ============================================================
@@ -186,10 +136,7 @@
   text-align: center;
 
   margin-bottom: 30px;
-
-  margin-bottom: 30px;
 }
-
 
 
 .auth-card__eyebrow {
@@ -197,18 +144,7 @@
 
   margin-bottom: 14px;
 
-  display: block;
-
-  margin-bottom: 14px;
-
   font-family: 'Space Grotesk', sans-serif;
-
-  font-size: 10px;
-
-  font-weight: 700;
-
-  letter-spacing: 0.16em;
-
 
   font-size: 10px;
 
@@ -222,18 +158,10 @@
 }
 
 
-
 .auth-card__title {
   margin: 0 0 8px;
 
-  margin: 0 0 8px;
-
   font-family: 'Space Grotesk', sans-serif;
-
-  font-size: 31px;
-
-  line-height: 1.2;
-
 
   font-size: 31px;
 
@@ -254,10 +182,6 @@
 
   max-width: 330px;
 
-  margin: 0 auto;
-
-  max-width: 330px;
-
   font-size: 13.5px;
 
   line-height: 1.55;
@@ -272,17 +196,10 @@
    FORM
    ============================================================ */
 
-
-/* ============================================================
-   FORM
-   ============================================================ */
-
 .auth-form {
   display: flex;
 
-
   flex-direction: column;
-
 
   gap: 18px;
 }
@@ -292,14 +209,7 @@
    ERROR
    ============================================================ */
 
-
-/* ============================================================
-   ERROR
-   ============================================================ */
-
 .auth-form__alert {
-  padding: 11px 14px;
-
   padding: 11px 14px;
 
   border-radius: 10px;
@@ -315,24 +225,7 @@
   line-height: 1.4;
 
   animation: alert-in 0.2s ease;
-
-  background: rgba(239, 68, 68, 0.07);
-
-  border: 1px solid rgba(239, 68, 68, 0.18);
-
-  color: #b42318;
-
-  font-size: 12.5px;
-
-  line-height: 1.4;
-
-  animation: alert-in 0.2s ease;
 }
-
-
-/* ============================================================
-   FIELD
-   ============================================================ */
 
 
 /* ============================================================
@@ -342,14 +235,10 @@
 .auth-field {
   display: flex;
 
-
   flex-direction: column;
 
   gap: 7px;
-
-  gap: 7px;
 }
-
 
 
 .auth-field__label {
@@ -369,25 +258,13 @@
    INPUT CONTAINER
    ============================================================ */
 
-
-/* ============================================================
-   INPUT CONTAINER
-   ============================================================ */
-
 .auth-field__control {
   position: relative;
 
-
   display: flex;
-
 
   align-items: center;
 }
-
-
-/* ============================================================
-   ICON
-   ============================================================ */
 
 
 /* ============================================================
@@ -406,18 +283,7 @@
 
   color: #93a5b9;
 
-
-  left: 15px;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  color: #93a5b9;
-
   pointer-events: none;
-
 
   transition: color 0.2s ease;
 }
@@ -427,16 +293,8 @@
    INPUT
    ============================================================ */
 
-
-/* ============================================================
-   INPUT
-   ============================================================ */
-
 .auth-field__input {
   width: 100%;
-
-  height: 53px;
-
 
   height: 53px;
 
@@ -450,25 +308,7 @@
 
   border: 1px solid rgba(105, 175, 177, 0.25);
 
-
-  padding:
-    0
-    48px
-    0
-    43px;
-
-  border: 1px solid rgba(105, 175, 177, 0.25);
-
   border-radius: 11px;
-
-  outline: none;
-
-  background: rgba(255, 255, 255, 0.76);
-
-  color: var(--text);
-
-  font-family: 'Inter', sans-serif;
-
 
   outline: none;
 
@@ -484,13 +324,7 @@
     border-color 0.2s ease,
     background 0.2s ease,
     box-shadow 0.2s ease;
-
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
 }
-
 
 
 .auth-field__input::placeholder {
@@ -504,18 +338,7 @@
   border-color: rgba(105, 175, 177, 0.40);
 
   background: rgba(255, 255, 255, 0.92);
-  color: var(--text-placeholder);
-
-  opacity: 0.85;
 }
-
-
-.auth-field__input:hover {
-  border-color: rgba(105, 175, 177, 0.40);
-
-  background: rgba(255, 255, 255, 0.92);
-}
-
 
 
 .auth-field__input:focus {
@@ -525,28 +348,13 @@
 
   box-shadow:
     0 0 0 3px rgba(105, 175, 177, 0.10);
-  border-color: var(--turquoise);
-
-  background: #ffffff;
-
-  box-shadow:
-    0 0 0 3px rgba(105, 175, 177, 0.10);
 }
 
 
 .auth-field__control:focus-within
 .auth-field__icon {
   color: var(--turquoise-dark);
-
-.auth-field__control:focus-within
-.auth-field__icon {
-  color: var(--turquoise-dark);
 }
-
-
-/* ============================================================
-   INVALID INPUT
-   ============================================================ */
 
 
 /* ============================================================
@@ -555,9 +363,7 @@
 
 .auth-field__input--invalid {
   border-color: #ef4444;
-  border-color: #ef4444;
 }
-
 
 
 .auth-field__input--invalid:focus {
@@ -565,12 +371,7 @@
 
   box-shadow:
     0 0 0 3px rgba(239, 68, 68, 0.08);
-  border-color: #ef4444;
-
-  box-shadow:
-    0 0 0 3px rgba(239, 68, 68, 0.08);
 }
-
 
 
 .auth-field__error {
@@ -579,17 +380,7 @@
   font-size: 11.5px;
 
   color: #dc2626;
-  padding-left: 2px;
-
-  font-size: 11.5px;
-
-  color: #dc2626;
 }
-
-
-/* ============================================================
-   PASSWORD
-   ============================================================ */
 
 
 /* ============================================================
@@ -599,23 +390,11 @@
 .auth-field__password-wrapper
 .auth-field__input {
   padding-right: 52px;
-.auth-field__password-wrapper
-.auth-field__input {
-  padding-right: 52px;
 }
-
 
 
 .auth-field__toggle {
   position: absolute;
-
-  right: 9px;
-
-  width: 36px;
-  height: 36px;
-
-  display: flex;
-
 
   right: 9px;
 
@@ -629,17 +408,7 @@
 
   padding: 0;
 
-
-  padding: 0;
-
   border: none;
-
-  border-radius: 8px;
-
-  background: transparent;
-
-  color: #93a5b9;
-
 
   border-radius: 8px;
 
@@ -652,27 +421,14 @@
   transition:
     color 0.2s ease,
     background 0.2s ease;
-
-  transition:
-    color 0.2s ease,
-    background 0.2s ease;
 }
-
 
 
 .auth-field__toggle:hover {
   color: var(--turquoise-dark);
 
   background: rgba(105, 175, 177, 0.08);
-  color: var(--turquoise-dark);
-
-  background: rgba(105, 175, 177, 0.08);
 }
-
-
-/* ============================================================
-   FORGOT PASSWORD
-   ============================================================ */
 
 
 /* ============================================================
@@ -682,14 +438,10 @@
 .auth-form__row {
   display: flex;
 
-
   justify-content: flex-end;
 
   margin-top: -4px;
-
-  margin-top: -4px;
 }
-
 
 
 .auth-form__link {
@@ -703,11 +455,7 @@
 
   transition:
     color 0.2s ease;
-
-  transition:
-    color 0.2s ease;
 }
-
 
 
 .auth-form__link:hover {
@@ -719,17 +467,8 @@
    SUBMIT BUTTON
    ============================================================ */
 
-/* ============================================================
-   SUBMIT BUTTON
-   ============================================================ */
-
 .auth-form__submit {
   position: relative;
-
-  width: 100%;
-
-  min-height: 52px;
-
 
   width: 100%;
 
@@ -744,29 +483,9 @@
 
   padding: 0 20px;
 
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  padding: 0 20px;
-
   border: none;
 
-
   border-radius: 11px;
-
-  background:
-    linear-gradient(
-      100deg,
-      #233a6e 0%,
-      #315486 55%,
-      #69afb1 100%
-    );
-
-  color: #ffffff;
-
 
   background:
     linear-gradient(
@@ -782,13 +501,7 @@
 
   font-size: 14px;
 
-
-  font-size: 14px;
-
   font-weight: 600;
-
-  letter-spacing: 0.01em;
-
 
   letter-spacing: 0.01em;
 
@@ -801,16 +514,7 @@
     transform 0.2s ease,
     box-shadow 0.2s ease,
     filter 0.2s ease;
-
-  box-shadow:
-    0 10px 22px rgba(35, 58, 110, 0.20);
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
 }
-
 
 
 .auth-form__submit:hover:not(:disabled) {
@@ -820,13 +524,7 @@
 
   box-shadow:
     0 14px 28px rgba(35, 58, 110, 0.25);
-
-  filter: brightness(1.04);
-
-  box-shadow:
-    0 14px 28px rgba(35, 58, 110, 0.25);
 }
-
 
 
 .auth-form__submit:active:not(:disabled) {
@@ -834,10 +532,7 @@
 }
 
 
-
 .auth-form__submit:disabled {
-  opacity: 0.65;
-
   opacity: 0.65;
 
   cursor: not-allowed;
@@ -848,24 +543,11 @@
    LOADING
    ============================================================ */
 
-
-/* ============================================================
-   LOADING
-   ============================================================ */
-
 .auth-form__spinner {
   width: 18px;
   height: 18px;
 
-
   border-radius: 50%;
-
-  border:
-    2px solid
-    rgba(255, 255, 255, 0.30);
-
-  border-top-color: #ffffff;
-
 
   border:
     2px solid
@@ -889,32 +571,14 @@
 
 
 @keyframes alert-in {
-
-/* ============================================================
-   ANIMATIONS
-   ============================================================ */
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-
-@keyframes alert-in {
   from {
     opacity: 0;
 
     transform: translateY(-3px);
-
-    transform: translateY(-3px);
   }
-
 
   to {
     opacity: 1;
-
-    transform: translateY(0);
 
     transform: translateY(0);
   }
@@ -956,18 +620,8 @@
     max-width: 450px;
 
     margin: 0 auto;
-
-  .auth-page__form-wrapper {
-    max-width: 450px;
-
-    margin: 0 auto;
   }
 }
-
-
-/* ============================================================
-   SMALL MOBILE
-   ============================================================ */
 
 
 /* ============================================================
@@ -984,26 +638,9 @@
     padding: 32px 21px 27px;
 
     border-radius: 20px;
-    padding: 32px 21px 27px;
-
-    border-radius: 20px;
   }
-
 
   .auth-card__title {
-    font-size: 27px;
-  }
-
-  .auth-card__subtitle {
-    font-size: 12.5px;
-  }
-
-  .auth-field__input {
-    height: 51px;
-  }
-
-  .auth-form__submit {
-    min-height: 50px;
     font-size: 27px;
   }
 
