@@ -6,31 +6,20 @@
   --bg-app: #0b0c10;
   --bg-surface: #13151c;
   --bg-surface-hover: #1e222d;
-  --bg-pill-active: rgba(10, 206, 193, 0.12);
+  --bg-pill-active: #222736;
   --border-color: #232733;
   --text-main: #ffffff;
   --text-muted: #8b92a5;
-  
-  /* Couleurs de la charte */
-  --primary: #0ACEC1; /* La teinte exacte demandée */
-  --primary-glow: rgba(10, 206, 193, 0.25);
-  --secondary: #223B67;
-  --accent-green: #B4D949;
-  --accent-yellow: #F3B329;
-
-  /* Dégradé Boutons & Accents (#0ACEC1 -> #B4D949) */
-  --btn-gradient: linear-gradient(135deg, #0ACEC1 0%, #B4D949 100%);
-  --btn-gradient-hover: linear-gradient(135deg, #08b8ad 0%, #a2c63c 100%);
-  
+  --primary: #e85002;
+  --primary-glow: rgba(232, 80, 2, 0.25);
   --glass-bg: rgba(19, 21, 28, 0.8);
   
-  /* Cartes AI / Spéciales */
-  --ai-card-bg: linear-gradient(135deg, #182b4a 0%, #111d33 100%);
-  --ai-card-border: rgba(10, 206, 193, 0.35);
-  --ai-card-title: #0ACEC1;
+  --ai-card-bg: linear-gradient(135deg, #7c1a00 0%, #3a0d02 100%);
+  --ai-card-border: rgba(232, 80, 2, 0.4);
+  --ai-card-title: #ff9d76;
   --ai-card-text: #ffffff;
-  --ai-btn-bg: var(--btn-gradient);
-  --ai-btn-text: #0b0c10;
+  --ai-btn-bg: #ffffff;
+  --ai-btn-text: #0f172a;
 }
 
 /* Light Mode (SaaS Lumineux & Épuré) */
@@ -38,33 +27,21 @@ html.light {
   --bg-app: #f8fafc;
   --bg-surface: #ffffff;
   --bg-surface-hover: #f1f5f9;
-  --bg-pill-active: rgba(10, 206, 193, 0.12);
+  --bg-pill-active: #fff1eb;
   --border-color: #e2e8f0;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  
-  /* Couleurs de la charte */
-  --primary: #0ACEC1;
-  --primary-glow: rgba(10, 206, 193, 0.18);
-  --secondary: #223B67;
-  --accent-green: #B4D949;
-  --accent-yellow: #e09f19;
-
-  /* Dégradé Boutons & Accents */
-  --btn-gradient: linear-gradient(135deg, #0ACEC1 0%, #B4D949 100%);
-  --btn-gradient-hover: linear-gradient(135deg, #08b8ad 0%, #a2c63c 100%);
-  
+  --primary: #e85002;
+  --primary-glow: rgba(232, 80, 2, 0.15);
   --glass-bg: rgba(255, 255, 255, 0.85);
 
-  /* Cartes AI / Spéciales */
-  --ai-card-bg: linear-gradient(135deg, #f0faf9 0%, #e1f5f3 100%);
-  --ai-card-border: rgba(10, 206, 193, 0.3);
-  --ai-card-title: #223B67;
+  --ai-card-bg: linear-gradient(135deg, #fff7f3 0%, #ffebd8 100%);
+  --ai-card-border: rgba(232, 80, 2, 0.2);
+  --ai-card-title: #e85002;
   --ai-card-text: #334155;
-  --ai-btn-bg: #223B67;
+  --ai-btn-bg: #e85002;
   --ai-btn-text: #ffffff;
 }
-
 :root {
   --topbar-height: 4.25rem;
   --sidebar-width: 17.5rem;

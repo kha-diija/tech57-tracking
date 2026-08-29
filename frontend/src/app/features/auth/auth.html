@@ -1,9 +1,17 @@
 <div class="auth-page">
-  <div class="auth-page__container">
-    <div class="auth-page__form-wrapper">
+  <div class="auth-page__backdrop"></div>
+  <div class="auth-page__scrim"></div>
+  <div class="auth-page__glow" aria-hidden="true"></div>
+
+  <main class="auth-page__stage">
+    <div class="auth-card-shell">
       <section class="auth-card" aria-labelledby="auth-title">
+        <span class="auth-card__badge">
+          <img src="/logo.png" alt="TECH-57" class="auth-card__badge-img" />
+        </span>
+
         <header class="auth-card__header">
-          <span class="auth-card__eyebrow">TECH&#8209;57 &middot; Installation Tracking</span>
+          <span class="auth-card__eyebrow">TECH&#8209;57 &middot; Tracking &amp; Installation</span>
           <h1 id="auth-title" class="auth-card__title">Bon retour</h1>
           <p class="auth-card__subtitle">Connectez-vous pour accéder à votre espace de suivi.</p>
         </header>
@@ -22,6 +30,7 @@
             <div class="auth-field__control">
               <span class="auth-field__icon" aria-hidden="true">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16v16H4z" opacity="0"/>
                   <rect x="3" y="5" width="18" height="14" rx="2.5"/>
                   <path d="m4 7 8 6 8-6"/>
                 </svg>
@@ -80,9 +89,9 @@
             </span>
           </div>
 
-          <div class="auth-form__row">
+          <!-- <div class="auth-form__row">
             <a class="auth-form__link" href="#" (click)="$event.preventDefault()">Mot de passe oublié ?</a>
-          </div>
+          </div> -->
 
           <button type="submit" class="auth-form__submit" [disabled]="isLoading()">
             <span *ngIf="!isLoading()">Se connecter</span>
@@ -91,5 +100,5 @@
         </form>
       </section>
     </div>
-  </div>
+  </main>
 </div>

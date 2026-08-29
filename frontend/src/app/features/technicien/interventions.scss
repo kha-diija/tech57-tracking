@@ -113,6 +113,8 @@
   }
 }
 
+
+
 .card {
   background-color: var(--bg-surface, #1e2128);
   border: 1px solid var(--border-color, #2d313a);
@@ -1001,5 +1003,186 @@
 
 .checkout-modal .text-input:focus {
   outline: none;
-  border-color: #2563eb !important;
+  border-color: #cf790f !important;
+}
+
+
+/* ================================================= */
+/* CHAMP "BÉNÉFICIAIRES RÉEL" (Checkout - 1ère visite) */
+/* ================================================= */
+.checkout-modal {
+  .section.beneficiaires-section {
+    background: #eff6ff;
+    border: 1px solid #f39d57;
+    border-left: 3px solid #f46e20;
+    border-radius: 8px;
+    padding: 10px 14px 12px;
+
+    .section-title {
+      color: #e3622b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      
+    }
+
+    .section-hint {
+      color: #cb722d;
+    }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  input[type="number"].form-input,
+  .form-group input[type="number"] {
+    margin-top: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #d68458;
+    background-color: #ffffff !important;
+    color: #1a1a1a !important;
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.12s ease;
+
+    &::placeholder {
+      color: #b8a894 !important;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #ee9127 !important;
+      box-shadow: 0 0 0 3px rgba(183, 92, 35, 0.12);
+    }
+
+    /* Masque les flèches natives du input number (Chrome/Safari) */
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    -moz-appearance: textfield; /* Firefox */
+  }
+}
+
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin-top: 8px;
+
+  th, td {
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    text-align: left;
+  }
+
+  th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+  }
+
+  td:last-child {
+    width: 60%;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: #f97316;
+      outline: none;
+    }
+  }
+}
+
+
+/* ==========================================================
+   STYLES POUR LA SECTION ATTESTATION (MODALE CHECKOUT)
+   ========================================================== */
+
+/* --- Label avec astérisque obligatoire --- */
+.checkout-modal .form-label.required {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.checkout-modal .form-label.required::after {
+  content: " *";
+  color: #ef4444;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* --- Champ de saisie du nom du signataire --- */
+.checkout-modal .form-input {
+  margin-top: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #dfe3ea;
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.checkout-modal .form-input::placeholder {
+  color: #999 !important;
+}
+
+.checkout-modal .form-input:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+}
+
+/* --- État d'erreur (champ invalide) --- */
+.checkout-modal .form-input.ng-invalid.ng-touched,
+.checkout-modal .form-input.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* --- Message d'erreur (texte rouge) --- */
+.checkout-modal .text-danger {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* --- Mise en valeur de la section Attestation (optionnel) --- */
+.checkout-modal .section-attestation {
+  background: #fafbfc;
+  border-radius: 8px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.checkout-modal .section-attestation .section-title {
+  color: #1a1a1a;
+}
+
+/* --- Indice pour la première visite (message "obligatoire") --- */
+.checkout-modal .section-attestation .section-hint.required-hint {
+  color: #ef4444;
+  font-weight: 500;
 }
