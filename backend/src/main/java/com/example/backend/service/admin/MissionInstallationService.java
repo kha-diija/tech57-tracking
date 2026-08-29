@@ -221,25 +221,14 @@ public class MissionInstallationService {
         MissionInstallation mission = missionRepository.findById(idMission)
                 .orElseThrow(() -> new RuntimeException("Mission introuvable"));
 
-        // ✅ VÉRIFICATION : Vérifier si la mission a des matériels rejetés
-        List<MissionMateriel> missionMateriels = missionMaterielRepository.findByMission_IdMission(idMission);
-        boolean aDesRejetes = missionMateriels.stream()
-                .anyMatch(mm -> "REJETE".equals(mm.getStatut()));
-
-        if (aDesRejetes) {
-            throw new IllegalStateException(
-                    "Impossible d'approuver cette mission car un ou plusieurs matériels ont été rejetés."
-            );
-        }
-
         mission.setStatut("Planifiée");
         MissionInstallation updated = missionRepository.save(mission);
 
-        // Récupérer l'admin connecté
+        // ✅ Récupérer l'admin connecté
         Utilisateur admin = utilisateurRepository.findById(idAdmin)
                 .orElseThrow(() -> new RuntimeException("Admin introuvable"));
 
-        // Envoyer une notification au technicien avec l'admin comme expéditeur
+        // ✅ Envoyer une notification au technicien avec l'admin comme expéditeur
         if (updated.getEquipe() != null && !updated.getEquipe().getMembres().isEmpty()) {
             Technicien technicien = updated.getEquipe().getMembres().get(0);
             String message = "Votre mission '" + updated.getTitre() + "' a été approuvée.";
