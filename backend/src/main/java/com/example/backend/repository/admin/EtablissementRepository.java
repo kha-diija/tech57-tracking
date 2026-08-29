@@ -40,12 +40,12 @@ public interface EtablissementRepository extends JpaRepository<Etablissement, In
     @Query("SELECT COUNT(m) FROM Materiel m WHERE m.etablissement.idEtablissement = :id")
     long countMaterielsByEtablissementId(@Param("id") Integer id);
 
-    List<Etablissement> findByCommuneProvinceIdProvince(Integer idProvince);
-
     Optional<Etablissement> findByReference(String reference);
     @Query("SELECT e FROM Etablissement e " +
             "LEFT JOIN FETCH e.responsable " +
             "WHERE e.commune.idCommune = :idCommune " +
             "ORDER BY e.designation ASC")
     List<Etablissement> findByCommune_IdCommune(@Param("idCommune") Integer idCommune);
+
+    List<Etablissement> findByCommuneProvinceIdProvince(Integer idProvince);
 }
