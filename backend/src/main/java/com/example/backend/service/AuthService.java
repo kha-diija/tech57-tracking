@@ -187,7 +187,6 @@ public class AuthService {
             case "TECHNICIEN" -> "/technicien/dashboard";
             case "OBSERVATEUR" -> "/client/dashboard";
             case "GESTIONNAIRE_STOCK" -> "/gestionnaire/dashboard";
-            case "PARTENAIRE" -> "/partenaire/dashboard";
             default -> "/login";
         };
     }

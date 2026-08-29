@@ -1,6 +1,7 @@
 package com.example.backend.service.technicien;
 
 import com.example.backend.dto.admin.intervention.*;
+import com.example.backend.dto.technicien.Dashboard.AttestationPreviewRequest;
 import com.example.backend.dto.technicien.Dashboard.CheckInRequest;
 import com.example.backend.dto.technicien.Dashboard.CheckOutRequest;
 import com.example.backend.dto.technicien.Dashboard.MissionSimplifieeDTO;
@@ -17,9 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,7 +39,7 @@ public class TechnicienInterventionService {
 
     private final InterventionService adminInterventionService;
     private final RapportPdfService rapportPdfService;
-    private final MissionInstallationService missionInstallationService; // ✅ AJOUT
+    private final MissionInstallationService missionInstallationService;
 
     public TechnicienInterventionService(InterventionRepository interventionRepository,
                                          CheckInOutRepository checkInOutRepository,
@@ -56,7 +55,7 @@ public class TechnicienInterventionService {
                                          MaterielRepository materielRepository,
                                          InterventionService adminInterventionService,
                                          RapportPdfService rapportPdfService,
-                                         MissionInstallationService missionInstallationService) { // ✅ AJOUT
+                                         MissionInstallationService missionInstallationService) {
         this.interventionRepository = interventionRepository;
         this.checkInOutRepository = checkInOutRepository;
         this.photoRepository = photoRepository;
@@ -71,7 +70,7 @@ public class TechnicienInterventionService {
         this.materielRepository = materielRepository;
         this.adminInterventionService = adminInterventionService;
         this.rapportPdfService = rapportPdfService;
-        this.missionInstallationService = missionInstallationService; // ✅ AJOUT
+        this.missionInstallationService = missionInstallationService;
     }
 
     public List<InterventionResponse> getMesInterventions(Integer technicienId) {
@@ -141,6 +140,55 @@ public class TechnicienInterventionService {
         return rapportPdfService.genererAttestationPdf(interventionId);
     }
 
+    public byte[] genererAttestationPreview(Integer interventionId, Integer technicienId, AttestationPreviewRequest request) throws Exception {
+        Intervention intervention = checkTechnicienAccess(interventionId, technicienId);
+        InterventionResponse base = adminInterventionService.convertToResponse(intervention);
+
+        List<SortieMaterielDto> sortiesPreview = new ArrayList<>();
+        if (request.getMaterielSortiIds() != null) {
+            for (Integer idMat : request.getMaterielSortiIds()) {
+                if (idMat == null) continue;
+                materielRepository.findById(idMat).ifPresent(m -> {
+                    SortieMaterielDto dto = new SortieMaterielDto();
+                    dto.setMaterielReference(m.getReference());
+                    dto.setQuantite(1);
+                    dto.setDateSortie(LocalDateTime.now());
+                    sortiesPreview.add(dto);
+                });
+            }
+        }
+
+        List<RetourMaterielDto> retoursPreview = new ArrayList<>();
+        if (request.getMaterielRetourIds() != null) {
+            List<Integer> ids = request.getMaterielRetourIds();
+            List<String> etats = request.getEtatsRetours();
+            for (int i = 0; i < ids.size(); i++) {
+                Integer idMat = ids.get(i);
+                if (idMat == null) continue;
+                String etat = (etats != null && i < etats.size()) ? etats.get(i) : "Bon état";
+                materielRepository.findById(idMat).ifPresent(m -> {
+                    RetourMaterielDto dto = new RetourMaterielDto();
+                    dto.setMaterielReference(m.getReference());
+                    dto.setQuantite(1);
+                    dto.setEtatMateriel(etat);
+                    dto.setDateRetour(LocalDateTime.now());
+                    retoursPreview.add(dto);
+                });
+            }
+        }
+
+        List<ChecklistItemDto> checklistPreview = new ArrayList<>();
+        if (request.getChecklistJson() != null && !request.getChecklistJson().isBlank()) {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            checklistPreview = mapper.readValue(
+                    request.getChecklistJson(),
+                    new com.fasterxml.jackson.core.type.TypeReference<List<ChecklistItemDto>>() {});
+        }
+
+        return rapportPdfService.genererAttestationPreviewPdf(
+                base, request.getNomSignataire(), sortiesPreview, retoursPreview, checklistPreview);
+    }
+
     @Transactional
     public InterventionResponse updateIntervention(Integer id, Integer technicienId, UpdateInterventionRequest request) {
         Intervention intervention = checkTechnicienAccess(id, technicienId);
@@ -174,6 +222,13 @@ public class TechnicienInterventionService {
         return adminInterventionService.convertToResponse(intervention);
     }
 
+    public Attestation getAttestationFichier(Integer interventionId) {
+        Intervention intervention = interventionRepository.findById(interventionId)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+        List<Attestation> list = attestationRepository.findByIntervention(intervention);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
     @Transactional
     public InterventionResponse checkOut(Integer interventionId, Integer technicienId, CheckOutRequest request, String checklistJson) throws IOException {
         Intervention intervention = checkTechnicienAccess(interventionId, technicienId);
@@ -189,6 +244,7 @@ public class TechnicienInterventionService {
         currentVisit.setDureeMinutes((int) minutes);
         checkInOutRepository.save(currentVisit);
 
+        // --- GESTION DES PHOTOS ---
         if (request.getPhotos() != null && !request.getPhotos().isEmpty()) {
             String uploadDir = "uploads/photos/";
             java.nio.file.Path uploadPath = java.nio.file.Paths.get(uploadDir);
@@ -228,28 +284,81 @@ public class TechnicienInterventionService {
             }
         }
 
+        // --- GESTION DE L'ATTESTATION (FICHIER SIGNÉ, TOUJOURS FACULTATIF) ---
+        // On gère d'abord le cas où un fichier est uploadé
         if (request.getAttestationFile() != null && !request.getAttestationFile().isEmpty()) {
             MultipartFile attFile = request.getAttestationFile();
-            String base64Signature = "data:" + attFile.getContentType() + ";base64," + Base64.getEncoder().encodeToString(attFile.getBytes());
+
+            String uploadDir = "uploads/attestations/";
+            java.nio.file.Path uploadPath = java.nio.file.Paths.get(uploadDir);
+            if (!java.nio.file.Files.exists(uploadPath)) {
+                java.nio.file.Files.createDirectories(uploadPath);
+            }
+
+            String originalFilename = attFile.getOriginalFilename();
+            if (originalFilename == null) originalFilename = "attestation";
+            String cleanName = originalFilename
+                    .replaceAll("[^a-zA-Z0-9._-]", "_")
+                    .replaceAll("_+", "_")
+                    .toLowerCase();
+            if (cleanName.isEmpty() || cleanName.equals("_")) cleanName = "attestation";
+
+            String fileName = java.util.UUID.randomUUID() + "_" + cleanName;
+            java.nio.file.Path filePath = uploadPath.resolve(fileName);
+            java.nio.file.Files.copy(attFile.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
             List<Attestation> existing = attestationRepository.findByIntervention(intervention);
             Attestation attestation;
             if (!existing.isEmpty()) {
                 attestation = existing.get(0);
+                if (attestation.getCheminFichier() != null) {
+                    try {
+                        java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get("." + attestation.getCheminFichier()));
+                    } catch (Exception ignored) {}
+                }
                 for (int i = 1; i < existing.size(); i++) {
                     attestationRepository.delete(existing.get(i));
                 }
             } else {
                 attestation = new Attestation();
             }
+
+            // Si un nom signataire est fourni dans la requête, on l'utilise, sinon on prend le technicien
+            if (request.getNomSignataire() != null && !request.getNomSignataire().isBlank()) {
+                attestation.setNomSignataire(request.getNomSignataire());
+            } else {
+                attestation.setNomSignataire(technicien.getNom() + " " + technicien.getPrenom());
+            }
             attestation.setIntervention(intervention);
-            attestation.setNomSignataire(request.getSignataire() != null ? request.getSignataire() : technicien.getNom() + " " + technicien.getPrenom());
             attestation.setDateSignature(LocalDateTime.now());
             attestation.setValide(true);
-            attestation.setSignatureNumerique(base64Signature);
+            attestation.setCheminFichier("/uploads/attestations/" + fileName);
             attestationRepository.save(attestation);
+        } else {
+            // Si aucun fichier n'est uploadé, mais qu'un nom signataire est fourni (cas 1ère visite sans upload)
+            if (request.getNomSignataire() != null && !request.getNomSignataire().isBlank()) {
+                List<Attestation> existing = attestationRepository.findByIntervention(intervention);
+                Attestation attestation;
+                if (!existing.isEmpty()) {
+                    attestation = existing.get(0);
+                } else {
+                    attestation = new Attestation();
+                    attestation.setIntervention(intervention);
+                }
+                attestation.setNomSignataire(request.getNomSignataire());
+                attestation.setDateSignature(LocalDateTime.now());
+                attestation.setValide(true);
+                // On conserve l'ancien chemin s'il existe, ou on le laisse null
+                attestationRepository.save(attestation);
+            }
         }
 
+        // --- Bénéficiaires réel (1ère visite) ---
+        if (request.getBeneficiairesReel() != null && intervention.getCheckInOuts().size() == 1) {
+            intervention.getMission().getEtablissement().setNombreBeneficiairesReel(request.getBeneficiairesReel());
+        }
+
+        // --- GESTION DU MATÉRIEL RETOURNÉ ---
         if (request.getMaterielRetourIds() != null && !request.getMaterielRetourIds().isEmpty()) {
             List<Integer> ids = request.getMaterielRetourIds();
             List<String> etats = request.getEtatsRetours();
@@ -270,7 +379,7 @@ public class TechnicienInterventionService {
             }
         }
 
-        // --- Checklist : reçue en JSON texte (multipart), parsée manuellement ---
+        // --- GESTION DE LA CHECKLIST ---
         if (checklistJson != null && !checklistJson.isBlank()) {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             List<ChecklistItemDto> checklistItems = mapper.readValue(
@@ -325,7 +434,6 @@ public class TechnicienInterventionService {
 
         updateInterventionStatus(intervention);
 
-        // ✅ AJOUT : Mettre à jour le statut de la mission après le check-out
         if (intervention.getMission() != null) {
             missionInstallationService.recalculerStatut(intervention.getMission().getIdMission());
         }
