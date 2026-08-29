@@ -1,3 +1,22 @@
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes growBar {
+  to { transform: scaleY(1); }
+}
+
+@keyframes pulseHalo {
+  0%, 100% { r: 7; opacity: 0.28; }
+  50% { r: 10; opacity: 0.12; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .dashboard {
   display: flex;
   flex-direction: column;
@@ -66,26 +85,38 @@
   }
 }
 
-/* Boutons */
+/* Boutons avec le Dégradé (#0ACEC1 -> Vert Pomme) */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 1rem;
+  padding: 0.625rem 1.125rem;
   border-radius: 12px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: none;
+  background: var(--btn-gradient);
+  color: #0f172a;
+  box-shadow: 0 4px 14px rgba(10, 206, 193, 0.25);
   transition: all 0.2s ease;
 
+  &:hover {
+    background: var(--btn-gradient-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(10, 206, 193, 0.35);
+  }
+
   &--ghost {
-    background-color: var(--bg-surface);
-    border-color: var(--border-color);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
     color: var(--text-main);
+    box-shadow: none;
 
     &:hover {
-      background-color: var(--bg-surface-hover);
+      background: var(--bg-surface-hover);
+      border-color: rgba(10, 206, 193, 0.797);
+      color: var(--primary);
     }
   }
 }
@@ -98,15 +129,11 @@
 }
 
 @media (max-width: 1024px) {
-  .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 560px) {
-  .kpi-grid {
-    grid-template-columns: 1fr;
-  }
+  .kpi-grid { grid-template-columns: 1fr; }
 }
 
 .kpi-card {
@@ -118,7 +145,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    border-color: rgba(249, 115, 22, 0.35);
+    border-color: rgba(10, 206, 193, 0.797);
   }
 
   &__top {
@@ -185,7 +212,7 @@
   }
 }
 
-/* Panels génériques */
+/* Panels */
 .panel {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
@@ -276,8 +303,8 @@
   color: var(--text-muted);
 
   &--success {
-    color: #22c55e;
-    background-color: rgba(34, 197, 94, 0.12);
+    color: var(--primary);
+    background-color: var(--primary-glow);
   }
 
   &--danger {
@@ -299,9 +326,7 @@
   }
 }
 
-/* ============================================================
-   Graphique en barres — missions planifiées vs réalisées
-   ============================================================ */
+/* Graphique en barres */
 .bar-chart {
   display: flex;
   align-items: flex-end;
@@ -355,8 +380,8 @@
     }
 
     &--primary {
-      background: linear-gradient(180deg, #ff9d76 0%, var(--primary) 100%);
-      box-shadow: 0 0 12px rgba(249, 115, 22, 0.25);
+      background: var(--btn-gradient);
+      box-shadow: 0 0 12px rgba(10, 206, 193, 0.25);
     }
   }
 
@@ -369,8 +394,8 @@
     border-radius: 999px;
 
     &--full {
-      color: #22c55e;
-      background: rgba(34, 197, 94, 0.12);
+      color: var(--primary);
+      background: var(--primary-glow);
     }
   }
 
@@ -381,78 +406,91 @@
   }
 }
 
-@keyframes growBar {
-  to { transform: scaleY(1); }
-}
-
-/* ============================================================
-   Donut — répartition du matériel
-   ============================================================ */
+/* Donut Graphique */
 .donut {
   display: flex;
   justify-content: center;
-  padding: 0.5rem 0 1.5rem;
-}
-
-.donut__ring {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  display: flex;
   align-items: center;
-  justify-content: center;
-  transition: transform 0.3s ease;
-  cursor: pointer;
+  padding: 1rem 0 1.5rem;
 
-  &:hover {
-    transform: scale(1.03);
+  &__ring {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(10, 206, 193, 0.15);
+
+    &:hover {
+      transform: scale(1.04);
+      box-shadow: 0 0 25px rgba(10, 206, 193, 0.3);
+    }
+  }
+
+  &__hole {
+    width: 114px;
+    height: 114px;
+    border-radius: 50%;
+    background-color: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: border-color 0.2s ease;
+  }
+
+  &__total {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.2;
+    transition: color 0.2s ease;
+  }
+
+  &__total-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 }
 
-.donut__hole {
-  width: 108px;
-  height: 108px;
-  border-radius: 50%;
-  background-color: var(--bg-surface);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.donut__total {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--text-main);
-}
-
-.donut__total-label {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-}
-
+/* Légende du donut */
 .donut-legend {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.625rem;
 
   &__item {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.4rem;
     font-size: 0.82rem;
     color: var(--text-main);
     cursor: pointer;
-    border-radius: 8px;
-    padding: 0.3rem 0.4rem;
-    transition: background 0.15s;
+    border-radius: 10px;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
 
     &:hover,
     &--active {
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--bg-surface-hover);
+      border-color: rgba(10, 206, 193, 0.797);
+      transform: translateX(3px);
+
+      .donut-legend__right {
+        color: var(--primary);
+      }
     }
   }
 
@@ -465,22 +503,31 @@
   &__left {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.625rem;
+    font-weight: 600;
+
+    .dot {
+      width: 0.6rem;
+      height: 0.6rem;
+      border-radius: 50%;
+      box-shadow: 0 0 6px currentColor;
+    }
   }
 
   &__right {
     font-weight: 700;
+    transition: color 0.2s ease;
   }
 
   &__percent {
     font-weight: 500;
     color: var(--text-muted);
-    margin-left: 0.2rem;
+    margin-left: 0.25rem;
   }
 
   &__bar {
     width: 100%;
-    height: 5px;
+    height: 6px;
     border-radius: 999px;
     background: var(--bg-pill-active);
     overflow: hidden;
@@ -489,13 +536,11 @@
   &__bar-fill {
     height: 100%;
     border-radius: 999px;
-    transition: width 0.5s ease;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
-/* ============================================================
-   Graphique en ligne — progression des installations
-   ============================================================ */
+/* Graphique en ligne */
 .line-chart-wrapper {
   position: relative;
 }
@@ -512,8 +557,8 @@
 
   &__line {
     fill: none;
-    stroke: #f97316;
-    stroke-width: 1.6;
+    stroke: var(--primary);
+    stroke-width: 2.5;
     stroke-linecap: round;
     vector-effect: non-scaling-stroke;
   }
@@ -528,7 +573,7 @@
     span {
       cursor: pointer;
       transition: color 0.15s;
-      &:hover { color: #f97316; }
+      &:hover { color: var(--primary); }
     }
   }
 }
@@ -538,15 +583,15 @@
 }
 
 .line-point__halo {
-  fill: #f97316;
+  fill: var(--primary);
   opacity: 0.16;
   transition: opacity 0.2s, r 0.2s;
 }
 
 .line-point {
-  fill: #0f172a;
-  stroke: #f97316;
-  stroke-width: 1.8;
+  fill: var(--bg-app);
+  stroke: var(--primary);
+  stroke-width: 2;
   transition: r 0.2s, fill 0.2s;
 }
 
@@ -556,21 +601,16 @@
 }
 
 .line-point-group:hover .line-point {
-  fill: #f97316;
+  fill: var(--primary);
 }
 
 .line-point-group--active .line-point {
-  fill: #f97316;
+  fill: var(--primary);
 }
 
 .line-point-group--active .line-point__halo {
   opacity: 0.3;
   animation: pulseHalo 2s ease-in-out infinite;
-}
-
-@keyframes pulseHalo {
-  0%, 100% { r: 7; opacity: 0.28; }
-  50% { r: 10; opacity: 0.12; }
 }
 
 .value-labels {
@@ -583,7 +623,7 @@
   position: absolute;
   transform: translate(-50%, calc(-100% - 10px));
   background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(249, 115, 22, 0.35);
+  border: 1px solid rgba(10, 206, 193, 0.797);
   color: #e2e8f0;
   font-size: 0.68rem;
   font-weight: 700;
@@ -593,10 +633,10 @@
   animation: fadeIn 0.3s ease-in-out;
 
   &--active {
-    background: #f97316;
-    border-color: #f97316;
-    color: #fff7ed;
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #0f172a;
+    box-shadow: 0 4px 12px rgba(10, 206, 193, 0.4);
   }
 
   &__tag {
@@ -639,7 +679,7 @@
   &__fill {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--primary) 0%, #ff9d76 100%);
+    background: var(--btn-gradient);
     transition: width 0.6s ease;
   }
 }
@@ -667,7 +707,7 @@
     flex-shrink: 0;
 
     &--success { background-color: #22c55e; }
-    &--warning { background-color: #f59e0b; }
+    &--warning { background-color: var(--accent-yellow); }
     &--info { background-color: var(--primary); }
   }
 
@@ -701,7 +741,7 @@
     transition: border-color 0.15s;
 
     &:hover {
-      border-color: rgba(249, 115, 22, 0.35);
+      border-color: rgba(10, 206, 193, 0.797);
     }
   }
 
@@ -746,7 +786,7 @@
   }
 }
 
-/* Infobulles modernes partagées */
+/* Infobulles modernes */
 .modern-tooltip {
   display: flex;
   align-items: center;
@@ -755,7 +795,7 @@
   margin-top: 0.75rem;
   padding: 0.5rem 1rem;
   background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(249, 115, 22, 0.4);
+  border: 1px solid rgba(10, 206, 193, 0.797);
   border-radius: 8px;
   font-size: 0.8rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -763,7 +803,7 @@
 
   .tooltip-day {
     font-weight: 700;
-    color: #f97316;
+    color: var(--primary);
   }
 
   .tooltip-val {
@@ -772,13 +812,7 @@
   }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-/* ============================================================
-   Modale — Historique complet des activités
-   ============================================================ */
+/* Modale */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -855,7 +889,7 @@
   transition: border-color 0.15s;
 
   &:hover {
-    border-color: rgba(249, 115, 22, 0.35);
+    border-color: rgba(10, 206, 193, 0.797);
   }
 
   .activity-info {
@@ -893,54 +927,4 @@
   &:hover {
     background-color: var(--bg-surface-hover);
   }
-}
-
-@keyframes scaleUp {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-/* --- Export PDF : état du bouton --- */
-.btn--primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* --- Export PDF : largeur fixe pour la capture --- */
-.dashboard {
-  width: 100%;
-  max-width: 100%;
-}
-/* Masquer les boutons lors de l'export PDF */
-.no-print {
-  display: none !important;
-}/* Style harmonisé des boutons */
-.dashboard__actions .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.dashboard__actions .btn--ghost,
-.dashboard__actions .btn--primary {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-}
-
-.dashboard__actions .btn--ghost:hover,
-.dashboard__actions .btn--primary:hover {
-  background-color: var(--bg-surface-hover);
-  border-color: rgba(249, 115, 22, 0.35);
-  color: var(--primary);
-}
-
-.dashboard__actions .btn--primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
