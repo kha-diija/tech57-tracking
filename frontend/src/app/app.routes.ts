@@ -147,7 +147,8 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/gestionnaire/retours/retours').then((m) => m.RetoursStock),
       },
-            {
+           
+      {
         path: 'partenaire',
         canActivate: [roleGuard(['PARTENAIRE'])], // adaptez au nom réel de votre guard
         children: [
