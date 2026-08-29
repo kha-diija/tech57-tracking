@@ -18,6 +18,7 @@ export class TechnicienInterventionService {
     return this.http.get<Intervention>(`${this.apiUrl}/${id}`);
   }
 
+  // --- MÉTHODE AJOUTÉE POUR CRÉER UNE INTERVENTION ---
   createIntervention(data: any): Observable<Intervention> {
     return this.http.post<Intervention>(this.apiUrl, data);
   }
@@ -26,38 +27,29 @@ export class TechnicienInterventionService {
     return this.http.post<Intervention>(`${this.apiUrl}/${id}/check-in`, { gpsCheckin });
   }
 
-  // ✅ Ajout du paramètre nomSignataire
-  checkOut(id: number, data: any, photos: { file: File, type: string }[], attestationFile: File | null, nomSignataire: string | null = null): Observable<Intervention> {
-    const formData = new FormData();
+  checkOut(id: number, data: any, photos: { file: File, type: string }[], attestationFile: File | null): Observable<Intervention> {
+  const formData = new FormData();
 
-    formData.append('gpsCheckout', data.gpsCheckout || '');
+  formData.append('gpsCheckout', data.gpsCheckout || '');
+  formData.append('signataire', data.signataire || '');
 
-    if (data.beneficiairesReel) {
-      formData.append('beneficiairesReel', String(data.beneficiairesReel));
-    }
+  (data.materielSortiIds || []).forEach((v: number) => formData.append('materielSortiIds', String(v)));
+  (data.materielRetourIds || []).forEach((v: number) => formData.append('materielRetourIds', String(v)));
+  (data.etatsRetours || []).forEach((v: string) => formData.append('etatsRetours', v));
 
-    (data.materielSortiIds || []).forEach((v: number) => formData.append('materielSortiIds', String(v)));
-    (data.materielRetourIds || []).forEach((v: number) => formData.append('materielRetourIds', String(v)));
-    (data.etatsRetours || []).forEach((v: string) => formData.append('etatsRetours', v));
+  formData.append('checklist', JSON.stringify(data.checklist || []));
 
-    formData.append('checklist', JSON.stringify(data.checklist || []));
+  photos.forEach(p => {
+    formData.append('photos', p.file);
+    formData.append('photoTypes', p.type);
+  });
 
-    // ✅ Ajout du nom du signataire si présent
-    if (nomSignataire) {
-      formData.append('nomSignataire', nomSignataire);
-    }
-
-    photos.forEach(p => {
-      formData.append('photos', p.file);
-      formData.append('photoTypes', p.type);
-    });
-
-    if (attestationFile) {
-      formData.append('attestationFile', attestationFile);
-    }
-
-    return this.http.post<Intervention>(`${this.apiUrl}/${id}/check-out`, formData);
+  if (attestationFile) {
+    formData.append('attestationFile', attestationFile);
   }
+
+  return this.http.post<Intervention>(`${this.apiUrl}/${id}/check-out`, formData);
+}
 
   genererRapport(id: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/rapport/download`, { responseType: 'blob' });
@@ -65,16 +57,6 @@ export class TechnicienInterventionService {
 
   downloadAttestation(id: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/attestation/download`, { responseType: 'blob' });
-  }
-
-  telechargerAttestationPreview(id: number, data: {
-    nomSignataire: string | null;
-    materielSortiIds: number[];
-    materielRetourIds: number[];
-    etatsRetours: string[];
-    checklistJson: string;
-  }): Observable<Blob> {
-    return this.http.post(`${this.apiUrl}/${id}/attestation/preview`, data, { responseType: 'blob' });
   }
 
   updateIntervention(id: number, data: any): Observable<Intervention> {

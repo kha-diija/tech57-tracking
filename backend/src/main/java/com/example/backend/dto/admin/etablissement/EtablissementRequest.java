@@ -6,7 +6,6 @@ public class EtablissementRequest {
     private String type;
     private String localisationGps; // format "lat,lng"
     private Integer nombreBeneficiaires;
-    private Integer nombreBeneficiairesReel;
     private String telephoneContact;
     private String emailContact;
     private Integer idCommune;
@@ -30,7 +29,4 @@ public class EtablissementRequest {
     public void setIdCommune(Integer idCommune) { this.idCommune = idCommune; }
     public ResponsableDto getResponsable() { return responsable; }
     public void setResponsable(ResponsableDto responsable) { this.responsable = responsable; }
-
-    public Integer getNombreBeneficiairesReel() { return nombreBeneficiairesReel; }
-    public void setNombreBeneficiairesReel(Integer nombreBeneficiairesReel) { this.nombreBeneficiairesReel = nombreBeneficiairesReel; }
 }

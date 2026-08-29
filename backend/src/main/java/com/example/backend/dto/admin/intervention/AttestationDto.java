@@ -8,7 +8,6 @@ public class AttestationDto {
     private String signatureNumerique;
     private String nomSignataire;
     private Boolean valide;
-    private String cheminFichier;
 
     public AttestationDto() {}
 
@@ -26,7 +25,4 @@ public class AttestationDto {
 
     public Boolean getValide() { return valide; }
     public void setValide(Boolean valide) { this.valide = valide; }
-
-    public String getCheminFichier() { return cheminFichier; }
-    public void setCheminFichier(String cheminFichier) { this.cheminFichier = cheminFichier; }
 }

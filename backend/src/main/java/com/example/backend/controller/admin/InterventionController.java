@@ -89,25 +89,8 @@ public class InterventionController {
     @GetMapping("/{id}/attestation/download")
     public ResponseEntity<byte[]> downloadAttestation(@PathVariable Integer id) {
         try {
-            var attestation = interventionService.getAttestationFichier(id);
-
-            // Cas 1 : un fichier a été uploadé (scan signé, PDF...) → on le sert tel quel
-            if (attestation != null && attestation.getCheminFichier() != null) {
-                java.nio.file.Path path = java.nio.file.Paths.get("." + attestation.getCheminFichier());
-                byte[] fileBytes = java.nio.file.Files.readAllBytes(path);
-                String filename = path.getFileName().toString();
-                MediaType mediaType = filename.toLowerCase().endsWith(".pdf")
-                        ? MediaType.APPLICATION_PDF
-                        : MediaType.IMAGE_JPEG;
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                        .contentType(mediaType)
-                        .body(fileBytes);
-            }
-
-            // Cas 2 : aucun fichier uploadé → génération automatique du PDF (comme le rapport),
-            // sans exiger de signature.
             byte[] pdfContent = rapportPdfService.genererAttestationPdf(id);
+
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attestation_intervention_" + id + ".pdf\"")
                     .contentType(MediaType.APPLICATION_PDF)
