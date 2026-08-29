@@ -7,8 +7,7 @@ export type UserRole =
   | 'ADMINISTRATEUR'
   | 'TECHNICIEN'
   | 'OBSERVATEUR'
-  | 'GESTIONNAIRE_STOCK'
-  | 'PARTENAIRE';
+  | 'GESTIONNAIRE_STOCK';
 
 export interface LoginResponse {
   accessToken: string;
