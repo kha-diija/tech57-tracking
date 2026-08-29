@@ -1,8 +1,7 @@
 /* ============================================================
    STOCK.SCSS — Complete Stylesheet (aligned with stock.html)
    Theme: SaaS Inventory Management
-   Palette : #233A6E (bleu foncé), #FEBE29 (jaune/orange),
-             #BAD439 (vert citron), #69AFB1 (bleu turquoise)
+   Accent: #e85002 (warm orange)
    ============================================================ */
 
 /* --------------------------------------------
@@ -17,8 +16,8 @@ html.dark {
   --border-color: #232733;
   --text-main: #ffffff;
   --text-muted: #8b92a5;
-  --primary: #69AFB1;          /* bleu turquoise */
-  --primary-glow: rgba(105, 175, 177, 0.25);
+  --primary: #e85002;
+  --primary-glow: rgba(232, 80, 2, 0.25);
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -35,12 +34,12 @@ html.light {
   --bg-app: #f8fafc;
   --bg-surface: #ffffff;
   --bg-surface-hover: #f1f5f9;
-  --bg-pill-active: #ebf5f6;
+  --bg-pill-active: #fff1eb;
   --border-color: #e2e8f0;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  --primary: #69AFB1;
-  --primary-glow: rgba(105, 175, 177, 0.15);
+  --primary: #e85002;
+  --primary-glow: rgba(232, 80, 2, 0.15);
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
@@ -130,16 +129,13 @@ p { margin: 0; }
 }
 
 .btn-primary {
-  /* Dégradé palette : bleu foncé → turquoise → jaune */
-  background: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
-  border-color: transparent;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
-  box-shadow: 0 4px 10px rgba(35, 58, 110, 0.3);
 }
 .btn-primary:hover {
-  background: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
-  box-shadow: 0 6px 14px rgba(35, 58, 110, 0.4);
-  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-glow);
 }
 
 .btn-ghost {
@@ -304,33 +300,32 @@ p { margin: 0; }
   background: currentColor;
 }
 
-/* ---- SELECT CATÉGORIE (le fameux "Toutes les catégories") ---- */
 .select-wrap {
   display: flex;
   align-items: center;
   gap: 0.7rem;
   padding: 0.75rem 1rem;
   border-radius: 14px;
-  border: 2px solid rgba(105, 175, 177, 0.35); /* turquoise */
+  border: 2px solid rgba(232, 80, 2, 0.35);
   background: linear-gradient(135deg, #1b1b1b, #2b2b2b);
-  color: #69AFB1; /* turquoise */
+  color: #ff6b00;
   font-weight: 700;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .select-wrap:hover {
-  border-color: #69AFB1;
-  box-shadow: 0 0 12px rgba(105, 175, 177, 0.35);
+  border-color: #ff6b00;
+  box-shadow: 0 0 12px rgba(255, 107, 0, 0.35);
 }
 
 .select-wrap:focus-within {
-  border-color: #69AFB1;
-  box-shadow: 0 0 0 4px rgba(105, 175, 177, 0.18);
+  border-color: #ff6b00;
+  box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.18);
 }
 
 .select-wrap i {
-  color: #69AFB1;
+  color: #ff6b00;
   font-size: 1rem;
 }
 
@@ -354,9 +349,8 @@ p { margin: 0; }
 }
 
 .select-wrap select:hover {
-  color: #8bc9cb; /* turquoise plus clair */
+  color: #ff8a33;
 }
-
 /* Etat color helpers — reused for pills, badges, chips, card icons */
 .etat-neuf    { background: var(--etat-neuf-bg);    color: var(--etat-neuf-fg); }
 .etat-service { background: var(--etat-service-bg); color: var(--etat-service-fg); }
@@ -1178,7 +1172,7 @@ p { margin: 0; }
   outline-offset: 2px;
 }
 .asset-card {
-  position: relative;
+  position: relative; // nécessaire pour positionner le bouton delete
   cursor: pointer;
 }
 
@@ -1204,7 +1198,6 @@ p { margin: 0; }
 .asset-card:hover .card-delete-btn {
   opacity: 1;
 }
-
 .confirm-modal {
   position: fixed;
   top: 50%;
@@ -1216,8 +1209,9 @@ p { margin: 0; }
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 1.5rem;
-  z-index: 2001;
+  z-index: 2001;   // ← changer 1000 en 2001 (au-dessus du backdrop à 2000)
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+
 
   .confirm-header-title {
     display: flex;
@@ -1225,7 +1219,7 @@ p { margin: 0; }
     gap: 0.75rem;
 
     .warning-icon {
-      color: #FEBE29; /* jaune de la palette */
+      color: #f59e0b;
     }
 
     h2 {
