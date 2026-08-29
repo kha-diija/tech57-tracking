@@ -70,6 +70,13 @@ public class InterventionService {
         return responses;
     }
 
+    public Attestation getAttestationFichier(Integer interventionId) {
+        Intervention intervention = interventionRepository.findById(interventionId)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+        List<Attestation> list = attestationRepository.findByIntervention(intervention);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
     public InterventionResponse getById(Integer id) {
         Intervention intervention = interventionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));

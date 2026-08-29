@@ -16,7 +16,8 @@ import {
   X,
   Phone,
   Navigation,
-  GraduationCap
+  GraduationCap,
+   CheckCircle 
 } from 'lucide-angular';
 import { EtablissementService } from '../../../shared/services/etablissement.service';
 import { FormateurService } from '../../../shared/services/formateur.service';
@@ -90,9 +91,9 @@ export class GsEtablissement {
   });
 
   readonly icons = {
-    Building2, MapPin, Users, UserX, Search, Plus, Download, Upload,
-    Pencil, Trash2, X, Phone, Navigation, GraduationCap
-  };
+  Building2, MapPin, Users, UserX, Search, Plus, Download, Upload,
+  Pencil, Trash2, X, Phone, Navigation, GraduationCap, CheckCircle
+};
 
   readonly typeOptions = ['École', 'Collège', 'Lycée', 'Université', 'Centre de formation', 'Autre'];
 
