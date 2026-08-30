@@ -101,6 +101,11 @@ public class EtablissementService {
                         .mapToLong(e -> e.getNombreBeneficiaires() == null ? 0 : e.getNombreBeneficiaires())
                         .sum()
         );
+        kpi.setTotalBeneficiairesReel(
+                all.stream()
+                        .mapToLong(e -> e.getNombreBeneficiairesReel() == null ? 0 : e.getNombreBeneficiairesReel())
+                        .sum()
+        );
         kpi.setSansResponsable(etablissementRepository.countSansResponsable());
 
         return kpi;
