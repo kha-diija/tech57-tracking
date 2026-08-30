@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.backend.exception.EmailNotFoundException; // NOUVEAU import
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -151,21 +152,22 @@ public class AuthService {
      */
     @Transactional
     public void forgotPassword(String email) {
-        utilisateurRepository.findByEmail(email).ifPresent(utilisateur -> {
-            // On invalide les anciens tokens en attente pour cet utilisateur
-            passwordResetTokenRepository.deleteByUtilisateur_Id(utilisateur.getId());
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new EmailNotFoundException(
+                        "Aucun utilisateur ne correspond à cet email"));
 
-            String rawToken = UUID.randomUUID().toString();
+        passwordResetTokenRepository.deleteByUtilisateur_Id(utilisateur.getId());
 
-            PasswordResetToken resetToken = new PasswordResetToken();
-            resetToken.setUtilisateur(utilisateur);
-            resetToken.setTokenHash(hash(rawToken));
-            resetToken.setDateExpiration(LocalDateTime.now().plusMinutes(RESET_TOKEN_VALIDITY_MINUTES));
-            passwordResetTokenRepository.save(resetToken);
+        String rawToken = UUID.randomUUID().toString();
 
-            emailService.sendPasswordResetEmail(
-                    utilisateur.getEmail(), utilisateur.getPrenom(), rawToken);
-        });
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setUtilisateur(utilisateur);
+        resetToken.setTokenHash(hash(rawToken));
+        resetToken.setDateExpiration(LocalDateTime.now().plusMinutes(RESET_TOKEN_VALIDITY_MINUTES));
+        passwordResetTokenRepository.save(resetToken);
+
+        emailService.sendPasswordResetEmail(
+                utilisateur.getEmail(), utilisateur.getPrenom(), rawToken);
     }
 
     @Transactional
