@@ -7,6 +7,7 @@ import {
   CurrentUser,
   LoginRequest,
   LoginResponse,
+  MessageResponse,
   UserRole,
 } from '../models/auth.model';
 
@@ -46,6 +47,25 @@ export class AuthService {
     } else {
       this.clearSessionAndRedirect();
     }
+  }
+
+  /**
+   * Demande d'envoi d'un email de réinitialisation de mot de passe.
+   * Le backend répond toujours 200 avec le même message, que l'email
+   * existe ou non (pas d'énumération de comptes).
+   */
+  forgotPassword(email: string): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${this.apiUrl}/forgot-password`, { email });
+  }
+
+  /**
+   * Valide le token reçu par email et applique le nouveau mot de passe.
+   */
+  resetPassword(token: string, nouveauMotDePasse: string): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${this.apiUrl}/reset-password`, {
+      token,
+      nouveauMotDePasse,
+    });
   }
 
   isAuthenticated(): boolean {

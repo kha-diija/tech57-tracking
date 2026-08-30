@@ -6,6 +6,7 @@ public class FormateurResponse {
     private String prenom;
     private String telephone;
     private String adresse;
+    private String email;
 
     public Integer getIdFormateur() { return idFormateur; }
     public void setIdFormateur(Integer idFormateur) { this.idFormateur = idFormateur; }
@@ -17,4 +18,6 @@ public class FormateurResponse {
     public void setTelephone(String telephone) { this.telephone = telephone; }
     public String getAdresse() { return adresse; }
     public void setAdresse(String adresse) { this.adresse = adresse; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }
