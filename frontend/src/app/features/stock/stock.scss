@@ -99,15 +99,13 @@ p { margin: 0; }
   transform: rotate(180deg);
 }
 
-/* --------------------------------------------
-   3.  BUTTONS (shared: header, toolbar, drawer, modal)
-   -------------------------------------------- */
+
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.55rem 1.25rem;
-  border-radius: var(--radius-lg);
+  border-radius: 10px; /* arrondi maximal */
   font-size: 0.875rem;
   font-weight: 600;
   font-family: var(--font-body);
@@ -122,7 +120,9 @@ p { margin: 0; }
   background: var(--bg-surface-hover);
   transform: translateY(-1px);
 }
-.btn:active { transform: translateY(0); }
+.btn:active {
+  transform: scale(0.97); /* effet de réduction au clic */
+}
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -141,6 +141,9 @@ p { margin: 0; }
   box-shadow: 0 6px 14px rgba(35, 58, 110, 0.4);
   transform: translateY(-1px);
 }
+.btn-primary:active {
+  transform: scale(0.97);
+}
 
 .btn-ghost {
   background: transparent;
@@ -148,6 +151,9 @@ p { margin: 0; }
 }
 .btn-ghost:hover {
   background: var(--bg-surface-hover);
+}
+.btn-ghost:active {
+  transform: scale(0.97);
 }
 
 .btn.sm,
@@ -172,6 +178,9 @@ p { margin: 0; }
 .icon-btn:hover {
   background: var(--bg-surface-hover);
   color: var(--text-main);
+}
+.icon-btn:active {
+  transform: scale(0.93);
 }
 .icon-btn.danger:hover {
   background: var(--etat-panne-bg);
@@ -279,7 +288,7 @@ p { margin: 0; }
   align-items: center;
   gap: 0.4rem;
   padding: 0.35rem 0.9rem;
-  border-radius: 999px;
+  border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 600;
   border: 1px solid var(--border-color);
@@ -292,6 +301,9 @@ p { margin: 0; }
 .etat-pill:hover {
   background: var(--bg-surface-hover);
   color: var(--text-main);
+}
+.etat-pill:active {
+  transform: scale(0.96);
 }
 .etat-pill.active {
   border-color: transparent;
@@ -440,7 +452,7 @@ p { margin: 0; }
   align-items: center;
   gap: 0.3rem;
   padding: 0.15rem 0.6rem;
-  border-radius: 999px;
+  border-radius: 10px;
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -548,7 +560,7 @@ p { margin: 0; }
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.9rem;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   border: 1px solid var(--border-color);
   background: transparent;
   color: var(--text-muted);
@@ -561,6 +573,9 @@ p { margin: 0; }
 .pagination button:hover:not(:disabled) {
   background: var(--bg-surface-hover);
   color: var(--text-main);
+}
+.pagination button:active:not(:disabled) {
+  transform: scale(0.95);
 }
 .pagination button:disabled {
   opacity: 0.35;
@@ -639,7 +654,7 @@ p { margin: 0; }
   align-items: center;
   gap: 0.25rem;
   padding: 0.1rem 0.55rem;
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--bg-pill-active);
   color: var(--primary);
   font-size: 0.65rem;
@@ -673,7 +688,7 @@ p { margin: 0; }
   align-items: center;
   gap: 0.35rem;
   padding: 0.3rem 0.75rem;
-  border-radius: 999px;
+  border-radius: 10px;
   font-size: 0.7rem;
   font-weight: 600;
   border: 1px solid transparent;
@@ -690,6 +705,9 @@ p { margin: 0; }
 }
 .etat-chip.active {
   color: #fff;
+}
+.etat-chip:active {
+  transform: scale(0.95);
 }
 .etat-chip.etat-neuf.active    { background: var(--etat-neuf-fg);    color: var(--etat-neuf-bg); }
 .etat-chip.etat-service.active { background: var(--etat-service-fg); color: var(--etat-service-bg); }
@@ -725,6 +743,9 @@ p { margin: 0; }
 }
 .drawer-tabs button:hover {
   color: var(--text-main);
+}
+.drawer-tabs button:active {
+  transform: scale(0.96);
 }
 .drawer-tabs button.active {
   color: var(--primary);
@@ -1021,7 +1042,7 @@ p { margin: 0; }
   font-size: 0.7rem;
   font-weight: 600;
   padding: 0.15rem 0.6rem;
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--etat-panne-bg);
   color: var(--etat-panne-fg);
 }
@@ -1089,6 +1110,9 @@ p { margin: 0; }
   font-family: var(--font-body);
   transition: all var(--transition);
 }
+.modal-tabs button:active {
+  transform: scale(0.96);
+}
 .modal-tabs button.active {
   background: var(--bg-app);
   color: var(--primary);
@@ -1143,8 +1167,73 @@ p { margin: 0; }
 }
 
 /* --------------------------------------------
-   10. RESPONSIVE
+   10. CONFIRM MODAL
    -------------------------------------------- */
+.confirm-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 440px;
+  background: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1.5rem;
+  z-index: 2001;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+
+  .confirm-header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .warning-icon {
+      color: #FEBE29; /* jaune de la palette */
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+  }
+
+  .confirm-message {
+    margin: 1rem 0 1.5rem 0;
+    color: #a1a1aa;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}
+
+.btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 10px; /* arrondi */
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+
+  &:hover {
+    background-color: #b91c1c;
+  }
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+/* ============================================================
+   11. RESPONSIVE
+   ============================================================ */
 @media (max-width: 1024px) {
   .stock-page { padding: 1rem 1.25rem 2rem; }
   .stock-header { flex-direction: column; align-items: stretch; }
@@ -1203,63 +1292,4 @@ p { margin: 0; }
 
 .asset-card:hover .card-delete-btn {
   opacity: 1;
-}
-
-.confirm-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  max-width: 440px;
-  background: #161616;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 1.5rem;
-  z-index: 2001;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-
-  .confirm-header-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-
-    .warning-icon {
-      color: #FEBE29; /* jaune de la palette */
-    }
-
-    h2 {
-      margin: 0;
-      font-size: 1.125rem;
-      font-weight: 600;
-    }
-  }
-
-  .confirm-message {
-    margin: 1rem 0 1.5rem 0;
-    color: #a1a1aa;
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-
-  .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-  }
-}
-
-.btn-danger {
-  background-color: #dc2626;
-  color: #ffffff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: #b91c1c;
-  }
 }
