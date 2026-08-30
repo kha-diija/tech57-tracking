@@ -37,17 +37,18 @@ export class AuthService {
       .pipe(tap((response) => this.handleAuthSuccess(response)));
   }
 
-  logout(): void {
-    const refreshToken = this.getRefreshToken();
-    if (refreshToken) {
-      this.http.post(`${this.apiUrl}/logout`, { refreshToken }).subscribe({
-        complete: () => this.clearSessionAndRedirect(),
-        error: () => this.clearSessionAndRedirect(),
-      });
-    } else {
-      this.clearSessionAndRedirect();
-    }
+  // APRÈS — ajoute le paramètre reason et transmets-le
+logout(reason?: string): void {
+  const refreshToken = this.getRefreshToken();
+  if (refreshToken) {
+    this.http.post(`${this.apiUrl}/logout`, { refreshToken }).subscribe({
+      complete: () => this.clearSessionAndRedirect(reason),
+      error: () => this.clearSessionAndRedirect(reason),
+    });
+  } else {
+    this.clearSessionAndRedirect(reason);
   }
+}
 
   /**
    * Demande d'envoi d'un email de réinitialisation de mot de passe.
@@ -105,13 +106,19 @@ export class AuthService {
     this.currentUser.set(user);
   }
 
-  private clearSessionAndRedirect(): void {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(CURRENT_USER_KEY);
-    this.currentUser.set(null);
+  // APRÈS — accepte reason et le transmet via router state
+private clearSessionAndRedirect(reason?: string): void {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(CURRENT_USER_KEY);
+  this.currentUser.set(null);
+
+  if (reason) {
+    this.router.navigateByUrl('/login', { state: { sessionMessage: reason } });
+  } else {
     this.router.navigateByUrl('/login');
   }
+}
 
   private readStoredUser(): CurrentUser | null {
     const raw = localStorage.getItem(CURRENT_USER_KEY);
