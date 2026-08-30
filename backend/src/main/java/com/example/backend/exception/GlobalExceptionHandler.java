@@ -217,4 +217,15 @@ public class GlobalExceptionHandler {
                 request.getRequestURI());
         return ResponseEntity.badRequest().body(error);
     }
+
+    @ExceptionHandler(EmailNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleEmailNotFound(EmailNotFoundException ex,
+                                                                HttpServletRequest request) {
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Email Not Found",
+                ex.getMessage(),
+                request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
 }
