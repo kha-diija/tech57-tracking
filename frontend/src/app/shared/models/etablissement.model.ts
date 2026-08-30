@@ -38,10 +38,12 @@ export interface EtablissementRequest {
   responsable?: ResponsableDto | null;
 }
 
+// APRÈS — ajoute cette ligne
 export interface EtablissementKpi {
   totalEtablissements: number;
   regionsCouvertes: number;
   totalBeneficiaires: number;
+  totalBeneficiairesReel: number;
   sansResponsable: number;
 }
 
