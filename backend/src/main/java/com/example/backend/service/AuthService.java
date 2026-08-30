@@ -2,12 +2,15 @@ package com.example.backend.service;
 
 import com.example.backend.dto.auth.LoginRequest;
 import com.example.backend.dto.auth.LoginResponse;
+import com.example.backend.entity.PasswordResetToken;
 import com.example.backend.entity.RefreshToken;
 import com.example.backend.entity.Utilisateur;
 import com.example.backend.exception.AccountDisabledException;
 import com.example.backend.exception.AccountLockedException;
 import com.example.backend.exception.InvalidCredentialsException;
 import com.example.backend.exception.InvalidRefreshTokenException;
+import com.example.backend.exception.InvalidResetTokenException;
+import com.example.backend.repository.PasswordResetTokenRepository;
 import com.example.backend.repository.RefreshTokenRepository;
 import com.example.backend.repository.UtilisateurRepository;
 import com.example.backend.security.JwtTokenProvider;
@@ -17,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.backend.exception.EmailNotFoundException; // NOUVEAU import
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -30,23 +34,30 @@ public class AuthService {
 
     private static final short MAX_TENTATIVES = 5;
     private static final long LOCK_DURATION_MINUTES = 15;
+    private static final long RESET_TOKEN_VALIDITY_MINUTES = 30;
 
     private final UtilisateurRepository utilisateurRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EmailService emailService;
 
     @Value("${jwt.refresh-token-expiration-ms:604800000}")
     private long refreshTokenExpirationMs;
 
     public AuthService(UtilisateurRepository utilisateurRepository,
-                        RefreshTokenRepository refreshTokenRepository,
-                        PasswordEncoder passwordEncoder,
-                        JwtTokenProvider jwtTokenProvider) {
+                       RefreshTokenRepository refreshTokenRepository,
+                       PasswordResetTokenRepository passwordResetTokenRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtTokenProvider jwtTokenProvider,
+                       EmailService emailService) {
         this.utilisateurRepository = utilisateurRepository;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -133,6 +144,50 @@ public class AuthService {
                     token.setRevoked(true);
                     refreshTokenRepository.save(token);
                 });
+    }
+
+    /**
+     * Toujours "silencieux" côté sécurité : ne révèle jamais si l'email
+     * existe ou non. Le controller renvoie systématiquement le même message.
+     */
+    @Transactional
+    public void forgotPassword(String email) {
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new EmailNotFoundException(
+                        "Aucun utilisateur ne correspond à cet email"));
+
+        passwordResetTokenRepository.deleteByUtilisateur_Id(utilisateur.getId());
+
+        String rawToken = UUID.randomUUID().toString();
+
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setUtilisateur(utilisateur);
+        resetToken.setTokenHash(hash(rawToken));
+        resetToken.setDateExpiration(LocalDateTime.now().plusMinutes(RESET_TOKEN_VALIDITY_MINUTES));
+        passwordResetTokenRepository.save(resetToken);
+
+        emailService.sendPasswordResetEmail(
+                utilisateur.getEmail(), utilisateur.getPrenom(), rawToken);
+    }
+
+    @Transactional
+    public void resetPassword(String rawToken, String nouveauMotDePasse) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHash(hash(rawToken))
+                .orElseThrow(() -> new InvalidResetTokenException(
+                        "Lien de réinitialisation invalide ou expiré"));
+
+        if (resetToken.isUtilise() || resetToken.getDateExpiration().isBefore(LocalDateTime.now())) {
+            throw new InvalidResetTokenException("Lien de réinitialisation invalide ou expiré");
+        }
+
+        Utilisateur utilisateur = resetToken.getUtilisateur();
+        utilisateur.setMotDePasse(passwordEncoder.encode(nouveauMotDePasse));
+        utilisateur.setTentativesEchouees((short) 0);
+        utilisateur.setCompteVerrouilleJusqu(null);
+        utilisateurRepository.save(utilisateur);
+
+        resetToken.setUtilise(true);
+        passwordResetTokenRepository.save(resetToken);
     }
 
     private void handleFailedAttempt(Utilisateur utilisateur) {
