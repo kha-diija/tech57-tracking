@@ -28,7 +28,8 @@
     </div>
   </div>
 
-  <div class="kpi-grid" *ngIf="kpis() as k">
+  <!-- APRÈS — carte ajoutée entre les deux -->
+      <div class="kpi-grid" *ngIf="kpis() as k">
     <div class="kpi-card">
       <div class="kpi-card__top">
         <span class="kpi-card__label">Établissements suivis</span>
@@ -51,6 +52,14 @@
         <span class="kpi-card__icon"><lucide-icon [img]="icons.Users" [size]="16"></lucide-icon></span>
       </div>
       <div class="kpi-card__value">{{ k.totalBeneficiaires | number }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Bénéficiaires réels</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.CheckCircle" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ k.totalBeneficiairesReel | number }}</div>
     </div>
 
     <div class="kpi-card">
