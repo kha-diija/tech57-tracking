@@ -37,6 +37,8 @@ public class FormateurController {
             return ResponseEntity.status(HttpStatus.CREATED).body(formateurService.create(idEtablissement, req));
         } catch (NoSuchElementException ex) {
             return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
         }
     }
 
@@ -48,6 +50,8 @@ public class FormateurController {
             return ResponseEntity.ok(formateurService.update(idFormateur, req));
         } catch (NoSuchElementException ex) {
             return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
         }
     }
 

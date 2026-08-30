@@ -318,6 +318,10 @@
                 <lucide-icon [img]="icons.Phone" [size]="11"></lucide-icon>
                 {{ f.telephone }}
               </span>
+              <span class="formateur-item__meta" *ngIf="f.email">
+                <lucide-icon [img]="icons.Mail" [size]="11"></lucide-icon>
+                {{ f.email }}
+              </span>
               <span class="formateur-item__meta" *ngIf="f.adresse">
                 <lucide-icon [img]="icons.MapPin" [size]="11"></lucide-icon>
                 {{ f.adresse }}
@@ -359,6 +363,11 @@
         </div>
 
         <div class="form-group">
+          <label>Email</label>
+          <input type="email" [ngModel]="formateurModal().form.email" (ngModelChange)="updateFormateurField('email', $event)" placeholder="nom@exemple.com" />
+        </div>
+
+        <div class="form-group">
           <label>Adresse</label>
           <input type="text" [ngModel]="formateurModal().form.adresse" (ngModelChange)="updateFormateurField('adresse', $event)" />
         </div>
@@ -374,6 +383,29 @@
       </button>
     </div>
   </aside>
+
+  <!-- Modale d'erreur : sauvegarde du formateur échouée (ex: email dupliqué) -->
+  <div class="side-panel-backdrop" *ngIf="formateurError()" (click)="closeFormateurError()"></div>
+
+  <div class="custom-modal-container" *ngIf="formateurError()">
+    <div class="custom-modal">
+      <div class="custom-modal__header">
+        <h3>
+          <lucide-icon [img]="icons.AlertTriangle" [size]="18" class="custom-modal__icon-danger"></lucide-icon>
+          Impossible d'enregistrer le formateur
+        </h3>
+        <button class="icon-btn" (click)="closeFormateurError()">
+          <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <div class="custom-modal__body">
+        <p>{{ formateurError() }}</p>
+      </div>
+      <div class="custom-modal__footer">
+        <button class="btn btn--primary" (click)="closeFormateurError()">Compris</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modale de confirmation de suppression -->
   <ng-container *ngIf="isAdmin()">
