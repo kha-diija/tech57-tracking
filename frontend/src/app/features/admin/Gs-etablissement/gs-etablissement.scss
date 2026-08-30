@@ -637,3 +637,92 @@
     transform: scale(1);
   }
 }
+// ---------- Aide format Excel (modale) ----------
+.custom-modal--wide {
+  max-width: 560px;
+}
+
+.format-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  width: fit-content;
+  margin-top: -0.5rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.format-help-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin: 1rem 0;
+
+  th {
+    text-align: left;
+    padding: 0.5rem 0.625rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  td {
+    padding: 0.5rem 0.625rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-main);
+    vertical-align: middle;
+  }
+
+  code {
+    font-size: 0.75rem;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.15rem 0.4rem;
+    color: var(--primary);
+  }
+}
+
+.format-help-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-muted);
+
+  &--required {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+  }
+}
+
+.format-help-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.custom-modal__header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.custom-modal__icon-danger {
+  color: #ef4444;
+  flex-shrink: 0;
+}
