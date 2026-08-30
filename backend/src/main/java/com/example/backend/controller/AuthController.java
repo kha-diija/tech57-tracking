@@ -40,4 +40,17 @@ public class AuthController {
         authService.logout(request.getRefreshToken());
         return ResponseEntity.ok(Map.of("message", "Déconnexion réussie"));
     }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.getEmail());
+        return ResponseEntity.ok(Map.of(
+                "message", "Si un compte existe avec cet email, un lien de réinitialisation vient de vous être envoyé."
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.getToken(), request.getNouveauMotDePasse());
+        return ResponseEntity.ok(Map.of("message", "Mot de passe réinitialisé avec succès."));
+    }
 }

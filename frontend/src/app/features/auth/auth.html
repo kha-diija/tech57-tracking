@@ -89,9 +89,9 @@
             </span>
           </div>
 
-          <!-- <div class="auth-form__row">
-            <a class="auth-form__link" href="#" (click)="$event.preventDefault()">Mot de passe oublié ?</a>
-          </div> -->
+      <div class="auth-form__row">
+        <a class="auth-form__link" routerLink="/forgot-password">Mot de passe oublié ?</a>
+      </div>
 
           <button type="submit" class="auth-form__submit" [disabled]="isLoading()">
             <span *ngIf="!isLoading()">Se connecter</span>

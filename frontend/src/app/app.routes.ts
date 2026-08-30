@@ -23,6 +23,16 @@ export const routes: Routes = [
 
   // 1. Route publique : Login (SANS sidebar/navbar)
   { path: 'login', component: Auth },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/forgot-password/forgot-password').then((m) => m.ForgotPassword),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/reset-password/reset-password').then((m) => m.ResetPassword),
+  },
 
   // 2. Routes protégées sous AppShell (AVEC sidebar/navbar)
   {
