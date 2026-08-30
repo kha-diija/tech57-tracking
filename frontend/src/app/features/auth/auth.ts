@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../shared/services/auth.service';
 import { ApiErrorResponse } from '../../shared/models/auth.model';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-auth',
