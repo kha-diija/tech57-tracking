@@ -85,7 +85,6 @@
   }
 }
 
-/* Boutons avec le Dégradé (#0ACEC1 -> Vert Pomme) */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -121,7 +120,6 @@
   }
 }
 
-/* KPI */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -212,7 +210,6 @@
   }
 }
 
-/* Panels */
 .panel {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
@@ -326,7 +323,6 @@
   }
 }
 
-/* Graphique en barres */
 .bar-chart {
   display: flex;
   align-items: flex-end;
@@ -406,7 +402,6 @@
   }
 }
 
-/* Donut Graphique */
 .donut {
   display: flex;
   justify-content: center;
@@ -461,7 +456,6 @@
   }
 }
 
-/* Légende du donut */
 .donut-legend {
   list-style: none;
   margin: 0;
@@ -540,7 +534,6 @@
   }
 }
 
-/* Graphique en ligne */
 .line-chart-wrapper {
   position: relative;
 }
@@ -650,7 +643,6 @@
   }
 }
 
-/* Conformité */
 .conformity {
   display: flex;
   align-items: baseline;
@@ -684,7 +676,6 @@
   }
 }
 
-/* Activité récente */
 .activity-list {
   list-style: none;
   margin: 0;
@@ -724,7 +715,6 @@
   }
 }
 
-/* Missions à venir */
 .mission-list {
   list-style: none;
   margin: 0;
@@ -786,7 +776,6 @@
   }
 }
 
-/* Infobulles modernes */
 .modern-tooltip {
   display: flex;
   align-items: center;
@@ -812,7 +801,6 @@
   }
 }
 
-/* Modale */
 .modal-backdrop {
   position: fixed;
   inset: 0;

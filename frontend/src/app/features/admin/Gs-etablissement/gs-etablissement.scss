@@ -23,9 +23,9 @@
   --accent-yellow: #FEBE29;     // Jaune (accent du bouton)
 
   // ★★★ DÉGRADÉ 3 COULEURS VERTICAL (identique en clair/sombre) ★★★
---btn-gradient: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
---btn-gradient-hover: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
---btn-shadow: 0 8px 20px rgba(35, 58, 110, 0.45);
+  --btn-gradient: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+  --btn-gradient-hover: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
+  --btn-shadow: 0 8px 20px rgba(35, 58, 110, 0.45);
 
   // Cartes AI (optionnel)
   --ai-card-bg: linear-gradient(135deg, #1e2a4a 0%, #14203a 100%);
@@ -115,6 +115,7 @@
   &__actions {
     display: flex;
     gap: 0.625rem;
+    margin-left: auto; // ← AJOUT POUR POUSSER À DROITE
   }
 }
 
@@ -124,12 +125,16 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
-  border-radius: 12px;
+  border-radius: 999px; /* ✅ arrondi maximal (style stock) */
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
   transition: all 0.2s ease;
+
+  &:active {
+    transform: scale(0.97); /* ✅ effet de réduction au clic */
+  }
 
   &--ghost {
     background-color: var(--bg-surface);
@@ -138,6 +143,10 @@
 
     &:hover {
       background-color: var(--bg-surface-hover);
+    }
+
+    &:active {
+      transform: scale(0.97);
     }
   }
 
@@ -152,6 +161,10 @@
       box-shadow: 0 8px 24px rgba(35, 58, 110, 0.55);
       transform: translateY(-1px);
     }
+
+    &:active {
+      transform: scale(0.97);
+    }
   }
 
   &--danger {
@@ -160,6 +173,10 @@
 
     &:hover {
       background: #dc2626;
+    }
+
+    &:active {
+      transform: scale(0.97);
     }
   }
 }
@@ -412,6 +429,7 @@
   font-size: 0.82rem;
 }
 
+// ---------- BADGE (standard et cliquable) ----------
 .badge {
   display: inline-flex;
   align-items: center;
@@ -425,6 +443,27 @@
   border: 1px solid rgba(186, 212, 57, 0.25);
 }
 
+// ★★★ Badge cliquable (colonne Formateurs) ★★★
+.badge--clickable {
+  cursor: pointer;
+  background-color: rgba(105, 175, 177, 0.12);
+  color: var(--primary);
+  border-color: rgba(105, 175, 177, 0.3);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(105, 175, 177, 0.25);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(105, 175, 177, 0.2);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// ---------- Icônes d'action ----------
 .icon-btn {
   width: 2rem;
   height: 2rem;
@@ -442,6 +481,10 @@
     background: var(--bg-surface-hover);
   }
 
+  &:active {
+    transform: scale(0.93);
+  }
+
   &--danger:hover {
     background: rgba(239, 68, 68, 0.12);
     border-color: rgba(239, 68, 68, 0.4);
@@ -449,7 +492,7 @@
   }
 }
 
-// ---------- Panneau latéral ----------
+// ---------- Panneau latéral (drawer) ----------
 .side-panel-backdrop {
   position: fixed;
   inset: 0;
@@ -504,6 +547,7 @@
   }
 }
 
+// ---------- Formulaires (génériques) ----------
 .form-group {
   display: flex;
   flex-direction: column;
@@ -557,6 +601,76 @@
   color: var(--primary);
   padding-top: 0.5rem;
   border-top: 1px solid var(--border-color);
+}
+
+// ---------- STYLES SPÉCIFIQUES AUX FORMATEURS ----------
+
+// Liste des formateurs dans le drawer
+.formateur-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem 0;
+}
+
+// Élément individuel
+.formateur-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  transition: border-color 0.2s, background 0.2s;
+
+  &:hover {
+    background: var(--bg-surface-hover);
+    border-color: rgba(105, 175, 177, 0.4);
+  }
+
+  // Bloc d'information
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+  }
+
+  // Nom du formateur
+  &__name {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.9rem;
+  }
+
+  // Métadonnées : téléphone, adresse
+  &__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+
+    lucide-icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  // Groupe d'actions (modifier / supprimer)
+  &__actions {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    margin-left: 0.75rem;
+
+    .icon-btn {
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 6px;
+    }
+  }
 }
 
 // ---------- Modale de confirmation ----------
