@@ -202,6 +202,45 @@
   flex-direction: column;
 
   gap: 18px;
+
+  /* ============================================================
+     FORGOT PASSWORD ROW / LINK
+     ============================================================ */
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    margin-top: -6px; // resserre l'espace sous le champ mot de passe
+  }
+
+  &__link {
+    position: relative;
+    z-index: 5;
+
+    display: inline-block;
+
+    font-size: 13.5px;
+
+    color: #8ea2f3;
+
+    text-decoration: none;
+
+    cursor: pointer;
+    pointer-events: auto;
+
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: #b3c2fb;
+      text-decoration: underline;
+    }
+
+    &:active {
+      color: #6d85e0;
+    }
+  }
 }
 
 

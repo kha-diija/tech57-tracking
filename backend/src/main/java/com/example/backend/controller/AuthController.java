@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.backend.dto.auth.ForgotPasswordRequest;
+import com.example.backend.dto.auth.ResetPasswordRequest;
 
 import java.util.Map;
 
@@ -39,5 +41,19 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> logout(@Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request.getRefreshToken());
         return ResponseEntity.ok(Map.of("message", "Déconnexion réussie"));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.getEmail());
+        return ResponseEntity.ok(Map.of(
+                "message", "Un lien de réinitialisation vient de vous être envoyé."
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.getToken(), request.getNouveauMotDePasse());
+        return ResponseEntity.ok(Map.of("message", "Mot de passe réinitialisé avec succès."));
     }
 }
