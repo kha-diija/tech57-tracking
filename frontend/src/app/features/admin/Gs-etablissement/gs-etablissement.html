@@ -115,7 +115,7 @@
                 </button>
               </div>
             </td>
-           
+
 
             <td>
   <span class="badge">
@@ -250,7 +250,7 @@
         <input type="number" [ngModel]="formModel().nombreBeneficiaires" (ngModelChange)="updateField('nombreBeneficiaires', +$event)" />
       </div>
 
-      
+
 
       <div class="form-divider">Contact de l'établissement</div>
 
@@ -427,6 +427,11 @@
             <input type="file" accept=".xlsx" (change)="onImportFileSelected($event)" />
           </div>
 
+          <button type="button" class="format-help-link" (click)="openFormatHelp()">
+            <lucide-icon [img]="icons.Search" [size]="13"></lucide-icon>
+            Voir le format de fichier requis
+          </button>
+
           <p class="text-muted" *ngIf="importModal().error">{{ importModal().error }}</p>
         </ng-container>
 
@@ -438,6 +443,10 @@
           <ul *ngIf="importModal().result?.erreurs?.length">
             <li *ngFor="let e of importModal().result?.erreurs">{{ e }}</li>
           </ul>
+          <button type="button" class="format-help-link" (click)="openFormatHelp()" *ngIf="importModal().result?.ignores">
+            <lucide-icon [img]="icons.Search" [size]="13"></lucide-icon>
+            Voir le format de fichier requis
+          </button>
         </ng-template>
       </div>
 
@@ -450,6 +459,88 @@
           (click)="submitImport()">
           {{ importModal().isImporting ? 'Import en cours...' : 'Importer' }}
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale d'aide : format du fichier Excel attendu -->
+  <div class="side-panel-backdrop" *ngIf="showFormatHelp()" (click)="closeFormatHelp()"></div>
+
+  <div class="custom-modal-container" *ngIf="showFormatHelp()">
+    <div class="custom-modal custom-modal--wide">
+      <div class="custom-modal__header">
+        <h3>Format du fichier Excel attendu</h3>
+        <button class="icon-btn" (click)="closeFormatHelp()">
+          <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="custom-modal__body">
+        <p>
+          Le fichier doit contenir une ligne d'en-tête (dans les 10 premières lignes de la feuille)
+          avec au minimum une colonne nommée <strong>CD_ETAB</strong>. Sans cette colonne, l'import échoue.
+        </p>
+
+        <table class="format-help-table">
+          <thead>
+            <tr>
+              <th>Colonne</th>
+              <th>Obligatoire</th>
+              <th>Utilisation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>CD_ETAB</code></td>
+              <td><span class="format-help-badge format-help-badge--required">Oui</span></td>
+              <td>Référence unique de l'établissement</td>
+            </tr>
+            <tr>
+              <td><code>LL_COM</code></td>
+              <td><span class="format-help-badge format-help-badge--required">Oui</span></td>
+              <td>Nom de la commune</td>
+            </tr>
+            <tr>
+              <td><code>NOM_ETABA</code></td>
+              <td><span class="format-help-badge">Non</span></td>
+              <td>Désignation de l'établissement</td>
+            </tr>
+            <tr>
+              <td><code>LL_NETAB</code></td>
+              <td><span class="format-help-badge">Non</span></td>
+              <td>Type d'établissement</td>
+            </tr>
+            <tr>
+              <td><code>X</code></td>
+              <td><span class="format-help-badge">Non</span></td>
+              <td>Coordonnée GPS (longitude)</td>
+            </tr>
+            <tr>
+              <td><code>Y</code></td>
+              <td><span class="format-help-badge">Non</span></td>
+              <td>Coordonnée GPS (latitude)</td>
+            </tr>
+            <tr>
+              <td><code>NBRE D'ÉLÈVES SELON AMI</code></td>
+              <td><span class="format-help-badge">Non</span></td>
+              <td>Nombre de bénéficiaires</td>
+            </tr>
+            <tr>
+              <td><code>NBRE D'ÉLÉVES RÉALISÉS</code></td>
+              <td><span class="format-help-badge">Non</span></td>
+              <td>Utilisé si la colonne précédente est vide</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p class="format-help-note">
+          Les noms de colonnes ne sont pas sensibles à la casse. Chaque ligne sans commune renseignée
+          (<code>LL_COM</code>) sera ignorée. Une ligne sans référence (<code>CD_ETAB</code>) sera aussi ignorée.
+        </p>
+      </div>
+
+      <div class="custom-modal__footer">
+        <button class="btn btn--primary" (click)="closeFormatHelp()">Compris</button>
       </div>
     </div>
   </div>

@@ -157,6 +157,9 @@ export class GsEtablissement {
   readonly importModal = signal<ImportModalState>(this.emptyImportModal());
   readonly importProvinces = signal<Province[]>([]);
 
+  // --- Modale d'aide : format du fichier Excel attendu ---
+  readonly showFormatHelp = signal<boolean>(false);
+
   private emptyForm(): FormModel {
     return {
       reference: '',
@@ -557,16 +560,34 @@ export class GsEtablissement {
     this.etablissementService.importExcel(m.selectedFile, m.idProvince).subscribe({
       next: (result) => {
         this.importModal.update((s) => ({ ...s, isImporting: false, result }));
+        // Si aucune ligne n'a été créée ni mise à jour, le fichier est probablement
+        // mal formaté (mauvais en-têtes de colonnes) : on ouvre l'aide automatiquement.
+        if ((result?.crees ?? 0) === 0 && (result?.misAJour ?? 0) === 0) {
+          this.showFormatHelp.set(true);
+        }
         this.loadData();
       },
-      error: () => {
+      error: (err) => {
+        const message =
+          err?.error?.error || "Échec de l'import. Vérifiez que le fichier respecte le format attendu.";
         this.importModal.update((s) => ({
           ...s,
           isImporting: false,
-          error: "Échec de l'import. Vérifiez le fichier et réessayez."
+          error: message
         }));
+        // Erreur renvoyée par le backend (ex: "Colonne CD_ETAB introuvable") : on affiche
+        // directement le popup expliquant le format attendu.
+        this.showFormatHelp.set(true);
       }
     });
+  }
+
+  openFormatHelp(): void {
+    this.showFormatHelp.set(true);
+  }
+
+  closeFormatHelp(): void {
+    this.showFormatHelp.set(false);
   }
 
   // ============================================================
@@ -578,7 +599,7 @@ export class GsEtablissement {
     const [lat, lng] = item.localisationGps.split(',').map((v) => v.trim());
     window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
   }
-
+  
   onExport(): void {
     const rows: string[] = [
       'Référence;Désignation;Région;Province;Commune;Bénéficiaires;Responsable;Téléphone;Formateurs'
