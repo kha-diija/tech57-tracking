@@ -38,10 +38,12 @@ export interface EtablissementRequest {
   responsable?: ResponsableDto | null;
 }
 
+// APRÈS — ajoute cette ligne
 export interface EtablissementKpi {
   totalEtablissements: number;
   regionsCouvertes: number;
   totalBeneficiaires: number;
+  totalBeneficiairesReel: number;
   sansResponsable: number;
 }
 
@@ -66,20 +68,6 @@ export interface Commune {
   provinceNom?: string;  // ✅ AJOUT : correspond au DTO
 }
 
-export interface Formateur {
-  idFormateur: number;
-  nom: string;
-  prenom: string;
-  telephone?: string;
-  adresse?: string;
-}
-
-export interface FormateurRequest {
-  nom: string;
-  prenom: string;
-  telephone?: string;
-  adresse?: string;
-}
 
 export interface ImportResult {
   totalLignes: number;
@@ -87,4 +75,20 @@ export interface ImportResult {
   misAJour: number;
   ignores: number;
   erreurs: string[];
+}
+export interface Formateur {
+  idFormateur: number;
+  nom: string;
+  prenom: string;
+  telephone?: string;
+  adresse?: string;
+  email?: string;
+}
+
+export interface FormateurRequest {
+  nom: string;
+  prenom: string;
+  telephone?: string;
+  adresse?: string;
+  email?: string;
 }

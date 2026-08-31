@@ -42,3 +42,15 @@ export interface ApiErrorResponse {
   path: string;
   fieldErrors?: Record<string, string>;
 }
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  nouveauMotDePasse: string;
+}
+
+export interface MessageResponse {
+  message: string;
+}

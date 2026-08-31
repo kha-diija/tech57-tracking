@@ -2,19 +2,22 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { AuthService } from '../../shared/services/auth.service';
 import { ApiErrorResponse } from '../../shared/models/auth.model';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-auth',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink], 
   templateUrl: './auth.html',
   styleUrl: './auth.scss',
 })
 export class Auth {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   readonly isLoading = signal(false);
   readonly showPassword = signal(false);
@@ -24,6 +27,17 @@ export class Auth {
     email: ['', [Validators.required, Validators.email]],
     motDePasse: ['', [Validators.required, Validators.minLength(6)]],
   });
+
+  constructor() {
+    // Si l'utilisateur arrive ici suite à une déconnexion forcée
+    // (refresh token expiré/révoqué), on affiche le message explicatif
+    // transmis par AuthService.clearSessionAndRedirect() via le router state.
+    const navState = this.router.getCurrentNavigation()?.extras?.state;
+    const sessionMessage = (navState ?? window.history.state)?.['sessionMessage'];
+    if (sessionMessage) {
+      this.errorMessage.set(sessionMessage);
+    }
+  }
 
   togglePasswordVisibility(): void {
     this.showPassword.update((value) => !value);
@@ -57,7 +71,6 @@ export class Auth {
 
   onGoogleLogin(): void {
     // À brancher sur l'endpoint OAuth2 Google du backend
-    // (ex: window.location.href = `${environment.apiUrl}/oauth2/authorization/google`;)
     console.info('Connexion Google : à implémenter côté backend (OAuth2).');
   }
 

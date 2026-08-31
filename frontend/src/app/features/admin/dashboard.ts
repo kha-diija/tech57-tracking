@@ -1,7 +1,6 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { ElementRef, ViewChild } from '@angular/core';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
@@ -37,6 +36,15 @@ export class Dashboard {
   private readonly dashboardService = inject(DashboardService);
   private readonly router = inject(Router);
 
+  // Palette de couleurs personnalisée : Bleu, Pistache, Jaune, Violet, Rose
+  private readonly materialPalette = [
+    '#3b82f6',   // Bleu
+    '#84cc16',   // Pistache
+    '#facc15',   // Jaune
+    '#a855f7',   // Violet
+    '#ec4899'    // Rose
+  ];
+
   readonly icons = {
     Briefcase,
     Building2,
@@ -65,7 +73,6 @@ export class Dashboard {
     return user?.prenom || user?.nom || 'Administrateur';
   });
 
-  // --- Gestion du Filtre de Période (Réactif) ---
   readonly selectedPeriod = signal<string>('7d');
 
   readonly kpis = toSignal(
@@ -75,30 +82,24 @@ export class Dashboard {
     { initialValue: [] }
   );
 
-  // --- Autres Données du Dashboard ---
   readonly weeklyMissions = toSignal(this.dashboardService.getWeeklyMissions(), { initialValue: [] });
   readonly installationProgress = toSignal(this.dashboardService.getInstallationProgress(), { initialValue: [] });
   readonly materialDistribution = toSignal(this.dashboardService.getMaterialDistribution(), { initialValue: [] });
   readonly recentActivity = toSignal(this.dashboardService.getRecentActivity(), { initialValue: [] });
   readonly upcomingMissions = toSignal(this.dashboardService.getUpcomingMissions(), { initialValue: [] });
 
-  // --- État des tooltips & interactions ---
   readonly activeWeeklyTooltip = signal<WeeklyMissionPoint | null>(null);
   readonly activeMaterialTooltip = signal<{ label: string; value: number; percent: number } | null>(null);
   readonly activeProgressTooltip = signal<InstallationPoint | null>(null);
-
-  // --- État pour la modale "Tout voir" (Activité récente) ---
   readonly showAllActivityModal = signal<boolean>(false);
-
-  // État de chargement pour l'export
   readonly isExporting = signal<boolean>(false);
 
-    @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
+  @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
+
   kpiIcon(id: string) {
     return this.kpiIconMap[id] || Briefcase;
   }
 
-  // --- Actions / Événements ---
   onFilter() {
     const nextPeriod = this.selectedPeriod() === '7d' ? '30d' : '7d';
     this.selectedPeriod.set(nextPeriod);
@@ -123,11 +124,10 @@ export class Dashboard {
     });
   }
 
-   onExportPdf() {
+  onExportPdf() {
     this.isExporting.set(true);
     const element = this.dashboardContent.nativeElement;
     
-    // ✅ 1. Masquer les boutons temporairement
     const actionButtons = element.querySelectorAll('.dashboard__actions .btn');
     const originalDisplays: string[] = [];
     actionButtons.forEach((btn: any) => {
@@ -135,14 +135,12 @@ export class Dashboard {
       btn.style.display = 'none';
     });
 
-    // ✅ 2. Capturer le dashboard SANS les boutons
     html2canvas(element, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#0f1115',
       logging: false
     }).then((canvas) => {
-      // ✅ 3. Restaurer les boutons (pour le navigateur)
       actionButtons.forEach((btn: any, index: number) => {
         btn.style.display = originalDisplays[index];
       });
@@ -171,14 +169,13 @@ export class Dashboard {
       pdf.save('dashboard.pdf');
       this.isExporting.set(false);
     }).catch((err) => {
-      // ✅ Restaurer les boutons en cas d'erreur
       actionButtons.forEach((btn: any, index: number) => {
         btn.style.display = originalDisplays[index];
       });
       console.error('Erreur lors de l’export PDF', err);
       this.isExporting.set(false);
     });
-}
+  }
 
   onNewMission() {
     this.router.navigate(['/admin/missions']);
@@ -230,6 +227,7 @@ export class Dashboard {
     return Math.round((value / total) * 100);
   }
 
+  // Donut avec palette personnalisée (bleu, pistache, jaune...)
   readonly donutGradient = computed(() => {
     const items = this.materialDistribution();
     const total = this.materialTotal();
@@ -238,13 +236,16 @@ export class Dashboard {
     let cumulativePercent = 0;
     const stops: string[] = [];
 
-    for (const item of items) {
+    items.forEach((item, index) => {
+      // Écraser la couleur avec la palette
+      const color = this.materialPalette[index % this.materialPalette.length];
+      item.color = color; // pour la légende
       const percent = (item.value / total) * 100;
       const start = cumulativePercent;
       const end = cumulativePercent + percent;
-      stops.push(`${item.color} ${start}% ${end}%`);
+      stops.push(`${color} ${start}% ${end}%`);
       cumulativePercent = end;
-    }
+    });
 
     return `conic-gradient(${stops.join(', ')})`;
   });

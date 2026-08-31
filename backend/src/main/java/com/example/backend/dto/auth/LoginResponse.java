@@ -9,7 +9,7 @@ public class LoginResponse {
     private String nom;
     private String prenom;
     private String email;
-    /** ADMINISTRATEUR / TECHNICIEN / OBSERVATEUR / GESTIONNAIRE_STOCK */
+    /** ADMINISTRATEUR / TECHNICIEN / OBSERVATEUR :partenaire et formateur/ GESTIONNAIRE_STOCK */
     private String role;
     /** Route Angular vers laquelle rediriger selon le rôle. */
     private String redirectUrl;
