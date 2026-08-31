@@ -254,4 +254,13 @@ export class Users implements OnInit {
       }
     });
   }
+
+  /**
+   * Fonction d'affichage UNIQUEMENT : traduit le rôle technique en libellé visible à l'écran.
+   * N'affecte ni la valeur stockée/envoyée au backend (user.role reste 'OBSERVATEUR'),
+   * ni aucune logique métier (filtres, classes CSS, canManageUser, etc.).
+   */
+  getRoleLabel(role: string): string {
+    return role === 'OBSERVATEUR' ? 'FORMATEUR' : role;
+  }
 }
