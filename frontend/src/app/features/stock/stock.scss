@@ -1,7 +1,8 @@
 /* ============================================================
    STOCK.SCSS — Complete Stylesheet (aligned with stock.html)
    Theme: SaaS Inventory Management
-   Accent: #e85002 (warm orange)
+   Palette : #233A6E (bleu foncé), #FEBE29 (jaune/orange),
+             #BAD439 (vert citron), #69AFB1 (bleu turquoise)
    ============================================================ */
 
 /* --------------------------------------------
@@ -16,8 +17,8 @@ html.dark {
   --border-color: #232733;
   --text-main: #ffffff;
   --text-muted: #8b92a5;
-  --primary: #e85002;
-  --primary-glow: rgba(232, 80, 2, 0.25);
+  --primary: #69AFB1;          /* bleu turquoise */
+  --primary-glow: rgba(105, 175, 177, 0.25);
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -34,12 +35,12 @@ html.light {
   --bg-app: #f8fafc;
   --bg-surface: #ffffff;
   --bg-surface-hover: #f1f5f9;
-  --bg-pill-active: #fff1eb;
+  --bg-pill-active: #ebf5f6;
   --border-color: #e2e8f0;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  --primary: #e85002;
-  --primary-glow: rgba(232, 80, 2, 0.15);
+  --primary: #69AFB1;
+  --primary-glow: rgba(105, 175, 177, 0.15);
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
@@ -98,15 +99,13 @@ p { margin: 0; }
   transform: rotate(180deg);
 }
 
-/* --------------------------------------------
-   3.  BUTTONS (shared: header, toolbar, drawer, modal)
-   -------------------------------------------- */
+
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.55rem 1.25rem;
-  border-radius: var(--radius-lg);
+  border-radius: 10px; /* arrondi maximal */
   font-size: 0.875rem;
   font-weight: 600;
   font-family: var(--font-body);
@@ -121,7 +120,9 @@ p { margin: 0; }
   background: var(--bg-surface-hover);
   transform: translateY(-1px);
 }
-.btn:active { transform: translateY(0); }
+.btn:active {
+  transform: scale(0.97); /* effet de réduction au clic */
+}
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -129,13 +130,19 @@ p { margin: 0; }
 }
 
 .btn-primary {
-  background: var(--primary);
-  border-color: var(--primary);
+  /* Dégradé palette : bleu foncé → turquoise → jaune */
+  background: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+  border-color: transparent;
   color: #fff;
+  box-shadow: 0 4px 10px rgba(35, 58, 110, 0.3);
 }
 .btn-primary:hover {
-  filter: brightness(1.1);
-  box-shadow: var(--shadow-glow);
+  background: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
+  box-shadow: 0 6px 14px rgba(35, 58, 110, 0.4);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: scale(0.97);
 }
 
 .btn-ghost {
@@ -144,6 +151,9 @@ p { margin: 0; }
 }
 .btn-ghost:hover {
   background: var(--bg-surface-hover);
+}
+.btn-ghost:active {
+  transform: scale(0.97);
 }
 
 .btn.sm,
@@ -168,6 +178,9 @@ p { margin: 0; }
 .icon-btn:hover {
   background: var(--bg-surface-hover);
   color: var(--text-main);
+}
+.icon-btn:active {
+  transform: scale(0.93);
 }
 .icon-btn.danger:hover {
   background: var(--etat-panne-bg);
@@ -275,7 +288,7 @@ p { margin: 0; }
   align-items: center;
   gap: 0.4rem;
   padding: 0.35rem 0.9rem;
-  border-radius: 999px;
+  border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 600;
   border: 1px solid var(--border-color);
@@ -289,6 +302,9 @@ p { margin: 0; }
   background: var(--bg-surface-hover);
   color: var(--text-main);
 }
+.etat-pill:active {
+  transform: scale(0.96);
+}
 .etat-pill.active {
   border-color: transparent;
   color: #fff;
@@ -300,32 +316,33 @@ p { margin: 0; }
   background: currentColor;
 }
 
+/* ---- SELECT CATÉGORIE (le fameux "Toutes les catégories") ---- */
 .select-wrap {
   display: flex;
   align-items: center;
   gap: 0.7rem;
   padding: 0.75rem 1rem;
   border-radius: 14px;
-  border: 2px solid rgba(232, 80, 2, 0.35);
+  border: 2px solid rgba(105, 175, 177, 0.35); /* turquoise */
   background: linear-gradient(135deg, #1b1b1b, #2b2b2b);
-  color: #ff6b00;
+  color: #69AFB1; /* turquoise */
   font-weight: 700;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .select-wrap:hover {
-  border-color: #ff6b00;
-  box-shadow: 0 0 12px rgba(255, 107, 0, 0.35);
+  border-color: #69AFB1;
+  box-shadow: 0 0 12px rgba(105, 175, 177, 0.35);
 }
 
 .select-wrap:focus-within {
-  border-color: #ff6b00;
-  box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.18);
+  border-color: #69AFB1;
+  box-shadow: 0 0 0 4px rgba(105, 175, 177, 0.18);
 }
 
 .select-wrap i {
-  color: #ff6b00;
+  color: #69AFB1;
   font-size: 1rem;
 }
 
@@ -349,8 +366,9 @@ p { margin: 0; }
 }
 
 .select-wrap select:hover {
-  color: #ff8a33;
+  color: #8bc9cb; /* turquoise plus clair */
 }
+
 /* Etat color helpers — reused for pills, badges, chips, card icons */
 .etat-neuf    { background: var(--etat-neuf-bg);    color: var(--etat-neuf-fg); }
 .etat-service { background: var(--etat-service-bg); color: var(--etat-service-fg); }
@@ -434,7 +452,7 @@ p { margin: 0; }
   align-items: center;
   gap: 0.3rem;
   padding: 0.15rem 0.6rem;
-  border-radius: 999px;
+  border-radius: 10px;
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -542,7 +560,7 @@ p { margin: 0; }
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.9rem;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   border: 1px solid var(--border-color);
   background: transparent;
   color: var(--text-muted);
@@ -555,6 +573,9 @@ p { margin: 0; }
 .pagination button:hover:not(:disabled) {
   background: var(--bg-surface-hover);
   color: var(--text-main);
+}
+.pagination button:active:not(:disabled) {
+  transform: scale(0.95);
 }
 .pagination button:disabled {
   opacity: 0.35;
@@ -633,7 +654,7 @@ p { margin: 0; }
   align-items: center;
   gap: 0.25rem;
   padding: 0.1rem 0.55rem;
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--bg-pill-active);
   color: var(--primary);
   font-size: 0.65rem;
@@ -667,7 +688,7 @@ p { margin: 0; }
   align-items: center;
   gap: 0.35rem;
   padding: 0.3rem 0.75rem;
-  border-radius: 999px;
+  border-radius: 10px;
   font-size: 0.7rem;
   font-weight: 600;
   border: 1px solid transparent;
@@ -684,6 +705,9 @@ p { margin: 0; }
 }
 .etat-chip.active {
   color: #fff;
+}
+.etat-chip:active {
+  transform: scale(0.95);
 }
 .etat-chip.etat-neuf.active    { background: var(--etat-neuf-fg);    color: var(--etat-neuf-bg); }
 .etat-chip.etat-service.active { background: var(--etat-service-fg); color: var(--etat-service-bg); }
@@ -719,6 +743,9 @@ p { margin: 0; }
 }
 .drawer-tabs button:hover {
   color: var(--text-main);
+}
+.drawer-tabs button:active {
+  transform: scale(0.96);
 }
 .drawer-tabs button.active {
   color: var(--primary);
@@ -1015,7 +1042,7 @@ p { margin: 0; }
   font-size: 0.7rem;
   font-weight: 600;
   padding: 0.15rem 0.6rem;
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--etat-panne-bg);
   color: var(--etat-panne-fg);
 }
@@ -1083,6 +1110,9 @@ p { margin: 0; }
   font-family: var(--font-body);
   transition: all var(--transition);
 }
+.modal-tabs button:active {
+  transform: scale(0.96);
+}
 .modal-tabs button.active {
   background: var(--bg-app);
   color: var(--primary);
@@ -1137,8 +1167,73 @@ p { margin: 0; }
 }
 
 /* --------------------------------------------
-   10. RESPONSIVE
+   10. CONFIRM MODAL
    -------------------------------------------- */
+.confirm-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 440px;
+  background: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1.5rem;
+  z-index: 2001;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+
+  .confirm-header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .warning-icon {
+      color: #FEBE29; /* jaune de la palette */
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+  }
+
+  .confirm-message {
+    margin: 1rem 0 1.5rem 0;
+    color: #a1a1aa;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}
+
+.btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 10px; /* arrondi */
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+
+  &:hover {
+    background-color: #b91c1c;
+  }
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+/* ============================================================
+   11. RESPONSIVE
+   ============================================================ */
 @media (max-width: 1024px) {
   .stock-page { padding: 1rem 1.25rem 2rem; }
   .stock-header { flex-direction: column; align-items: stretch; }
@@ -1172,7 +1267,7 @@ p { margin: 0; }
   outline-offset: 2px;
 }
 .asset-card {
-  position: relative; // nécessaire pour positionner le bouton delete
+  position: relative;
   cursor: pointer;
 }
 
@@ -1197,63 +1292,4 @@ p { margin: 0; }
 
 .asset-card:hover .card-delete-btn {
   opacity: 1;
-}
-.confirm-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  max-width: 440px;
-  background: #161616;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 1.5rem;
-  z-index: 2001;   // ← changer 1000 en 2001 (au-dessus du backdrop à 2000)
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-
-
-  .confirm-header-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-
-    .warning-icon {
-      color: #f59e0b;
-    }
-
-    h2 {
-      margin: 0;
-      font-size: 1.125rem;
-      font-weight: 600;
-    }
-  }
-
-  .confirm-message {
-    margin: 1rem 0 1.5rem 0;
-    color: #a1a1aa;
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-
-  .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-  }
-}
-
-.btn-danger {
-  background-color: #dc2626;
-  color: #ffffff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: #b91c1c;
-  }
 }

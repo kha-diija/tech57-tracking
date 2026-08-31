@@ -1,4 +1,9 @@
-/* Thème sombre global pour la page des missions technicien */
+/* ============================================================
+   Fichier : technicien-mission.scss
+   Palette : #233A6E (bleu foncé), #FEBE29 (jaune),
+             #BAD439 (vert citron), #69AFB1 (bleu turquoise)
+   ============================================================ */
+
 .gs-etab {
   padding: 28px;
   max-width: 1600px;
@@ -10,6 +15,8 @@
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 16px;
   }
 
   &__eyebrow {
@@ -19,15 +26,16 @@
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
-    color: #f97316; // Orange caractéristique de l'app
+    color: #69AFB1;
     letter-spacing: 0.5px;
     margin-bottom: 8px;
 
     &-dot {
       width: 6px;
       height: 6px;
-      background-color: #f97316;
+      background-color: #69AFB1;
       border-radius: 50%;
+      box-shadow: 0 0 8px rgba(105, 175, 177, 0.5);
     }
   }
 
@@ -47,30 +55,142 @@
   &__actions {
     display: flex;
     gap: 12px;
+    flex-wrap: wrap;
   }
 }
 
-/* Barre de recherche et filtres style dark */
+/* ============================================================
+   BOUTONS
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &--primary {
+    background: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(35, 58, 110, 0.35);
+
+    &:hover {
+      background: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(35, 58, 110, 0.45);
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+
+  &--ghost {
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+
+  &--danger {
+    background: #ef4444;
+    color: white;
+
+    &:hover {
+      background: #dc2626;
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+
+  &--sm {
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 999px;
+  }
+}
+
+/* ============================================================
+   ICÔNES D'ACTION
+   ============================================================ */
+.icon-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  padding: 7px;
+  border-radius: 8px;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+
+  &:active {
+    transform: scale(0.93);
+  }
+
+  &--danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+}
+
+/* ============================================================
+   BARRE DE RECHERCHE ET FILTRES
+   ============================================================ */
 .toolbar {
   display: flex;
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
-  background: #1e1e2d; // Fond sombre des blocs
+  background: #1e1e2d;
   padding: 14px 20px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap;
 
   &__search {
     display: flex;
     align-items: center;
     gap: 10px;
     flex: 1;
+    min-width: 200px;
     background: #151521;
     padding: 10px 14px;
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     color: #94a3b8;
+    transition: border-color 0.3s;
+
+    &:focus-within {
+      border-color: #69AFB1;
+      box-shadow: 0 0 0 3px rgba(105, 175, 177, 0.15);
+    }
 
     input {
       border: none;
@@ -95,6 +215,11 @@
     font-size: 14px;
     outline: none;
     cursor: pointer;
+
+    &:focus {
+      border-color: #69AFB1;
+      box-shadow: 0 0 0 3px rgba(105, 175, 177, 0.15);
+    }
   }
 
   &__count {
@@ -104,7 +229,23 @@
   }
 }
 
-/* Tableau Dark Mode */
+/* Filtres pills */
+.flex.items-center.gap-2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 999px;
+  }
+}
+
+/* ============================================================
+   TABLEAU
+   ============================================================ */
 .panel {
   background: #1e1e2d;
   border-radius: 16px;
@@ -132,6 +273,7 @@
     text-transform: uppercase;
     font-size: 11px;
     letter-spacing: 0.5px;
+    white-space: nowrap;
   }
 
   td {
@@ -141,13 +283,11 @@
     vertical-align: middle;
   }
 
-  tr:hover td {
-    background: rgba(255, 255, 255, 0.02);
-  }
-
-  &__ref {
-    font-weight: 600;
-    color: #f97316; // Référence en orange
+  tbody tr {
+    transition: background 0.2s;
+    &:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
   }
 
   &__name {
@@ -168,9 +308,8 @@
     padding: 40px !important;
   }
 
-  &__row-actions {
-    display: flex;
-    gap: 6px;
+  .text-right {
+    text-align: right;
   }
 }
 
@@ -180,294 +319,93 @@
   gap: 6px;
   font-size: 13px;
   color: #cbd5e1;
+
+  lucide-icon {
+    opacity: 0.6;
+  }
 }
 
 .id-tag {
   font-size: 11px;
   color: #64748b;
   background: rgba(255, 255, 255, 0.05);
-  padding: 1px 6px;
+  padding: 1px 8px;
   border-radius: 6px;
   font-family: monospace;
+  display: inline-block;
+  margin-top: 2px;
 }
 
-/* Badges de statuts adaptés au thème sombre */
+/* ============================================================
+   BADGES DE STATUT
+   ============================================================ */
 .badge {
   display: inline-block;
-  padding: 5px 12px;
-  border-radius: 20px;
+  padding: 5px 14px;
+  border-radius: 999px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 
-  &--info { 
-    background: rgba(14, 165, 233, 0.15); 
-    color: #38bdf8; 
-    border: 1px solid rgba(14, 165, 233, 0.3);
+  &--info {
+    background: rgba(105, 175, 177, 0.15);
+    color: #69AFB1;
+    border: 1px solid rgba(105, 175, 177, 0.3);
+    box-shadow: 0 0 15px rgba(105, 175, 177, 0.05);
   }
-  &--warning { 
-    background: rgba(245, 158, 11, 0.15); 
-    color: #fbbf24; 
-    border: 1px solid rgba(245, 158, 11, 0.3);
+  &--warning {
+    background: rgba(254, 190, 41, 0.15);
+    color: #FEBE29;
+    border: 1px solid rgba(254, 190, 41, 0.3);
+    box-shadow: 0 0 15px rgba(254, 190, 41, 0.05);
   }
-  &--success { 
-    background: rgba(34, 197, 94, 0.15); 
-    color: #4ade80; 
-    border: 1px solid rgba(34, 197, 94, 0.3);
+  &--success {
+    background: rgba(186, 212, 57, 0.15);
+    color: #BAD439;
+    border: 1px solid rgba(186, 212, 57, 0.3);
+    box-shadow: 0 0 15px rgba(186, 212, 57, 0.05);
   }
-  &--danger { 
-    background: rgba(239, 68, 68, 0.15); 
-    color: #f87171; 
+  &--danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
     border: 1px solid rgba(239, 68, 68, 0.3);
   }
-}
-
-/* Boutons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
-
-  &--primary {
-    background: #f97316; // Bouton orange principal
-    color: white;
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
-    &:hover { 
-      background: #ea580c; 
-      transform: translateY(-1px);
-    }
+  &--purple {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.10);
   }
-
-  &--ghost {
+  &--neutral {
     background: rgba(255, 255, 255, 0.06);
-    color: #cbd5e1;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    &:hover { 
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-    }
-  }
-}
-
-.icon-btn {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: pointer;
-  padding: 7px;
-  border-radius: 8px;
-  color: #94a3b8;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-  }
-}
-
-/* Panneau latéral (Drawer) Dark Mode */
-.side-panel-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 100;
-  backdrop-filter: blur(4px);
-}
-
-.side-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 480px;
-  height: 100vh;
-  background: #1e1e2d;
-  z-index: 101;
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  flex-direction: column;
-
-  &__header {
-    padding: 22px 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    h2 { font-size: 18px; margin: 0; color: #ffffff; font-weight: 600; }
-  }
-
-  &__body {
-    padding: 24px;
-    flex: 1;
-    overflow-y: auto;
-  }
-
-  &__footer {
-    padding: 16px 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    background: #151521;
-  }
-}
-
-.form-group {
-  margin-bottom: 18px;
-
-  label {
-    display: block;
-    font-size: 13px;
-    font-weight: 500;
     color: #94a3b8;
-    margin-bottom: 6px;
-  }
-
-  input, select {
-    width: 100%;
-    padding: 11px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 14px;
-    outline: none;
-    background: #151521;
-    color: white;
-
-    &:focus {
-      border-color: #f97316;
-      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
-    }
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.text-muted {
-  color: #94a3b8;
-}
-
-.responsable-card {
-  background: #151521;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-size: 13px;
-  color: #e2e8f0;
-
-  &__row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
-    &:not(:last-child) {
-      margin-bottom: 4px;
-    }
-  }
-}
-/* --- NOUVEAUX STYLES POUR LA GESTION DES MATÉRIELS --- */
-
-/* Badge PROPOSEE */
-.badge--purple {
-  background: rgba(168, 85, 247, 0.15);
-  color: #c084fc;
-  border: 1px solid rgba(168, 85, 247, 0.3);
-}
-
-/* Style pour les matériels dans le tableau */
-.materiel-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-/* Lignes de matériels sélectionnés dans le formulaire */
-.materiel-ligne {
+/* ============================================================
+   MATÉRIELS DANS LE TABLEAU
+   ============================================================ */
+.materiel-summary {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  margin-top: 8px;
+  flex-wrap: wrap;
 
-  span {
-    flex: 1;
-    font-size: 13px;
+  .materiel-count {
+    font-size: 12px;
     color: #e2e8f0;
+    background: rgba(105, 175, 177, 0.08);
+    padding: 2px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(105, 175, 177, 0.15);
   }
 
-  input {
-    width: 60px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: #151521;
-    color: white;
-  }
-
-  button {
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 6px;
+  .btn--sm {
+    padding: 2px 8px;
     font-size: 11px;
-    cursor: pointer;
   }
 }
-/* Style pour la ligne de matériel sélectionné */
-.materiel-ligne {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  margin-top: 8px;
-
-  span {
-    flex: 1;
-    font-size: 13px;
-    color: #e2e8f0;
-  }
-
-  input {
-    width: 60px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: #151521;
-    color: white;
-  }
-
-  button {
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-    cursor: pointer;
-  }
-}
-/* --- NOUVEAU DESIGN POUR LES MATÉRIELS --- */
 
 .materiels-compact {
   display: flex;
@@ -490,39 +428,6 @@
   white-space: nowrap;
 }
 
-.materiel-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.dot-green {
-  background-color: #22c55e;
-}
-
-.dot-red {
-  background-color: #ef4444;
-}
-
-.dot-orange {
-  background-color: #f97316;
-}
-
-.materiel-nom {
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.materiel-qty {
-  font-size: 10px;
-  color: #94a3b8;
-  font-weight: 700;
-}
-/* --- NOUVEAU DESIGN POUR LES MATÉRIELS (LISTE VERTICALE) --- */
-
 .materiels-list {
   display: flex;
   flex-direction: column;
@@ -540,23 +445,25 @@
   font-size: 12px;
 }
 
+/* ============================================================
+   DOTS POUR MATÉRIELS - PALETTE HARMONISÉE
+   ============================================================ */
 .materiel-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.dot-green {
+.materiel-dot.dot-green {
   background-color: #22c55e;
 }
-
-.dot-red {
+.materiel-dot.dot-red {
   background-color: #ef4444;
 }
-
-.dot-orange {
-  background-color: #f97316;
+.materiel-dot.dot-orange {
+  background-color: #FEBE29; /* ✅ Jaune palette (remplace orange) */
+  box-shadow: 0 0 6px rgba(254, 190, 41, 0.3);
 }
 
 .materiel-nom {
@@ -576,148 +483,496 @@
   padding: 2px 6px;
   border-radius: 4px;
 }
-/* --- MODALE DES MATÉRIELS --- */
-.materiel-summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.materiel-count {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.materiel-detail-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.materiel-detail-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.materiel-detail-nom {
-  flex: 1;
-  font-size: 13px;
-  color: #e2e8f0;
-}
-
-.materiel-detail-qty {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.materiel-detail-statut {
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.text-green { color: #22c55e; }
-.text-red { color: #ef4444; }
-.text-orange { color: #f97316; }
-/* --- MODALE DES MATÉRIELS --- */
-.modal-backdrop {
+/* ============================================================
+   PANEL LATÉRAL (Drawer)
+   ============================================================ */
+.side-panel-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 480px;
+  max-width: 100vw;
+  height: 100vh;
+  background: #1e1e2d;
+  z-index: 101;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.25s ease-out;
+
+  &__header {
+    padding: 22px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(to right, #233A6E, #69AFB1, #FEBE29);
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 0;
+      color: #ffffff;
+      font-weight: 700;
+      background: linear-gradient(to right, #ffffff, #69AFB1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  }
+
+  &__body {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  &__footer {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: #151521;
+    flex-shrink: 0;
+  }
+}
+
+/* ============================================================
+   FORMULAIRES
+   ============================================================ */
+.form-group {
+  margin-bottom: 18px;
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 14px;
+    outline: none;
+    background: #151521;
+    color: white;
+    transition: border-color 0.3s, box-shadow 0.3s;
+
+    &:focus {
+      border-color: #69AFB1;
+      box-shadow: 0 0 0 3px rgba(105, 175, 177, 0.15);
+    }
+
+    &::placeholder {
+      color: #64748b;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  small.text-muted {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #64748b;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.text-muted {
+  color: #94a3b8;
+}
+
+/* ============================================================
+   CARTE RESPONSABLE
+   ============================================================ */
+.responsable-card {
+  background: #151521;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #e2e8f0;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &:not(:last-child) {
+      margin-bottom: 4px;
+    }
+
+    lucide-icon {
+      color: #FEBE29; /* ✅ Jaune palette */
+    }
+  }
+}
+
+/* ============================================================
+   SÉLECTION MATÉRIEL DANS LE FORMULAIRE
+   ============================================================ */
+.materiel-ligne {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #151521;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 6px;
+
+  span {
+    flex: 1;
+    font-size: 13px;
+    color: #e2e8f0;
+  }
+
+  input[type="number"] {
+    width: 60px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0b0c10;
+    color: white;
+    text-align: center;
+    font-size: 13px;
+
+    &:focus {
+      border-color: #69AFB1;
+      outline: none;
+    }
+  }
+
+  .btn--danger {
+    padding: 2px 8px;
+    font-size: 11px;
+  }
+}
+
+/* ============================================================
+   BANNIÈRE INFO (notification)
+   ============================================================ */
+.p-4.bg-amber-500\/10 {
+  padding: 12px 16px;
+  background: rgba(254, 190, 41, 0.08);
+  border: 1px solid rgba(254, 190, 41, 0.2);
+  border-radius: 10px;
+  font-size: 12px;
+  color: #FEBE29; /* ✅ Jaune palette */
+  margin-top: 12px;
+}
+
+/* ============================================================
+   MODALE DES MATÉRIELS
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: fadeIn 0.2s ease;
 }
 
 .modal-content {
   background: #1e1e2d;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 16px;
-  width: 500px;
-  max-width: 90vw;
+  width: 100%;
+  max-width: 520px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-}
+  animation: scaleUp 0.25s ease-out;
 
-.modal-header {
-  padding: 18px 22px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+  .modal-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    position: relative;
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 16px;
-  color: #ffffff;
-  font-weight: 600;
-}
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(to right, #233A6E, #69AFB1, #FEBE29);
+    }
 
-.modal-body {
-  padding: 22px;
-  overflow-y: auto;
-  flex: 1;
-}
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(to right, #ffffff, #69AFB1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  }
 
-.modal-footer {
-  padding: 14px 22px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: flex-end;
+  .modal-body {
+    padding: 20px 24px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    padding: 14px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    justify-content: flex-end;
+    background: #151521;
+    flex-shrink: 0;
+  }
 }
 
 .materiel-detail-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  margin-bottom: 8px;
 
-.materiel-detail-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
+  .materiel-detail-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
 
-.dot-green {
-  background-color: #22c55e;
-}
+  .materiel-detail-dot.dot-green {
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+  }
 
-.dot-red {
-  background-color: #ef4444;
-}
+  .materiel-detail-dot.dot-red {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  }
 
-.dot-orange {
-  background-color: #f97316;
-}
+  .materiel-detail-dot.dot-orange {
+    background: #FEBE29; /* ✅ Jaune palette */
+    box-shadow: 0 0 8px rgba(254, 190, 41, 0.4);
+  }
 
-.materiel-detail-nom {
-  flex: 1;
-  font-size: 13px;
-  color: #e2e8f0;
-}
+  .materiel-detail-nom {
+    flex: 1;
+    font-size: 13px;
+    color: #e2e8f0;
+  }
 
-.materiel-detail-qty {
-  font-size: 12px;
-  color: #94a3b8;
+  .materiel-detail-qty {
+    font-size: 12px;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .materiel-detail-statut {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 20px;
+  }
 }
 
 .materiel-detail-statut {
-  font-size: 11px;
-  font-weight: 600;
+  &.statut-approuve {
+    background: rgba(186, 212, 57, 0.15);
+    color: #BAD439; /* ✅ Vert citron palette */
+  }
+  &.statut-rejete {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+  }
+  &.statut-attente {
+    background: rgba(254, 190, 41, 0.15);
+    color: #FEBE29; /* ✅ Jaune palette */
+  }
 }
 
-.text-green { color: #22c55e; }
-.text-red { color: #ef4444; }
-.text-orange { color: #f97316; }
+/* ============================================================
+   CLASSES DE TEXTE POUR STATUTS
+   ============================================================ */
+.text-green {
+  color: #22c55e;
+}
+.text-red {
+  color: #ef4444;
+}
+.text-orange {
+  color: #FEBE29; /* ✅ Jaune palette (remplace orange) */
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+  .gs-etab {
+    padding: 16px;
+  }
+
+  .gs-etab__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gs-etab__actions {
+    justify-content: stretch;
+
+    .btn {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+
+  .side-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .gs-etab {
+    padding: 12px;
+  }
+
+  .gs-etab__title {
+    font-size: 20px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar__search {
+    min-width: 0;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .etab-table {
+    font-size: 12px;
+
+    th,
+    td {
+      padding: 10px 12px;
+    }
+  }
+
+  .side-panel__body {
+    padding: 16px;
+  }
+
+  .side-panel__header {
+    padding: 16px 18px;
+  }
+
+  .side-panel__footer {
+    padding: 12px 18px;
+  }
+
+  .modal-content {
+    max-width: 95vw;
+    max-height: 90vh;
+  }
+}
