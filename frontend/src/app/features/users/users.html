@@ -25,8 +25,9 @@
       <option value="ALL">Tous les rôles</option>
       <option value="ADMINISTRATEUR">Administrateur</option>
       <option value="TECHNICIEN">Technicien</option>
-      <option value="OBSERVATEUR">Observateur</option>
+      <option value="OBSERVATEUR">FORMATEUR</option>
       <option value="GESTIONNAIRE_STOCK">Gestionnaire de Stock</option>
+      <option value="PARTENAIRE">Partenaire</option>
     </select>
   </div>
 
@@ -55,8 +56,9 @@
               [class.badge-tech]="user.role === 'TECHNICIEN'"
               [class.badge-obs]="user.role === 'OBSERVATEUR'"
               [class.badge-stock]="user.role === 'GESTIONNAIRE_STOCK'"
+              [class.badge-partner]="$any(user.role) === 'PARTENAIRE'"
             >
-              {{ user.role }}
+              {{ getRoleLabel(user.role) }}
             </span>
           </td>
           <td>
@@ -125,12 +127,12 @@
           <input type="password" formControlName="password" />
         </div>
 
-        <!-- Rôle (désactivé en mode édition) -->
-        <div class="form-group">
+        <!-- Rôle (visible uniquement en création, absent en édition) -->
+        <div class="form-group" *ngIf="!isEditMode()">
           <label>Rôle *</label>
           <select formControlName="role">
             <option value="TECHNICIEN">Technicien</option>
-            <option value="OBSERVATEUR">Observateur</option>
+            <option value="OBSERVATEUR">FORMATEUR</option>
             <option value="GESTIONNAIRE_STOCK">Gestionnaire de Stock</option>
             <option value="ADMINISTRATEUR">Administrateur</option>
           </select>
