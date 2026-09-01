@@ -19,11 +19,11 @@ import {
 } from 'lucide-angular';
 import { TechnicienMissionService } from '../../shared/services/technicien-mission.service';
 import { EtablissementService } from '../../shared/services/etablissement.service';
-import { CommuneService } from '../../shared/services/commune.service';
+import { LocationService } from '../../shared/services/location.service'; // ✅ REMPLACÉ
 import { MaterielService } from '../../shared/services/materiel.service';
 import { AuthService } from '../../shared/services/auth.service';
 import { MissionInstallation, MissionRequestDTO, MissionMateriel } from '../../shared/models/mission.model';
-import { Etablissement, Commune } from '../../shared/models/etablissement.model';
+import { Etablissement, Commune, Province } from '../../shared/models/etablissement.model'; // ✅ AJOUT Province
 import { Materiel } from '../../shared/models/materiel.model';
 
 interface MissionFormModel {
@@ -45,7 +45,7 @@ interface MissionFormModel {
 export class TechnicienMissionComponent {
   private readonly techMissionService = inject(TechnicienMissionService);
   private readonly etablissementService = inject(EtablissementService);
-  private readonly communeService = inject(CommuneService);
+  private readonly locationService = inject(LocationService); // ✅ REMPLACÉ
   private readonly materielService = inject(MaterielService);
   private readonly authService = inject(AuthService);
 
@@ -59,9 +59,14 @@ export class TechnicienMissionComponent {
   // Données réactives
   readonly missions = signal<MissionInstallation[]>([]);
   readonly etablissementsList = signal<Etablissement[]>([]);
+  
+  // ✅ NOUVEAUX SIGNAUX LOCALISATION
+  readonly provincesList = signal<Province[]>([]);
   readonly communesList = signal<Commune[]>([]);
   readonly etablissementsFiltres = signal<Etablissement[]>([]);
+  readonly selectedProvinceId = signal<number | null>(null);
   readonly selectedCommuneId = signal<number | null>(null);
+  
   readonly materielsList = signal<Materiel[]>([]);
   readonly isLoading = signal<boolean>(true);
 
@@ -121,6 +126,14 @@ export class TechnicienMissionComponent {
   constructor() {
     this.loadData();
     this.loadMateriels();
+    this.loadProvinces(); // ✅ AJOUT
+  }
+
+  // ✅ NOUVELLE MÉTHODE : Charger les provinces
+  private loadProvinces(): void {
+    this.locationService.getProvinces().subscribe((data) => {
+      this.provincesList.set(data);
+    });
   }
 
   private loadData(): void {
@@ -143,11 +156,7 @@ export class TechnicienMissionComponent {
     this.etablissementService.getAll().subscribe((data) => {
       this.etablissementsList.set(data);
     });
-
-    // Charger les communes
-    this.communeService.getAll().subscribe((data) => {
-      this.communesList.set(data);
-    });
+    
   }
 
   // Charger la liste des matériels
@@ -155,6 +164,22 @@ export class TechnicienMissionComponent {
     this.materielService.getAll().subscribe((data) => {
       this.materielsList.set(data);
     });
+  }
+
+  // ✅ NOUVELLE MÉTHODE : Quand la province change, charger les communes
+  onProvinceChange(idProvince: number | null): void {
+    this.selectedProvinceId.set(idProvince);
+    this.selectedCommuneId.set(null);
+    this.etablissementsFiltres.set([]);
+    this.updateField('idEtablissement', null);
+
+    if (idProvince) {
+      this.locationService.getCommunes(idProvince).subscribe((data) => {
+        this.communesList.set(data);
+      });
+    } else {
+      this.communesList.set([]);
+    }
   }
 
   // ✅ Quand la commune change, filtrer les établissements
@@ -226,7 +251,9 @@ export class TechnicienMissionComponent {
   openCreateForm(): void {
     this.editingId.set(null);
     this.selectedMateriels.set([]);
+    this.selectedProvinceId.set(null); // ✅ AJOUT
     this.selectedCommuneId.set(null);
+    this.communesList.set([]); // ✅ AJOUT
     this.etablissementsFiltres.set([]);
     const currentUser = this.authService.currentUser();
     this.formModel.set({
@@ -251,10 +278,16 @@ export class TechnicienMissionComponent {
       idAdministrateur: item.idAdministrateur ?? null
     });
 
-    // Si l'établissement est déjà sélectionné, charger la commune correspondante
+    // Si l'établissement est déjà sélectionné, charger la province + commune correspondante
     if (item.idEtablissement) {
       const etab = this.etablissementsList().find(e => e.idEtablissement === item.idEtablissement);
       if (etab) {
+        // ✅ Charger la province et ses communes
+        this.selectedProvinceId.set(etab.idProvince);
+        this.locationService.getCommunes(etab.idProvince).subscribe((communes) => {
+          this.communesList.set(communes);
+        });
+        
         this.selectedCommuneId.set(etab.idCommune);
         this.etablissementService.getByCommune(etab.idCommune).subscribe((data) => {
           this.etablissementsFiltres.set(data);
@@ -284,6 +317,9 @@ export class TechnicienMissionComponent {
       idEtablissement: m.idEtablissement,
       idAdministrateur: m.idAdministrateur ?? currentUser.id,
       idEquipe: undefined,
+      // ✅ AJOUT DES NOUVEAUX CHAMPS
+      idProvince: this.selectedProvinceId(),
+      idCommune: this.selectedCommuneId(),
       materiels: this.selectedMateriels()
     };
 

@@ -5,13 +5,17 @@ public class CommuneResponse {
     private String nom;
     private String code;
     private Integer idProvince;
+    private String nomProvince; // ✅ NOUVEAU CHAMP
 
     public CommuneResponse() {}
-    public CommuneResponse(Integer idCommune, String nom, String code, Integer idProvince) {
+
+    // ✅ MODIFICATION DU CONSTRUCTEUR (ajout du nomProvince)
+    public CommuneResponse(Integer idCommune, String nom, String code, Integer idProvince, String nomProvince) {
         this.idCommune = idCommune;
         this.nom = nom;
         this.code = code;
         this.idProvince = idProvince;
+        this.nomProvince = nomProvince;
     }
 
     public Integer getIdCommune() { return idCommune; }
@@ -22,4 +26,6 @@ public class CommuneResponse {
     public void setCode(String code) { this.code = code; }
     public Integer getIdProvince() { return idProvince; }
     public void setIdProvince(Integer idProvince) { this.idProvince = idProvince; }
+    public String getNomProvince() { return nomProvince; } // ✅ GETTER
+    public void setNomProvince(String nomProvince) { this.nomProvince = nomProvince; } // ✅ SETTER
 }
