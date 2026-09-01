@@ -132,7 +132,7 @@ public class RapportPdfService {
             document.add(tableRetour);
         }
 
-        // Attestation (informative uniquement)
+        // ✅ Attestation (informative uniquement)
         if (intervention.getAttestation() != null) {
             document.add(new Paragraph("\n"));
             addSectionHeader(document, "✅ Attestation de réalisation");
@@ -186,139 +186,6 @@ public class RapportPdfService {
         rapportRepository.save(rapport);
 
         return pdfBytes;
-    }
-
-    public byte[] genererAttestationPdf(Integer interventionId) throws DocumentException, IOException {
-        InterventionResponse intervention = interventionService.getById(interventionId);
-
-        String nomSignataire = intervention.getAttestation() != null
-                ? intervention.getAttestation().getNomSignataire()
-                : null;
-
-        return construireAttestationPdf(
-                intervention,
-                nomSignataire,
-                intervention.getSortiesMateriel(),
-                intervention.getRetoursMateriel(),
-                intervention.getChecklistItems()
-        );
-    }
-
-    public byte[] genererAttestationPreviewPdf(InterventionResponse intervention,
-                                               String nomSignataire,
-                                               List<SortieMaterielDto> sortiesPreview,
-                                               List<RetourMaterielDto> retoursPreview,
-                                               List<ChecklistItemDto> checklistPreview) throws DocumentException, IOException {
-        return construireAttestationPdf(intervention, nomSignataire, sortiesPreview, retoursPreview, checklistPreview);
-    }
-
-    /**
-     * Construction commune du PDF d'attestation.
-     * Le tableau de la checklist est réduit à 2 colonnes : Matériel et État constaté (vide).
-     */
-    private byte[] construireAttestationPdf(InterventionResponse intervention,
-                                            String nomSignataire,
-                                            List<SortieMaterielDto> sorties,
-                                            List<RetourMaterielDto> retours,
-                                            List<ChecklistItemDto> checklist) throws DocumentException, IOException {
-        Document document = new Document(PageSize.A4);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfWriter.getInstance(document, baos);
-        document.open();
-
-        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, BaseColor.ORANGE);
-        Paragraph title = new Paragraph("ATTESTATION DE RÉALISATION", titleFont);
-        title.setAlignment(Element.ALIGN_CENTER);
-        document.add(title);
-        document.add(new Paragraph("\n"));
-
-        Font subtitleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.DARK_GRAY);
-        Paragraph subtitle = new Paragraph("TECH-57 - Système de Suivi Logistique", subtitleFont);
-        subtitle.setAlignment(Element.ALIGN_CENTER);
-        document.add(subtitle);
-        document.add(new Paragraph("\n"));
-        document.add(new Paragraph("-------------------------------------------------------------------", FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.LIGHT_GRAY)));
-        document.add(new Paragraph("\n"));
-
-        addSectionHeader(document, "📋 Informations Générales");
-        document.add(new Paragraph("Intervention N° : " + intervention.getId()));
-        document.add(new Paragraph("Mission : " + intervention.getMissionReference()));
-        document.add(new Paragraph("Établissement : " + (intervention.getEtablissementDesignation() != null ? intervention.getEtablissementDesignation() : "Non renseigné")));
-        document.add(new Paragraph("Technicien : " + intervention.getTechnicienNom()));
-        document.add(new Paragraph("Visites effectuées : " + intervention.getNumeroVisite()));
-        document.add(new Paragraph("\n"));
-
-        if (sorties != null && !sorties.isEmpty()) {
-            addSectionHeader(document, "📤 Matériel sorti / utilisé");
-            PdfPTable table = new PdfPTable(3);
-            table.setWidthPercentage(100);
-            table.setSpacingBefore(10f);
-            table.setSpacingAfter(10f);
-            addTableHeader(table, "Référence", "Quantité", "Date");
-            for (SortieMaterielDto s : sorties) {
-                table.addCell(s.getMaterielReference());
-                table.addCell(String.valueOf(s.getQuantite()));
-                table.addCell(s.getDateSortie() != null ? s.getDateSortie().format(DateTimeFormatter.ofPattern("dd/MM HH:mm")) : "-");
-            }
-            document.add(table);
-        }
-
-        if (retours != null && !retours.isEmpty()) {
-            addSectionHeader(document, "📥 Matériel retourné");
-            PdfPTable table = new PdfPTable(4);
-            table.setWidthPercentage(100);
-            table.setSpacingBefore(10f);
-            table.setSpacingAfter(10f);
-            addTableHeader(table, "Référence", "Quantité", "État", "Date");
-            for (RetourMaterielDto r : retours) {
-                table.addCell(r.getMaterielReference());
-                table.addCell(String.valueOf(r.getQuantite()));
-                table.addCell(r.getEtatMateriel());
-                table.addCell(r.getDateRetour() != null ? r.getDateRetour().format(DateTimeFormatter.ofPattern("dd/MM HH:mm")) : "-");
-            }
-            document.add(table);
-        }
-
-        // --- Checklist : tableau 2 colonnes (Matériel, État constaté) avec état constaté vide ---
-        if (checklist != null && !checklist.isEmpty()) {
-            addSectionHeader(document, "📋 Checklist d'installation");
-            PdfPTable table = new PdfPTable(2);
-            table.setWidthPercentage(100);
-            table.setSpacingBefore(10f);
-            table.setSpacingAfter(10f);
-            addTableHeader(table, "Matériel", "État constaté");
-            for (ChecklistItemDto c : checklist) {
-                String materiel = c.getMaterielReference() != null ? c.getMaterielReference() : "-";
-                table.addCell(materiel);
-                table.addCell(""); // cellule vide
-            }
-            document.add(table);
-        }
-
-        document.add(new Paragraph("\n"));
-        document.add(new Paragraph("Ce document atteste de la bonne réalisation de l'intervention."));
-        document.add(new Paragraph("Généré le : " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")), FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.GRAY)));
-
-        // Nom du signataire en bas à droite
-        document.add(new Paragraph("\n\n"));
-        Font signFont = FontFactory.getFont(FontFactory.HELVETICA, 11, BaseColor.BLACK);
-
-        Paragraph signLine = new Paragraph(
-                (nomSignataire != null && !nomSignataire.isBlank())
-                        ? "Signataire : " + nomSignataire
-                        : "Signataire : ____________________",
-                signFont
-        );
-        signLine.setAlignment(Element.ALIGN_RIGHT);
-        document.add(signLine);
-
-        Paragraph signSpace = new Paragraph("Signature : ______________________", signFont);
-        signSpace.setAlignment(Element.ALIGN_RIGHT);
-        signSpace.setSpacingBefore(30f);
-        document.add(signSpace);
-
-        document.close();
-        return baos.toByteArray();
     }
 
     private void addSectionHeader(Document document, String text) throws DocumentException {
