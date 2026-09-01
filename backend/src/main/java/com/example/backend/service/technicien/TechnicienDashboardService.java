@@ -68,26 +68,32 @@ public class TechnicienDashboardService {
                     ));
         }
 
-        // ⚡ 1 seule requête pour TOUTES les sorties
+        // ⚡ Récupérer TOUTES les sorties du technicien (via son email)
         Map<Integer, List<SortieMateriel>> sortiesByIntervention = new java.util.HashMap<>();
-        if (!interventionIds.isEmpty()) {
-            sortiesByIntervention = sortieMaterielRepository.findByInterventionIds(interventionIds)
-                    .stream()
-                    .collect(Collectors.groupingBy(
-                            s -> s.getIntervention().getIdIntervention()
-                    ));
+        List<SortieMateriel> allSorties = sortieMaterielRepository.findByTechnicienEmail(emailTechnicien);
+        for (SortieMateriel s : allSorties) {
+            if (s.getIntervention() != null) {
+                sortiesByIntervention
+                        .computeIfAbsent(s.getIntervention().getIdIntervention(), k -> new ArrayList<>())
+                        .add(s);
+            } else {
+                // Si pas de lien avec intervention, on les met dans une liste globale
+                sortiesByIntervention.computeIfAbsent(-1, k -> new ArrayList<>()).add(s);
+            }
         }
 
-        // ⚡ 1 seule requête pour TOUS les retours
+        // ⚡ Récupérer TOUS les retours du technicien (via son email)
         Map<Integer, List<RetourMateriel>> retoursByIntervention = new java.util.HashMap<>();
-        if (!interventionIds.isEmpty()) {
-            retoursByIntervention = retourMaterielRepository.findByInterventionIds(interventionIds)
-                    .stream()
-                    .collect(Collectors.groupingBy(
-                            r -> r.getIntervention().getIdIntervention()
-                    ));
+        List<RetourMateriel> allRetours = retourMaterielRepository.findByTechnicienEmail(emailTechnicien);
+        for (RetourMateriel r : allRetours) {
+            if (r.getIntervention() != null) {
+                retoursByIntervention
+                        .computeIfAbsent(r.getIntervention().getIdIntervention(), k -> new ArrayList<>())
+                        .add(r);
+            } else {
+                retoursByIntervention.computeIfAbsent(-1, k -> new ArrayList<>()).add(r);
+            }
         }
-
         for (Intervention it : interventions) {
             Integer interventionId = it.getIdIntervention();
 
@@ -124,16 +130,18 @@ public class TechnicienDashboardService {
             List<SortieMateriel> sorties = sortiesByIntervention.getOrDefault(interventionId, new ArrayList<>());
             for (SortieMateriel s : sorties) {
                 if (s.getDetails() != null) {
+                    // ✅ Gérer le null : si quantite est null, on prend 1 par défaut
                     quantiteSortie += s.getDetails().stream()
-                            .mapToLong(d -> d.getQuantite() != null ? d.getQuantite() : 0)
+                            .mapToLong(d -> d.getQuantite() != null ? d.getQuantite() : 1)
                             .sum();
                 }
             }
 
             // ✅ Utiliser les maps pré-chargées pour les retours
             List<RetourMateriel> retours = retoursByIntervention.getOrDefault(interventionId, new ArrayList<>());
+            // ✅ Gérer le null : si quantite est null, on prend 1 par défaut
             quantiteRendue += retours.stream()
-                    .mapToLong(r -> r.getQuantite() != null ? r.getQuantite() : 0)
+                    .mapToLong(r -> r.getQuantite() != null ? r.getQuantite() : 1)
                     .sum();
         }
 

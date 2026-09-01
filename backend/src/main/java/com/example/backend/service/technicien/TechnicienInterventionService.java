@@ -15,6 +15,8 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import com.example.backend.entity.SortieMateriel;
+import com.example.backend.entity.DetailSortieMateriel;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -355,6 +357,40 @@ public class TechnicienInterventionService {
         // --- Bénéficiaires réel (1ère visite) ---
         if (request.getBeneficiairesReel() != null && intervention.getCheckInOuts().size() == 1) {
             intervention.getMission().getEtablissement().setNombreBeneficiairesReel(request.getBeneficiairesReel());
+        }
+
+        // --- GESTION DU MATÉRIEL SORTI ET RETOURNÉ ---
+        if (request.getMaterielSortiIds() != null && !request.getMaterielSortiIds().isEmpty()) {
+            for (Integer idMateriel : request.getMaterielSortiIds()) {
+                if (idMateriel == null) continue;
+                Materiel materiel = materielRepository.findById(idMateriel).orElse(null);
+                if (materiel == null) continue;
+
+                // 1. Créer la SortieMateriel
+                SortieMateriel sortie = new SortieMateriel();
+                sortie.setDateSortie(LocalDateTime.now());
+                sortie.setStatut("En attente"); // En attente, Validée, Rejetée
+                sortie.setRetourTraite(false);
+                sortie.setIntervention(intervention);
+                sortie.setTechnicien(technicien);
+                sortie.setLieuIntervention(
+                        intervention.getMission() != null && intervention.getMission().getEtablissement() != null
+                                ? intervention.getMission().getEtablissement().getDesignation()
+                                : null
+                );
+
+                // 2. Créer le détail de sortie
+                DetailSortieMateriel detail = new DetailSortieMateriel();
+                detail.setSortieMateriel(sortie);
+                detail.setMateriel(materiel);
+                detail.setQuantite(1); // Quantité fixe à 1 (adapter si besoin)
+
+                // 3. Ajouter le détail à la sortie (cascade = ALL)
+                sortie.getDetails().add(detail);
+
+                // 4. Sauvegarder la sortie (les détails seront sauvegardés automatiquement)
+                sortieMaterielRepository.save(sortie);
+            }
         }
 
         // --- GESTION DU MATÉRIEL RETOURNÉ ---
