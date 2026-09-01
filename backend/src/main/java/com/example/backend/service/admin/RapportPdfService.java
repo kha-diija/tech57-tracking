@@ -1,6 +1,7 @@
 package com.example.backend.service.admin;
 
 import com.example.backend.dto.admin.intervention.*;
+import com.example.backend.entity.Intervention; // ✅ AJOUT IMPORTANT
 import com.example.backend.entity.Rapport;
 import com.example.backend.repository.admin.RapportRepository;
 import com.itextpdf.text.*;
@@ -94,7 +95,20 @@ public class RapportPdfService {
         }
 
         document.add(new Paragraph("\n"));
-        document.add(new Paragraph("Localisation GPS : " + (intervention.getLocalisationGps() != null ? intervention.getLocalisationGps() : "Non renseignée")));
+
+        // ============================================================
+        // 📍 LOCALISATION : On utilise celle de l'établissement si dispo
+        // ============================================================
+        Intervention interventionEntity = interventionService.getInterventionEntity(interventionId);
+        String localisationEtablissement = (interventionEntity.getMission() != null && interventionEntity.getMission().getEtablissement() != null)
+                ? interventionEntity.getMission().getEtablissement().getLocalisationGps()
+                : null;
+
+        String localisationGps = (localisationEtablissement != null && !localisationEtablissement.isEmpty())
+                ? localisationEtablissement
+                : intervention.getLocalisationGps();
+
+        document.add(new Paragraph("Localisation GPS : " + (localisationGps != null ? localisationGps : "Non renseignée")));
         document.add(new Paragraph("\n"));
 
         addSectionHeader(document, "📦 Suivi du Matériel");
@@ -130,15 +144,6 @@ public class RapportPdfService {
                 tableRetour.addCell(r.getDateRetour() != null ? r.getDateRetour().format(DateTimeFormatter.ofPattern("dd/MM HH:mm")) : "-");
             }
             document.add(tableRetour);
-        }
-
-        // ✅ Attestation (informative uniquement)
-        if (intervention.getAttestation() != null) {
-            document.add(new Paragraph("\n"));
-            addSectionHeader(document, "✅ Attestation de réalisation");
-            document.add(new Paragraph("Signataire : " + intervention.getAttestation().getNomSignataire()));
-            document.add(new Paragraph("Date de signature : " + (intervention.getAttestation().getDateSignature() != null ? intervention.getAttestation().getDateSignature().format(dtf) : "Non signé")));
-            document.add(new Paragraph("Validité : " + (intervention.getAttestation().getValide() ? "Validée" : "En attente")));
         }
 
         if (intervention.getPhotos() != null && !intervention.getPhotos().isEmpty()) {
