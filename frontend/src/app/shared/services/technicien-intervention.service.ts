@@ -26,7 +26,6 @@ export class TechnicienInterventionService {
     return this.http.post<Intervention>(`${this.apiUrl}/${id}/check-in`, { gpsCheckin });
   }
 
-  // ✅ Ajout du paramètre nomSignataire
   checkOut(id: number, data: any, photos: { file: File, type: string }[], attestationFile: File | null, nomSignataire: string | null = null): Observable<Intervention> {
     const formData = new FormData();
 
@@ -42,7 +41,6 @@ export class TechnicienInterventionService {
 
     formData.append('checklist', JSON.stringify(data.checklist || []));
 
-    // ✅ Ajout du nom du signataire si présent
     if (nomSignataire) {
       formData.append('nomSignataire', nomSignataire);
     }
@@ -63,6 +61,37 @@ export class TechnicienInterventionService {
     return this.http.get(`${this.apiUrl}/${id}/rapport/download`, { responseType: 'blob' });
   }
 
+  // ============================================================
+  // ✅ NOUVELLES MÉTHODES POUR L'ATTESTATION
+  // ============================================================
+
+  // Générer et télécharger l'attestation (à imprimer et faire signer)
+  genererAttestation(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/attestation/generate`, { 
+      responseType: 'blob' 
+    });
+  }
+
+  // Uploader l'attestation signée
+  uploadAttestationSignee(id: number, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.apiUrl}/${id}/attestation/upload`, formData);
+  }
+
+  // Télécharger l'attestation signée
+  downloadAttestationSignee(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/attestation/signee/download`, { 
+      responseType: 'blob' 
+    });
+  }
+
+  // Vérifier si l'intervention est terminée (2 visites)
+  estTerminee(id: number): Observable<{ estTerminee: boolean }> {
+    return this.http.get<{ estTerminee: boolean }>(`${this.apiUrl}/${id}/est-terminee`);
+  }
+
+  // Garder l'ancienne méthode pour compatibilité
   downloadAttestation(id: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/attestation/download`, { responseType: 'blob' });
   }

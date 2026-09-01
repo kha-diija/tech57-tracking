@@ -22,12 +22,12 @@ import {
 } from 'lucide-angular';
 import { MissionService } from '../../../../shared/services/mission.service';
 import { EtablissementService } from '../../../../shared/services/etablissement.service';
-import { CommuneService } from '../../../../shared/services/commune.service';
+import { LocationService } from '../../../../shared/services/location.service'; // ✅ REMPLACÉ
 import { EquipeTechniqueService } from '../../../../shared/services/equipe-technique.service';
 import { MaterielService } from '../../../../shared/services/materiel.service';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { MissionInstallation, MissionRequestDTO, MissionMateriel } from '../../../../shared/models/mission.model';
-import { Etablissement, Commune } from '../../../../shared/models/etablissement.model';
+import { Etablissement, Commune, Province } from '../../../../shared/models/etablissement.model'; // ✅ AJOUT Province
 import { Materiel } from '../../../../shared/models/materiel.model';
 
 interface EquipeTechnique {
@@ -55,7 +55,7 @@ interface MissionFormModel {
 export class GsMission {
   private readonly missionService = inject(MissionService);
   private readonly etablissementService = inject(EtablissementService);
-  private readonly communeService = inject(CommuneService);
+  private readonly locationService = inject(LocationService); // ✅ REMPLACÉ
   private readonly equipeService = inject(EquipeTechniqueService);
   private readonly authService = inject(AuthService);
   private readonly materielService = inject(MaterielService);
@@ -70,9 +70,14 @@ export class GsMission {
   // Données réactives
   readonly missions = signal<MissionInstallation[]>([]);
   readonly etablissementsList = signal<Etablissement[]>([]);
+  
+  // ✅ NOUVEAUX SIGNAUX LOCALISATION
+  readonly provincesList = signal<Province[]>([]);
   readonly communesList = signal<Commune[]>([]);
   readonly etablissementsFiltres = signal<Etablissement[]>([]);
+  readonly selectedProvinceId = signal<number | null>(null);
   readonly selectedCommuneId = signal<number | null>(null);
+  
   readonly equipesList = signal<EquipeTechnique[]>([]);
   readonly materielsList = signal<Materiel[]>([]);
   readonly isLoading = signal<boolean>(true);
@@ -234,6 +239,14 @@ export class GsMission {
 
   constructor() {
     this.loadData();
+    this.loadProvinces(); // ✅ AJOUT
+  }
+
+  // ✅ NOUVELLE MÉTHODE : Charger les provinces
+  private loadProvinces(): void {
+    this.locationService.getProvinces().subscribe((data) => {
+      this.provincesList.set(data);
+    });
   }
 
   private loadData(): void {
@@ -249,11 +262,7 @@ export class GsMission {
     this.etablissementService.getAll().subscribe((data) => {
       this.etablissementsList.set(data);
     });
-
-    // Charger les communes
-    this.communeService.getAll().subscribe((data) => {
-      this.communesList.set(data);
-    });
+    
 
     this.equipeService.getAll().subscribe((data: any) => {
       this.equipesList.set(data);
@@ -262,6 +271,22 @@ export class GsMission {
     this.materielService.getAll().subscribe((data) => {
       this.materielsList.set(data);
     });
+  }
+
+  // ✅ NOUVELLE MÉTHODE : Quand la province change, charger les communes
+  onProvinceChange(idProvince: number | null): void {
+    this.selectedProvinceId.set(idProvince);
+    this.selectedCommuneId.set(null);
+    this.etablissementsFiltres.set([]);
+    this.updateField('idEtablissement', null);
+
+    if (idProvince) {
+      this.locationService.getCommunes(idProvince).subscribe((data) => {
+        this.communesList.set(data);
+      });
+    } else {
+      this.communesList.set([]);
+    }
   }
 
   // ✅ Quand la commune change, filtrer les établissements
@@ -279,62 +304,53 @@ export class GsMission {
   }
 
   // Approuver la mission
-  // ✅ Approuver la mission
-approuverMission(missionId: number): void {
-  this.missionService.approuver(missionId).subscribe({
-    next: () => {
-      this.loadData();
-      // ✅ Message de succès
-      this.showMessage('✅ Mission approuvée avec succès', 'success');
-    },
-    error: (err) => {
-      // ❌ On empêche l'affichage de l'erreur dans la console
-      // console.error('Erreur lors de l\'approbation', err);  // À SUPPRIMER ou COMMENTAIRES
-      
-      // ✅ Récupérer le message d'erreur du backend
-      let errorMessage = 'Une erreur est survenue';
-      if (err.error?.message) {
-        errorMessage = err.error.message;
+  approuverMission(missionId: number): void {
+    this.missionService.approuver(missionId).subscribe({
+      next: () => {
+        this.loadData();
+        this.showMessage('✅ Mission approuvée avec succès', 'success');
+      },
+      error: (err) => {
+        let errorMessage = 'Une erreur est survenue';
+        if (err.error?.message) {
+          errorMessage = err.error.message;
+        }
+        this.showMessage('❌ ' + errorMessage, 'error');
       }
-      
-      // ✅ Afficher le message stylé
-      this.showMessage('❌ ' + errorMessage, 'error');
-    }
-  });
-}
+    });
+  }
 
-// ✅ Méthode pour afficher un message stylé
-showMessage(message: string, type: 'success' | 'error'): void {
-  // Créer un élément div pour le message
-  const div = document.createElement('div');
-  div.className = `message-popup message-popup--${type}`;
-  div.textContent = message;
-  div.style.cssText = `
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 16px 32px;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 500;
-    z-index: 9999;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    transition: all 0.3s ease;
-    color: white;
-    ${type === 'success' 
-      ? 'background: linear-gradient(135deg, #22c55e, #16a34a); border: 1px solid #4ade80;' 
-      : 'background: linear-gradient(135deg, #ef4444, #dc2626); border: 1px solid #f87171;'}
-  `;
+  // ✅ Méthode pour afficher un message stylé
+  showMessage(message: string, type: 'success' | 'error'): void {
+    const div = document.createElement('div');
+    div.className = `message-popup message-popup--${type}`;
+    div.textContent = message;
+    div.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      z-index: 9999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transition: all 0.3s ease;
+      color: white;
+      ${type === 'success' 
+        ? 'background: linear-gradient(135deg, #22c55e, #16a34a); border: 1px solid #4ade80;' 
+        : 'background: linear-gradient(135deg, #ef4444, #dc2626); border: 1px solid #f87171;'}
+    `;
 
-  document.body.appendChild(div);
+    document.body.appendChild(div);
 
-  // Supprimer automatiquement après 4 secondes
-  setTimeout(() => {
-    div.style.opacity = '0';
-    setTimeout(() => div.remove(), 300);
-  }, 4000);
-}
+    setTimeout(() => {
+      div.style.opacity = '0';
+      setTimeout(() => div.remove(), 300);
+    }, 4000);
+  }
+
   // Rejeter la mission avec modale personnalisée
   rejeterMission(missionId: number): void {
     this.ouvrirRejetModal(missionId);
@@ -349,7 +365,9 @@ showMessage(message: string, type: 'success' | 'error'): void {
       idAdministrateur: currentUser?.id ?? null
     });
     // Réinitialiser les filtres
+    this.selectedProvinceId.set(null); // ✅ AJOUT
     this.selectedCommuneId.set(null);
+    this.communesList.set([]); // ✅ AJOUT
     this.etablissementsFiltres.set([]);
     this.showForm.set(true);
   }
@@ -371,12 +389,17 @@ showMessage(message: string, type: 'success' | 'error'): void {
       idEquipe: item.idEquipe ?? null
     });
 
-    // Si l'établissement est déjà sélectionné, charger la commune correspondante
+    // Si l'établissement est déjà sélectionné, charger la province + commune correspondante
     if (item.idEtablissement) {
       const etab = this.etablissementsList().find(e => e.idEtablissement === item.idEtablissement);
       if (etab) {
+        // ✅ Charger la province et ses communes
+        this.selectedProvinceId.set(etab.idProvince);
+        this.locationService.getCommunes(etab.idProvince).subscribe((communes) => {
+          this.communesList.set(communes);
+        });
+        
         this.selectedCommuneId.set(etab.idCommune);
-        // Charger les établissements de cette commune
         this.etablissementService.getByCommune(etab.idCommune).subscribe((data) => {
           this.etablissementsFiltres.set(data);
         });
@@ -403,7 +426,10 @@ showMessage(message: string, type: 'success' | 'error'): void {
       budgetPropose: m.budgetPropose,
       idEtablissement: m.idEtablissement,
       idAdministrateur: m.idAdministrateur,
-      idEquipe: m.idEquipe
+      idEquipe: m.idEquipe,
+      // ✅ AJOUT DES NOUVEAUX CHAMPS
+      idProvince: this.selectedProvinceId(),
+      idCommune: this.selectedCommuneId()
     };
 
     const id = this.editingId();

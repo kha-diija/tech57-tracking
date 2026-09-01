@@ -140,16 +140,124 @@ public class MissionInstallationService {
         MissionInstallation mission = missionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Mission introuvable avec l'ID : " + id));
 
-        mapDtoToEntity(dto, mission);
+        // ✅ Mettre à jour les champs de base
+        mission.setReference(dto.getReference());
+        mission.setTitre(dto.getTitre());
+        if (dto.getStatut() != null && !dto.getStatut().isEmpty()) {
+            mission.setStatut(dto.getStatut());
+        }
+        mission.setBudgetPropose(dto.getBudgetPropose());
 
-        // ✅ Supprimer les anciens matériels si on modifie
-        if (dto.getMateriels() != null) {
-            missionMaterielRepository.deleteByMission_IdMission(id);
+        // ✅ Mettre à jour l'établissement
+        Etablissement etab = etablissementRepository.findById(dto.getIdEtablissement())
+                .orElseThrow(() -> new RuntimeException("Établissement introuvable"));
+        mission.setEtablissement(etab);
+
+        // ✅ Mettre à jour l'admin
+        if (dto.getIdAdministrateur() != null) {
+            Utilisateur user = utilisateurRepository.findById(dto.getIdAdministrateur())
+                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+            if (user instanceof Administrateur) {
+                mission.setAdministrateur((Administrateur) user);
+            } else {
+                mission.setAdministrateur(null);
+            }
+        }
+
+        // ✅ Mettre à jour l'équipe (si non fourni, on garde l'existant)
+        if (dto.getIdEquipe() != null) {
+            EquipeTechnique equipe = equipeTechniqueRepository.findById(dto.getIdEquipe())
+                    .orElseThrow(() -> new RuntimeException("Équipe technique introuvable"));
+            mission.setEquipe(equipe);
+        }
+
+        // ✅ GESTION DES MATÉRIELS DE LA MISSION
+        // 1️⃣ Supprimer les anciens matériels de la mission
+        if (mission.getMateriels() != null && !mission.getMateriels().isEmpty()) {
+            missionMaterielRepository.deleteAll(mission.getMateriels());
             mission.getMateriels().clear();
         }
 
+        // 2️⃣ Ajouter les nouveaux matériels à la mission
+        if (dto.getMateriels() != null && !dto.getMateriels().isEmpty()) {
+            for (MissionMaterielDTO materielDTO : dto.getMateriels()) {
+                Materiel materiel = materielRepository.findById(materielDTO.getIdMateriel())
+                        .orElseThrow(() -> new RuntimeException("Matériel introuvable avec ID : " + materielDTO.getIdMateriel()));
+
+                MissionMateriel missionMateriel = new MissionMateriel();
+                missionMateriel.setMission(mission);
+                missionMateriel.setMateriel(materiel);
+                missionMateriel.setQuantite(materielDTO.getQuantite() != null ? materielDTO.getQuantite() : 1);
+                missionMateriel.setStatut("PROPOSE");
+                mission.getMateriels().add(missionMateriel);
+            }
+        }
+
+        // ✅ Sauvegarder la mission
         MissionInstallation updated = missionRepository.save(mission);
-        return new MissionResponseDTO(updated);
+
+        // ✅ METTRE À JOUR LA SORTIE DE MATÉRIEL ASSOCIÉE
+        mettreAJourSortieMateriel(updated, dto.getMateriels());
+
+        // ✅ Recharger la mission pour la réponse
+        MissionInstallation refreshed = missionRepository.findById(updated.getIdMission())
+                .orElseThrow(() -> new RuntimeException("Mission introuvable après mise à jour"));
+
+        return new MissionResponseDTO(refreshed);
+    }
+
+    /**
+     * Met à jour la SortieMateriel associée à la mission
+     */
+    private void mettreAJourSortieMateriel(MissionInstallation mission, List<MissionMaterielDTO> materielsDTO) {
+        try {
+            // 1. Récupérer la SortieMateriel associée à la mission
+            List<SortieMateriel> sorties = sortieMaterielRepository.findByMissionIdMission(mission.getIdMission());
+
+            if (sorties.isEmpty()) {
+                // Si pas de sortie, en créer une nouvelle (si des matériels sont présents)
+                if (materielsDTO != null && !materielsDTO.isEmpty()) {
+                    // Récupérer le technicien depuis l'équipe
+                    Utilisateur technicien = null;
+                    if (mission.getEquipe() != null && !mission.getEquipe().getMembres().isEmpty()) {
+                        technicien = mission.getEquipe().getMembres().get(0);
+                    }
+                    if (technicien != null) {
+                        creerSortieMaterielAutomatically(mission, materielsDTO, technicien);
+                    }
+                }
+                return;
+            }
+
+            SortieMateriel sortie = sorties.get(0);
+
+            // 2. Supprimer les anciens détails de la sortie
+            if (sortie.getDetails() != null && !sortie.getDetails().isEmpty()) {
+                sortie.getDetails().clear();
+            }
+
+            // 3. Ajouter les nouveaux matériels à la sortie
+            if (materielsDTO != null && !materielsDTO.isEmpty()) {
+                for (MissionMaterielDTO materielDTO : materielsDTO) {
+                    Materiel materiel = materielRepository.findById(materielDTO.getIdMateriel())
+                            .orElseThrow(() -> new RuntimeException("Matériel introuvable"));
+
+                    DetailSortieMateriel detail = new DetailSortieMateriel();
+                    detail.setSortieMateriel(sortie);
+                    detail.setMateriel(materiel);
+                    detail.setQuantite(materielDTO.getQuantite() != null ? materielDTO.getQuantite() : 1);
+                    sortie.getDetails().add(detail);
+                }
+            }
+
+            // 4. Sauvegarder la sortie mise à jour
+            sortieMaterielRepository.save(sortie);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Ne pas bloquer la mise à jour de la mission si la sortie échoue
+            System.err.println("Erreur lors de la mise à jour de la SortieMateriel: " + e.getMessage());
+        }
     }
 
     @Transactional

@@ -315,40 +315,14 @@
       <!-- SECTION ATTESTATION                                       -->
       <!-- ========================================================= -->
       <section class="section">
-        <span class="section-title">Attestation</span>
-        <span class="section-hint" *ngIf="!isFirstVisit">L'attestation est facultative pour les visites suivantes.</span>
+        
         <span class="section-hint" *ngIf="isFirstVisit">Le nom du signataire est obligatoire pour la première visite.</span>
 
         <!-- 1. Champ "Nom du signataire" : UNIQUEMENT pour la 1ère visite -->
-        <div class="form-group" *ngIf="isFirstVisit">
-          <label for="signataire" class="form-label required">Nom du signataire</label>
-          <input id="signataire"
-                 type="text"
-                 [(ngModel)]="checkoutData.nomSignataire"
-                 placeholder="Nom complet du signataire"
-                 class="form-input"
-                 required>
-          <div class="text-danger text-sm" *ngIf="showValidationErrors && !checkoutData.nomSignataire?.trim()">
-            Ce champ est obligatoire pour la première visite.
-          </div>
-        </div>
+       
 
-        <!-- 2. Upload de l'attestation signée : UNIQUEMENT pour les visites ≠ 1ère, accepte PDF -->
-        <div class="upload-row" style="margin-top: 8px;" *ngIf="!isFirstVisit">
-          <label class="upload-btn wide">
-            <input type="file" 
-                   hidden 
-                   accept="application/pdf" 
-                   (change)="onAttestationSelected($event)">
-            <lucide-icon [img]="icons.FileText" [size]="15"></lucide-icon>
-            {{ attestationFile ? attestationFile.name : "Uploader l'attestation signée (optionnel)" }}
-          </label>
-        </div>
-
-        <!-- Message pour la 1ère visite (pas d'upload) -->
-        <div class="text-muted text-sm mt-2" *ngIf="isFirstVisit">
-          ⚠️ Pour la première visite, seule la saisie du signataire est requise. Vous pourrez uploader le document signé lors des prochaines visites.
-        </div>
+        
+        
       </section>
 
       <!-- Checklist d'installation : chips -->
@@ -517,45 +491,74 @@
         </div>
 
         <!-- ATTESTATION : bouton visible uniquement si visite n°1 terminée -->
-        <div class="media-card">
-          <div class="media-header">
-            <h3 class="section-title"><lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon> Attestation</h3>
-          </div>
+        <!-- ATTESTATION -->
+<div class="media-card">
+  <div class="media-header">
+    <h3 class="section-title">
+      <lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon> 
+      Attestation
+    </h3>
+  </div>
 
-          <div class="attestation-body">
-            <ng-container *ngIf="currentDetail?.attestation as att; else noAttestationInfo">
-              <div class="att-row">
-                <span class="label">Signataire</span>
-                <span class="value">{{ att.nomSignataire || 'Non renseigné' }}</span>
-              </div>
-              <div class="att-row">
-                <span class="label">Date de signature</span>
-                <span class="value">{{ att.dateSignature ? (att.dateSignature | date:'dd/MM/yyyy HH:mm') : 'Générée automatiquement' }}</span>
-              </div>
-              <div class="att-row">
-                <span class="label">Validité</span>
-                <span class="value">
-                  <span class="badge" [ngClass]="att.valide ? 'badge-success' : 'badge-warning'">
-                    {{ att.valide ? '✅ Validée' : '⏳ En attente' }}
-                  </span>
-                </span>
-              </div>
-            </ng-container>
+  <div class="attestation-body">
+    <!-- Si attestation signée déjà uploadée -->
+    <div *ngIf="currentDetail?.attestation?.cheminFichierSigne">
+      <div class="att-row success">
+        <span class="label">✅ Attestation signée</span>
+        <span class="value">
+          Uploadée le {{ currentDetail?.attestation?.dateUploadSigne | date:'dd/MM/yyyy HH:mm' }}
+        </span>
+      </div>
+      <div class="att-actions mt-2">
+        <button class="btn btn-secondary btn-sm" (click)="downloadAttestationSignee(currentDetail?.id!)">
+          <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon> 
+          Voir l'attestation signée
+        </button>
+      </div>
+    </div>
 
-            <ng-template #noAttestationInfo>
-              <p class="text-muted text-sm">Aucun fichier uploadé — le document sera généré automatiquement à partir des données de l'intervention.</p>
-            </ng-template>
+    <!-- Si attestation générée mais pas encore signée -->
+    <div *ngIf="currentDetail?.attestation && !currentDetail?.attestation?.cheminFichierSigne">
+      <div class="att-row">
+        <span class="label">Statut</span>
+        <span class="value">
+          <span class="badge badge-warning">📄 En attente de signature</span>
+        </span>
+      </div>
+      <div class="att-actions mt-2">
+        <button class="btn btn-primary btn-sm" (click)="genererAttestation(currentDetail?.id!)">
+          <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon> 
+          1. Télécharger l'attestation
+        </button>
+        <span class="text-muted text-sm">→ Imprimer → Faire signer par le responsable</span>
+      </div>
+            <div class="att-actions mt-2">
+        <label class="btn btn-primary btn-sm" style="cursor: pointer; margin-bottom: 0; display: inline-flex; align-items: center; gap: 4px;">
+          <input type="file" hidden accept="application/pdf" (change)="uploadAttestationSignee($event)">
+          <lucide-icon [img]="icons.Upload" [size]="14"></lucide-icon> 
+          2. Uploader l'attestation signée
+        </label>
+        <span class="text-muted text-sm">→ Scanner l'attestation signée</span>
+      </div>
+    </div>
 
-            <div class="att-actions" *ngIf="visite1Terminee()">
-              <button class="btn btn-primary btn-sm" (click)="downloadAttestation(currentDetail?.id!)">
-                <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon> Télécharger le PDF
-              </button>
-            </div>
-            <div class="att-actions" *ngIf="!visite1Terminee()">
-              <span class="text-muted text-sm">L'attestation sera disponible après la fin de la première visite.</span>
-            </div>
-          </div>
-        </div>
+    <!-- Pas d'attestation générée -->
+    <div *ngIf="!currentDetail?.attestation">
+      <div class="att-actions mt-2" *ngIf="estTerminee()">
+        <button class="btn btn-primary btn-sm" (click)="genererAttestation(currentDetail?.id!)">
+          <lucide-icon [img]="icons.Download" [size]="14"></lucide-icon> 
+          📄 Générer l'attestation
+        </button>
+        <span class="text-muted text-sm">→ À imprimer et faire signer par le responsable</span>
+      </div>
+      <div class="att-actions mt-2" *ngIf="!estTerminee()">
+        <span class="text-muted text-sm">
+          ⏳ L'attestation sera disponible après la fin de la deuxième visite.
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
 
         <div class="media-card" *ngIf="currentDetail?.sortiesMateriel?.length || currentDetail?.retoursMateriel?.length || currentDetail?.checklistItems?.length">
           <div class="media-header">

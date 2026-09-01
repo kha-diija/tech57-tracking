@@ -10,6 +10,10 @@ export interface Attestation {
   cheminFichier?: string;
   nomSignataire: string;
   valide: boolean;
+  statut?: string;           // GENEREE, SIGNEE, VALIDEE
+  dateGeneration?: string;
+  cheminFichierSigne?: string;
+  dateUploadSigne?: string;
 }
 
 // --- Aligné exactement sur CheckInOutDto.java ---
