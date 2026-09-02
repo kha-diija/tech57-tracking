@@ -6,6 +6,7 @@ import com.example.backend.dto.admin.intervention.UpdateInterventionRequest;
 import com.example.backend.dto.admin.intervention.TechnicienDropdownDto;
 import com.example.backend.repository.admin.TechnicienRepository;
 import com.example.backend.security.UserPrincipal;
+import com.example.backend.service.admin.AttestationPdfService;
 import com.example.backend.service.admin.InterventionService;
 import com.example.backend.service.admin.RapportPdfService;
 import jakarta.transaction.Transactional;
@@ -17,6 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,13 +34,16 @@ public class InterventionController {
     private final InterventionService interventionService;
     private final TechnicienRepository technicienRepository;
     private final RapportPdfService rapportPdfService;
+    private final AttestationPdfService attestationPdfService;
 
     public InterventionController(InterventionService interventionService,
                                   TechnicienRepository technicienRepository,
-                                  RapportPdfService rapportPdfService) {
+                                  RapportPdfService rapportPdfService,
+                                  AttestationPdfService attestationPdfService) {
         this.interventionService = interventionService;
         this.technicienRepository = technicienRepository;
         this.rapportPdfService = rapportPdfService;
+        this.attestationPdfService = attestationPdfService;
     }
 
     @GetMapping
@@ -91,10 +98,21 @@ public class InterventionController {
         try {
             var attestation = interventionService.getAttestationFichier(id);
 
-            // Cas 1 : un fichier a été uploadé (scan signé, PDF...) → on le sert tel quel
+            // ✅ Cas 1 : Vérifier si une attestation signée a été uploadée (cheminFichierSigne)
+            if (attestation != null && attestation.getCheminFichierSigne() != null) {
+                Path path = Paths.get("." + attestation.getCheminFichierSigne());
+                byte[] fileBytes = Files.readAllBytes(path);
+                String filename = path.getFileName().toString();
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .body(fileBytes);
+            }
+
+            // ✅ Cas 2 : Vérifier si un fichier a été uploadé (ancien champ chemin_fichier)
             if (attestation != null && attestation.getCheminFichier() != null) {
-                java.nio.file.Path path = java.nio.file.Paths.get("." + attestation.getCheminFichier());
-                byte[] fileBytes = java.nio.file.Files.readAllBytes(path);
+                Path path = Paths.get("." + attestation.getCheminFichier());
+                byte[] fileBytes = Files.readAllBytes(path);
                 String filename = path.getFileName().toString();
                 MediaType mediaType = filename.toLowerCase().endsWith(".pdf")
                         ? MediaType.APPLICATION_PDF
@@ -105,9 +123,8 @@ public class InterventionController {
                         .body(fileBytes);
             }
 
-            // Cas 2 : aucun fichier uploadé → génération automatique du PDF (comme le rapport),
-            // sans exiger de signature.
-            byte[] pdfContent = rapportPdfService.genererAttestationPdf(id);
+            // ✅ Cas 3 : aucun fichier uploadé → génération automatique du PDF
+            byte[] pdfContent = attestationPdfService.genererAttestationPdf(id);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attestation_intervention_" + id + ".pdf\"")
                     .contentType(MediaType.APPLICATION_PDF)

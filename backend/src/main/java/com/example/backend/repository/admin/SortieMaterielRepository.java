@@ -14,8 +14,12 @@ public interface SortieMaterielRepository extends JpaRepository<SortieMateriel, 
     List<SortieMateriel> findByIntervention(Intervention intervention);
     List<SortieMateriel> findByStatut(String statut);
 
-    // ✅ NOUVELLE MÉTHODE
+    // ✅ REQUÊTE EXPLICITE : Jointure avec le technicien pour récupérer par email
+    @Query("SELECT s FROM SortieMateriel s JOIN s.technicien t WHERE t.email = :email")
+    List<SortieMateriel> findByTechnicienEmail(@Param("email") String email);
+
     List<SortieMateriel> findByMissionIdMission(Integer idMission);
+
     @Query("SELECT s FROM SortieMateriel s WHERE s.intervention.idIntervention IN :ids")
     List<SortieMateriel> findByInterventionIds(@Param("ids") List<Integer> ids);
 }

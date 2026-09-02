@@ -30,6 +30,11 @@ public class MissionRequestDTO {
     private Integer idAdministrateur;
 
     private Integer idEquipe; // Optionnel
+    // ✅ NOUVEAU : ID de la province (pour filtrage)
+    private Integer idProvince;
+
+    // ✅ NOUVEAU : ID de la commune (pour filtrage)
+    private Integer idCommune;
     // ✅ NOUVEAU : Liste des matériels avec quantités
     private List<MissionMaterielDTO> materiels;
 }
