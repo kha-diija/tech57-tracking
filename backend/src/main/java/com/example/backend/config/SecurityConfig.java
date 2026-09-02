@@ -93,8 +93,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/locations/**").hasAnyRole("ADMINISTRATEUR", "TECHNICIEN")
 
                         .requestMatchers("/api/admin/resources/**").hasRole("ADMINISTRATEUR")
-                        .requestMatchers("/api/etablissements/**").hasAnyRole("ADMINISTRATEUR", "TECHNICIEN")
-                        .requestMatchers("/api/admin/**").hasRole("ADMINISTRATEUR")
+                        .requestMatchers("/api/etablissements/**").hasAnyRole("ADMINISTRATEUR", "TECHNICIEN", "GESTIONNAIRE_STOCK")                        .requestMatchers("/api/admin/**").hasRole("ADMINISTRATEUR")
                         .requestMatchers("/api/technicien/**").hasAnyRole("TECHNICIEN", "ADMINISTRATEUR")
                         .requestMatchers("/api/observateur/**").hasAnyRole("OBSERVATEUR", "ADMINISTRATEUR")
                         .requestMatchers("/api/gestionnaire-stock/**").hasAnyRole("GESTIONNAIRE_STOCK", "ADMINISTRATEUR")
