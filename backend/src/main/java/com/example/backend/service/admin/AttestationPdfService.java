@@ -53,7 +53,7 @@ public class AttestationPdfService {
 
         String nom = province.toLowerCase();
         if (nom.contains("سيدي قاسم") || nom.contains("sidi kacem")) {
-            return "attestations/templates/SidiKacemAttestation.pdf";
+            return "attestations/templates/Attestaion-SidiKacem.pdf"; // ✅ NOUVEAU FICHIER
         } else if (nom.contains("برشيد") || nom.contains("berrechid")) {
             return "attestations/templates/berrechidAttestation.pdf";
         } else if (nom.contains("تاونات") || nom.contains("taounate")) {
@@ -79,6 +79,7 @@ public class AttestationPdfService {
                 etablissement.getResponsable().getPrenom() + " " + etablissement.getResponsable().getNom() : "";
         String nomEtablissement = etablissement.getDesignation() != null ? etablissement.getDesignation() : "";
         String commune = etablissement.getCommune().getNom() != null ? etablissement.getCommune().getNom() : "";
+        String referenceEtablissement = etablissement.getReference() != null ? etablissement.getReference() : ""; // ✅ AJOUT
         String dateArrivee = getFirstCheckinDate(response);
         String dateDepart = getLastCheckoutDate(response);
         String nbBeneficiaires = etablissement.getNombreBeneficiairesReel() != null ?
@@ -93,7 +94,7 @@ public class AttestationPdfService {
         PdfContentByte over = stamper.getOverContent(1);
 
         // ============================================================
-        // 📍 COORDONNÉES PAR DÉFAUT (POUR BERRECHID, SIDI KACEM, ETC.)
+        // 📍 COORDONNÉES PAR DÉFAUT (POUR BERRECHID, ETC.)
         // ============================================================
         float xResponsable = 280f;
         float yResponsable = 602f;
@@ -113,15 +114,20 @@ public class AttestationPdfService {
         float xNbBeneficiaires = 180f;
         float yNbBeneficiaires = 300f;
 
+        float xReference = 220f; // ✅ NOUVEAU (par défaut)
+        float yReference = 519f; // ✅ NOUVEAU (par défaut)
+
         // ============================================================
-        // ⚠️ COORDONNÉES SPÉCIFIQUES POUR TAOUNATE (UNIQUEMENT)
+        // ⚠️ COORDONNÉES SPÉCIFIQUES POUR TAOUNATE
         // ============================================================
         boolean isTaounate = templatePath.toLowerCase().contains("taounate");
 
         if (isTaounate) {
-            // Ajuste ces valeurs selon le design de ton PDF Taounate
-            xResponsable = 300f;   // Déplace vers la droite
-            yResponsable = 600f;   // Déplace vers le bas/haut
+            xReference = 200f;
+            yReference = 517f;
+
+            xResponsable = 300f;
+            yResponsable = 600f;
 
             xEtablissement = 300f;
             yEtablissement = 572f;
@@ -129,14 +135,42 @@ public class AttestationPdfService {
             xCommune = 300f;
             yCommune = 545f;
 
-            xDateArrivee = 160f;   // Déplace vers la gauche
-            yDateArrivee = 326f;   // Déplace vers le bas
+            xDateArrivee = 160f;
+            yDateArrivee = 326f;
 
             xDateDepart = 160f;
             yDateDepart = 298f;
 
             xNbBeneficiaires = 140f;
             yNbBeneficiaires = 270f;
+        }
+
+        // ============================================================
+        // ⚠️ COORDONNÉES SPÉCIFIQUES POUR SIDI KACEM
+        // ============================================================
+        boolean isSidiKacem = templatePath.toLowerCase().contains("sidikacem") || templatePath.toLowerCase().contains("sidi kacem");
+
+        if (isSidiKacem) {
+            xResponsable = 250f;
+            yResponsable = 608f;
+
+            xEtablissement = 220f;
+            yEtablissement = 580f;
+
+            xCommune = 280f;
+            yCommune = 555f;
+
+            xReference = 180f;
+            yReference = 525f;
+
+            xDateArrivee = 200f;
+            yDateArrivee = 310f;
+
+            xDateDepart = 200f;
+            yDateDepart = 283f;
+
+            xNbBeneficiaires = 160f;
+            yNbBeneficiaires = 255f;
         }
 
 
@@ -180,6 +214,13 @@ public class AttestationPdfService {
         over.setFontAndSize(baseFont, 14);
         over.setTextMatrix(xNbBeneficiaires, yNbBeneficiaires);
         over.showText(nbBeneficiaires);
+        over.endText();
+
+        // 7. Référence de l'établissement
+        over.beginText();
+        over.setFontAndSize(baseFont, 14);
+        over.setTextMatrix(xReference, yReference);
+        over.showText(referenceEtablissement);
         over.endText();
 
         stamper.close();
