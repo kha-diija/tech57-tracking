@@ -12,6 +12,11 @@ import java.util.List;
 @Repository
 public interface RetourMaterielRepository extends JpaRepository<RetourMateriel, Integer> {
     List<RetourMateriel> findByIntervention(Intervention intervention);
+
     @Query("SELECT r FROM RetourMateriel r WHERE r.intervention.idIntervention IN :ids")
     List<RetourMateriel> findByInterventionIds(@Param("ids") List<Integer> ids);
+
+    // ✅ REQUÊTE EXPLICITE : Jointure avec le technicien pour récupérer par email
+    @Query("SELECT r FROM RetourMateriel r JOIN r.technicien t WHERE t.email = :email")
+    List<RetourMateriel> findByTechnicienEmail(@Param("email") String email);
 }

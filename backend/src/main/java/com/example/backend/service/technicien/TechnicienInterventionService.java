@@ -7,6 +7,7 @@ import com.example.backend.dto.technicien.Dashboard.CheckOutRequest;
 import com.example.backend.dto.technicien.Dashboard.MissionSimplifieeDTO;
 import com.example.backend.entity.*;
 import com.example.backend.repository.admin.*;
+import com.example.backend.service.admin.AttestationPdfService;
 import com.example.backend.service.admin.InterventionService;
 import com.example.backend.service.admin.MissionInstallationService;
 import com.example.backend.service.admin.RapportPdfService;
@@ -14,6 +15,8 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import com.example.backend.entity.SortieMateriel;
+import com.example.backend.entity.DetailSortieMateriel;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -39,6 +42,7 @@ public class TechnicienInterventionService {
 
     private final InterventionService adminInterventionService;
     private final RapportPdfService rapportPdfService;
+    private final AttestationPdfService attestationPdfService;
     private final MissionInstallationService missionInstallationService;
 
     public TechnicienInterventionService(InterventionRepository interventionRepository,
@@ -55,6 +59,7 @@ public class TechnicienInterventionService {
                                          MaterielRepository materielRepository,
                                          InterventionService adminInterventionService,
                                          RapportPdfService rapportPdfService,
+                                         AttestationPdfService attestationPdfService,
                                          MissionInstallationService missionInstallationService) {
         this.interventionRepository = interventionRepository;
         this.checkInOutRepository = checkInOutRepository;
@@ -70,13 +75,14 @@ public class TechnicienInterventionService {
         this.materielRepository = materielRepository;
         this.adminInterventionService = adminInterventionService;
         this.rapportPdfService = rapportPdfService;
+        this.attestationPdfService = attestationPdfService;
         this.missionInstallationService = missionInstallationService;
     }
 
     public List<InterventionResponse> getMesInterventions(Integer technicienId) {
         List<Intervention> interventions = interventionRepository.findByTechnicienIdWithMissionAndCheckIns(technicienId);
         return interventions.stream()
-                .map(adminInterventionService::convertToListResponse)  // ← Utilise convertToListResponse
+                .map(adminInterventionService::convertToListResponse)
                 .collect(Collectors.toList());
     }
 
@@ -137,7 +143,7 @@ public class TechnicienInterventionService {
     }
 
     public byte[] genererAttestation(Integer interventionId) throws Exception {
-        return rapportPdfService.genererAttestationPdf(interventionId);
+        return attestationPdfService.genererAttestationPdf(interventionId);
     }
 
     public byte[] genererAttestationPreview(Integer interventionId, Integer technicienId, AttestationPreviewRequest request) throws Exception {
@@ -185,8 +191,7 @@ public class TechnicienInterventionService {
                     new com.fasterxml.jackson.core.type.TypeReference<List<ChecklistItemDto>>() {});
         }
 
-        return rapportPdfService.genererAttestationPreviewPdf(
-                base, request.getNomSignataire(), sortiesPreview, retoursPreview, checklistPreview);
+        return attestationPdfService.genererAttestationPdf(interventionId);
     }
 
     @Transactional
@@ -285,7 +290,6 @@ public class TechnicienInterventionService {
         }
 
         // --- GESTION DE L'ATTESTATION (FICHIER SIGNÉ, TOUJOURS FACULTATIF) ---
-        // On gère d'abord le cas où un fichier est uploadé
         if (request.getAttestationFile() != null && !request.getAttestationFile().isEmpty()) {
             MultipartFile attFile = request.getAttestationFile();
 
@@ -323,7 +327,6 @@ public class TechnicienInterventionService {
                 attestation = new Attestation();
             }
 
-            // Si un nom signataire est fourni dans la requête, on l'utilise, sinon on prend le technicien
             if (request.getNomSignataire() != null && !request.getNomSignataire().isBlank()) {
                 attestation.setNomSignataire(request.getNomSignataire());
             } else {
@@ -335,7 +338,6 @@ public class TechnicienInterventionService {
             attestation.setCheminFichier("/uploads/attestations/" + fileName);
             attestationRepository.save(attestation);
         } else {
-            // Si aucun fichier n'est uploadé, mais qu'un nom signataire est fourni (cas 1ère visite sans upload)
             if (request.getNomSignataire() != null && !request.getNomSignataire().isBlank()) {
                 List<Attestation> existing = attestationRepository.findByIntervention(intervention);
                 Attestation attestation;
@@ -348,7 +350,6 @@ public class TechnicienInterventionService {
                 attestation.setNomSignataire(request.getNomSignataire());
                 attestation.setDateSignature(LocalDateTime.now());
                 attestation.setValide(true);
-                // On conserve l'ancien chemin s'il existe, ou on le laisse null
                 attestationRepository.save(attestation);
             }
         }
@@ -356,6 +357,40 @@ public class TechnicienInterventionService {
         // --- Bénéficiaires réel (1ère visite) ---
         if (request.getBeneficiairesReel() != null && intervention.getCheckInOuts().size() == 1) {
             intervention.getMission().getEtablissement().setNombreBeneficiairesReel(request.getBeneficiairesReel());
+        }
+
+        // --- GESTION DU MATÉRIEL SORTI ET RETOURNÉ ---
+        if (request.getMaterielSortiIds() != null && !request.getMaterielSortiIds().isEmpty()) {
+            for (Integer idMateriel : request.getMaterielSortiIds()) {
+                if (idMateriel == null) continue;
+                Materiel materiel = materielRepository.findById(idMateriel).orElse(null);
+                if (materiel == null) continue;
+
+                // 1. Créer la SortieMateriel
+                SortieMateriel sortie = new SortieMateriel();
+                sortie.setDateSortie(LocalDateTime.now());
+                sortie.setStatut("En attente"); // En attente, Validée, Rejetée
+                sortie.setRetourTraite(false);
+                sortie.setIntervention(intervention);
+                sortie.setTechnicien(technicien);
+                sortie.setLieuIntervention(
+                        intervention.getMission() != null && intervention.getMission().getEtablissement() != null
+                                ? intervention.getMission().getEtablissement().getDesignation()
+                                : null
+                );
+
+                // 2. Créer le détail de sortie
+                DetailSortieMateriel detail = new DetailSortieMateriel();
+                detail.setSortieMateriel(sortie);
+                detail.setMateriel(materiel);
+                detail.setQuantite(1); // Quantité fixe à 1 (adapter si besoin)
+
+                // 3. Ajouter le détail à la sortie (cascade = ALL)
+                sortie.getDetails().add(detail);
+
+                // 4. Sauvegarder la sortie (les détails seront sauvegardés automatiquement)
+                sortieMaterielRepository.save(sortie);
+            }
         }
 
         // --- GESTION DU MATÉRIEL RETOURNÉ ---
@@ -471,5 +506,38 @@ public class TechnicienInterventionService {
         }
 
         interventionRepository.save(intervention);
+    }
+
+    // ============================================================
+// MÉTHODES POUR L'ATTESTATION
+// ============================================================
+
+    /**
+     * Récupère le chemin de l'attestation signée
+     */
+    public String getAttestationSigneePath(Integer interventionId) {
+        Intervention intervention = interventionRepository.findById(interventionId)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable"));
+
+        List<Attestation> list = attestationRepository.findByIntervention(intervention);
+        if (!list.isEmpty()) {
+            Attestation attestation = list.get(0);
+            return attestation.getCheminFichierSigne();
+        }
+        return null;
+    }
+
+    /**
+     * Vérifie si l'intervention est terminée (au moins 2 visites terminées)
+     */
+    public boolean estTerminee(Integer interventionId) {
+        Intervention intervention = interventionRepository.findById(interventionId)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable"));
+
+        long visitesTerminees = intervention.getCheckInOuts().stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+
+        return visitesTerminees >= 2;
     }
 }

@@ -50,17 +50,23 @@ public class LocationController {
         return ResponseEntity.ok(result);
     }
 
+    // ✅ MODIFICATION ICI
     @GetMapping("/communes")
     public ResponseEntity<List<CommuneResponse>> getCommunes(
             @RequestParam(required = false) Integer provinceId) {
 
-        List<CommuneResponse> result = (provinceId != null
-                ? communeRepository.findByProvince_IdProvince(provinceId)
-                : communeRepository.findAll())
-                .stream()
-                .map(c -> new CommuneResponse(
-                        c.getIdCommune(), c.getNom(), c.getCode(), c.getProvince().getIdProvince()))
-                .collect(Collectors.toList());
+        List<CommuneResponse> result;
+        if (provinceId != null) {
+            // Utilise la nouvelle requête qui joint le nom de la province
+            result = communeRepository.findCommunesWithProvinceName(provinceId);
+        } else {
+            // Si pas de province spécifiée, on utilise l'ancienne méthode mais on doit passer le nomProvince
+            // Ici, on n'a pas de nom de province, on passe "null" pour éviter l'erreur de compil
+            result = communeRepository.findAll().stream()
+                    .map(c -> new CommuneResponse(
+                            c.getIdCommune(), c.getNom(), c.getCode(), c.getProvince().getIdProvince(), c.getProvince().getNom())) // ✅ On passe le nom
+                    .collect(Collectors.toList());
+        }
         return ResponseEntity.ok(result);
     }
 }

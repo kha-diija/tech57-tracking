@@ -10,15 +10,24 @@ import com.example.backend.dto.technicien.Dashboard.MissionSimplifieeDTO;
 import com.example.backend.entity.Materiel;
 import com.example.backend.repository.admin.MaterielRepository;
 import com.example.backend.security.UserPrincipal;
+import com.example.backend.service.admin.AttestationPdfService;
 import com.example.backend.service.technicien.TechnicienInterventionService;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import com.example.backend.dto.technicien.MaterielSimpleDto;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/technicien/interventions")
@@ -27,11 +36,14 @@ public class TechnicienInterventionController {
 
     private final TechnicienInterventionService technicienService;
     private final MaterielRepository materielRepository;
+    private final AttestationPdfService attestationPdfService;
 
     public TechnicienInterventionController(TechnicienInterventionService technicienService,
-                                            MaterielRepository materielRepository) {
+                                            MaterielRepository materielRepository,
+                                            AttestationPdfService attestationPdfService) {
         this.technicienService = technicienService;
         this.materielRepository = materielRepository;
+        this.attestationPdfService = attestationPdfService;
     }
 
     @GetMapping
@@ -114,7 +126,6 @@ public class TechnicienInterventionController {
         try {
             var attestation = technicienService.getAttestationFichier(id);
 
-            // Cas 1 : fichier uploadé → on le sert tel quel
             if (attestation != null && attestation.getCheminFichier() != null) {
                 java.nio.file.Path path = java.nio.file.Paths.get("." + attestation.getCheminFichier());
                 byte[] fileBytes = java.nio.file.Files.readAllBytes(path);
@@ -128,7 +139,6 @@ public class TechnicienInterventionController {
                         .body(fileBytes);
             }
 
-            // Cas 2 : pas de fichier → génération automatique du PDF, sans signature requise
             byte[] pdfContent = technicienService.genererAttestation(id);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attestation_intervention_" + id + ".pdf\"")
@@ -136,6 +146,105 @@ public class TechnicienInterventionController {
                     .body(pdfContent);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // ✅ NOUVEAU ENDPOINT : Générer l'attestation à signer
+    @GetMapping("/{id}/attestation/generate")
+    public ResponseEntity<byte[]> generateAttestation(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        try {
+            technicienService.getInterventionById(id, principal.getId());
+
+            byte[] pdfBytes = attestationPdfService.genererAttestationPdf(id);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"attestation_a_signer_" + id + ".pdf\"")
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // ✅ NOUVEAU ENDPOINT : Uploader l'attestation signée
+    @PostMapping(value = "/{id}/attestation/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadAttestationSignee(
+            @PathVariable Integer id,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        try {
+            technicienService.getInterventionById(id, principal.getId());
+
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Le fichier est vide"));
+            }
+
+            // Créer le dossier d'upload
+            String uploadDir = "uploads/attestations/";
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Générer un nom de fichier unique
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null && originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                    : ".pdf";
+            String fileName = UUID.randomUUID().toString() + "_attestation_signe_" + id + extension;
+            Path filePath = uploadPath.resolve(fileName);
+
+            // Sauvegarder le fichier
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Mettre à jour l'attestation en base
+            String cheminFichierSigne = "/uploads/attestations/" + fileName;
+            attestationPdfService.uploadAttestationSignee(id, cheminFichierSigne);
+
+            return ResponseEntity.ok().body(Map.of(
+                    "message", "Attestation signée uploadée avec succès",
+                    "chemin", cheminFichierSigne
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ✅ NOUVEAU ENDPOINT : Télécharger l'attestation signée
+    @GetMapping("/{id}/attestation/signee/download")
+    public ResponseEntity<byte[]> downloadAttestationSignee(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        try {
+            technicienService.getInterventionById(id, principal.getId());
+
+            String chemin = technicienService.getAttestationSigneePath(id);
+            if (chemin == null || chemin.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Path filePath = Paths.get("." + chemin);
+            if (!Files.exists(filePath)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            byte[] fileBytes = Files.readAllBytes(filePath);
+            String filename = filePath.getFileName().toString();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + filename + "\"")
+                    .body(fileBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

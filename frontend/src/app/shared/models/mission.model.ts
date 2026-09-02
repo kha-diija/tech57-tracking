@@ -38,6 +38,8 @@ export interface MissionRequestDTO {
   idEtablissement: number;
   idAdministrateur: number;
   idEquipe?: number | null;
+  idProvince?: number | null;
+  idCommune?: number | null;
   
   // ✅ NOUVEAU : Liste des matériels avec quantités
   materiels?: MissionMateriel[];

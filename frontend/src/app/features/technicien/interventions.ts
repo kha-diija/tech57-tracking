@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Intervention } from '../../shared/models/intervention.model';
 import { TechnicienInterventionForm } from '../../shared/models/intervention.model';
-import { LucideAngularModule, MapPin, CheckCircle, Clock, Calendar, Trash2, Plus, Download, Search, Edit, Eye, Activity, Map, Image as LucideImage, FileText, Package, AlertCircle } from 'lucide-angular';
+import { LucideAngularModule, MapPin, CheckCircle, Clock, Calendar, Trash2, Plus, Download, Search, Edit, Eye, Activity, Map, Image as LucideImage, FileText, Package, AlertCircle, Upload } from 'lucide-angular';
 import { TechnicienInterventionService } from '../../shared/services/technicien-intervention.service';
 
 @Component({
@@ -16,10 +16,9 @@ import { TechnicienInterventionService } from '../../shared/services/technicien-
 })
 export class TechnicienInterventions implements OnInit {
   readonly icons = {
-    MapPin, CheckCircle, Clock, Calendar, Trash2, Plus, Download, Search, Edit, Eye, Activity, Map,
-    Image: LucideImage, FileText, Package, AlertCircle
-  };
-
+  MapPin, CheckCircle, Clock, Calendar, Trash2, Plus, Download, Search, Edit, Eye, Activity, Map,
+  Image: LucideImage, FileText, Package, AlertCircle, Upload
+};
   private technicienService = inject(TechnicienInterventionService);
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
@@ -251,12 +250,7 @@ export class TechnicienInterventions implements OnInit {
     if (this.checkoutInterventionId === null) return;
 
     // Validation : si 1ère visite, nomSignataire obligatoire
-    if (this.isFirstVisit) {
-      this.showValidationErrors = true;
-      if (!this.checkoutData.nomSignataire?.trim()) {
-        return; // blocage
-      }
-    }
+    
 
     const payload = {
       gpsCheckout: "33.8935,-5.5473",
@@ -273,7 +267,7 @@ export class TechnicienInterventions implements OnInit {
       payload,
       this.selectedFiles,
       this.attestationFile,
-      this.isFirstVisit ? this.checkoutData.nomSignataire : null
+      
     ).subscribe({
       next: () => {
         this.fermerCheckout();
@@ -500,4 +494,83 @@ export class TechnicienInterventions implements OnInit {
     link.click();
     document.body.removeChild(link);
   }
+  // ============================================================
+// MÉTHODES POUR L'ATTESTATION (À AJOUTER)
+// ============================================================
+
+// ✅ Vérifier si l'intervention est terminée (2 visites terminées)
+estTerminee(): boolean {
+  if (!this.currentDetail?.checkInOuts) return false;
+  const visitesTerminees = this.currentDetail.checkInOuts
+    .filter(v => v.dateHeureCheckin && v.dateHeureCheckout).length;
+  return visitesTerminees >= 2;
+}
+
+// ✅ Générer et télécharger l'attestation (à imprimer)
+genererAttestation(id: number): void {
+  this.technicienService.genererAttestation(id).subscribe({
+    next: (blob: Blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `attestation_a_signer_${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      this.showToast('Attestation générée avec succès !', 'success');
+      this.loadInterventions();
+    },
+    error: (err) => {
+      console.error('Erreur lors de la génération:', err);
+      this.showToast('Erreur lors de la génération de l\'attestation', 'error');
+    }
+  });
+}
+
+// ✅ Uploader l'attestation signée (PDF)
+uploadAttestationSignee(event: any): void {
+  const file = event.target.files[0];
+  if (!file) {
+    this.showToast('Veuillez sélectionner un fichier', 'error');
+    return;
+  }
+  
+  if (file.type !== 'application/pdf') {
+    this.showToast('Veuillez sélectionner un fichier PDF', 'error');
+    return;
+  }
+  
+  this.technicienService.uploadAttestationSignee(this.currentDetail?.id!, file).subscribe({
+    next: () => {
+      this.showToast('Attestation signée uploadée avec succès !', 'success');
+      this.loadInterventions();
+    },
+    error: (err) => {
+      console.error('Erreur lors de l\'upload:', err);
+      this.showToast('Erreur lors de l\'upload de l\'attestation', 'error');
+    }
+  });
+}
+
+// ✅ Télécharger l'attestation signée
+downloadAttestationSignee(id: number): void {
+  this.technicienService.downloadAttestationSignee(id).subscribe({
+    next: (blob: Blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `attestation_signe_${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      this.showToast('Attestation signée téléchargée', 'success');
+    },
+    error: (err) => {
+      console.error('Erreur lors du téléchargement:', err);
+      this.showToast('Erreur lors du téléchargement de l\'attestation signée', 'error');
+    }
+  });
+}
 }
