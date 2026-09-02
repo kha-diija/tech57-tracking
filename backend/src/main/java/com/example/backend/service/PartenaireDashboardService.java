@@ -10,7 +10,9 @@ import com.example.backend.repository.PartenaireRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class PartenaireDashboardService {
@@ -34,19 +36,44 @@ public class PartenaireDashboardService {
 
         Integer idProvince = partenaire.getProvince().getIdProvince();
 
-        // Nécessite dans EtablissementRepository :
-        // List<Etablissement> findByCommuneProvinceIdProvince(Integer idProvince);
+        // 1 requête : établissements + commune déjà chargée (fetch join)
         List<Etablissement> etablissements = etablissementRepository
-                .findByCommuneProvinceIdProvince(idProvince);
+                .findByCommuneProvinceIdProvinceWithCommune(idProvince);
+
+        List<Integer> ids = etablissements.stream().map(Etablissement::getIdEtablissement).toList();
+
+        // 1 requête pour TOUS les comptes de matériel (au lieu de N)
+        Map<Integer, Long> nbMaterielsParEtablissement = new HashMap<>();
+        if (!ids.isEmpty()) {
+            for (Object[] row : etablissementRepository.countMaterielsByEtablissementIds(ids)) {
+                nbMaterielsParEtablissement.put((Integer) row[0], (Long) row[1]);
+            }
+        }
+
+        // 1 requête pour TOUTES les moyennes de taux d'avancement (au lieu de N)
+        Map<Integer, Double> avgTauxParEtablissement = new HashMap<>();
+        if (!ids.isEmpty()) {
+            for (Object[] row : interventionRepositoryy.findAvgTauxAvancementByEtablissementIds(ids)) {
+                avgTauxParEtablissement.put((Integer) row[0], (Double) row[1]);
+            }
+        }
 
         List<EtablissementAvancementDto> dtos = etablissements.stream()
-                .map(this::toDto)
+                .map(e -> new EtablissementAvancementDto(
+                        e.getIdEtablissement(),
+                        e.getDesignation(),
+                        e.getCommune().getNom(),
+                        e.getNombreBeneficiaires(),
+                        nbMaterielsParEtablissement.getOrDefault(e.getIdEtablissement(), 0L).intValue(),
+                        avgTauxParEtablissement.getOrDefault(e.getIdEtablissement(), 0.0)
+                ))
                 .toList();
 
         long totalBeneficiaires = etablissements.stream()
                 .mapToLong(e -> e.getNombreBeneficiaires() == null ? 0 : e.getNombreBeneficiaires())
                 .sum();
 
+        // 1 requête pour la moyenne province
         Double avancementProvince = interventionRepositoryy.findAvgTauxAvancementByProvince(idProvince);
 
         return new PartenaireDashboardDto(
@@ -55,19 +82,6 @@ public class PartenaireDashboardService {
                 totalBeneficiaires,
                 avancementProvince != null ? avancementProvince : 0.0,
                 dtos
-        );
-    }
-
-    private EtablissementAvancementDto toDto(Etablissement e) {
-        Double avgTaux = interventionRepositoryy.findAvgTauxAvancementByEtablissement(e.getIdEtablissement());
-
-        return new EtablissementAvancementDto(
-                e.getIdEtablissement(),
-                e.getDesignation(),
-                e.getCommune().getNom(),
-                e.getNombreBeneficiaires(),
-                e.getMateriels().size(),
-                avgTaux != null ? avgTaux : 0.0
         );
     }
 }
