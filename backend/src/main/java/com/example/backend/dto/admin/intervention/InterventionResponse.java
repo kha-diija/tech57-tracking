@@ -16,6 +16,7 @@ public class InterventionResponse {
     private Integer missionId;
     private String missionReference;
     private String etablissementDesignation;
+    private String etablissementReference; // ✅ AJOUT
     private Integer technicienId;
     private String technicienNom;
 
@@ -62,6 +63,9 @@ public class InterventionResponse {
 
     public String getEtablissementDesignation() { return etablissementDesignation; }
     public void setEtablissementDesignation(String etablissementDesignation) { this.etablissementDesignation = etablissementDesignation; }
+
+    public String getEtablissementReference() { return etablissementReference; } // ✅ AJOUT
+    public void setEtablissementReference(String etablissementReference) { this.etablissementReference = etablissementReference; } // ✅ AJOUT
 
     public Integer getTechnicienId() { return technicienId; }
     public void setTechnicienId(Integer technicienId) { this.technicienId = technicienId; }

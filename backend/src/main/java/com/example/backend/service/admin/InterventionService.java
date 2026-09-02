@@ -348,6 +348,7 @@ public class InterventionService {
 
             if (intervention.getMission().getEtablissement() != null) {
                 response.setEtablissementDesignation(intervention.getMission().getEtablissement().getDesignation());
+                response.setEtablissementReference(intervention.getMission().getEtablissement().getReference()); // ✅ AJOUT
             }
         }
 
@@ -432,6 +433,7 @@ public class InterventionService {
 
             if (intervention.getMission().getEtablissement() != null) {
                 response.setEtablissementDesignation(intervention.getMission().getEtablissement().getDesignation());
+                response.setEtablissementReference(intervention.getMission().getEtablissement().getReference()); // ✅ AJOUT
             }
         }
 
