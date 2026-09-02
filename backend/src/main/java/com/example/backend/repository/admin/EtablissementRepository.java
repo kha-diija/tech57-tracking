@@ -41,6 +41,7 @@ public interface EtablissementRepository extends JpaRepository<Etablissement, In
     long countMaterielsByEtablissementId(@Param("id") Integer id);
 
     Optional<Etablissement> findByReference(String reference);
+
     @Query("SELECT e FROM Etablissement e " +
             "LEFT JOIN FETCH e.responsable " +
             "WHERE e.commune.idCommune = :idCommune " +
@@ -48,4 +49,20 @@ public interface EtablissementRepository extends JpaRepository<Etablissement, In
     List<Etablissement> findByCommune_IdCommune(@Param("idCommune") Integer idCommune);
 
     List<Etablissement> findByCommuneProvinceIdProvince(Integer idProvince);
+
+    // --- Ajouts pour optimiser le dashboard partenaire (évite le lazy loading en boucle) ---
+
+    // Charge les établissements d'une province avec la commune déjà fetchée (1 seule requête)
+    @Query("SELECT e FROM Etablissement e " +
+            "LEFT JOIN FETCH e.commune c " +
+            "WHERE c.province.idProvince = :idProvince " +
+            "ORDER BY e.designation ASC")
+    List<Etablissement> findByCommuneProvinceIdProvinceWithCommune(@Param("idProvince") Integer idProvince);
+
+    // Compte les matériels pour un lot d'établissements en une seule requête groupée
+    // row[0] = idEtablissement (Integer), row[1] = count (Long)
+    @Query("SELECT m.etablissement.idEtablissement, COUNT(m) FROM Materiel m " +
+            "WHERE m.etablissement.idEtablissement IN :ids " +
+            "GROUP BY m.etablissement.idEtablissement")
+    List<Object[]> countMaterielsByEtablissementIds(@Param("ids") List<Integer> ids);
 }
