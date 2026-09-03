@@ -99,20 +99,22 @@ export class Sidebar {
 
         // Adaptation des Missions pour le technicien
         if (item.label === 'Missions') {
-          if (role === 'TECHNICIEN') {
-            route = '/technicien/missions';
-          } else {
-            route = '/admin/missions';
-          }
+          route = role === 'TECHNICIEN' ? '/technicien/missions' : '/admin/missions';
         }
 
         // Adaptation de la Gestion et suivi des interventions pour le technicien
         if (item.label === 'Gestion et suivi des interventions') {
-          if (role === 'TECHNICIEN') {
-            route = '/technicien/interventions';
-          } else {
-            route = '/admin/interventions';
-          }
+          route = role === 'TECHNICIEN' ? '/technicien/interventions' : '/admin/interventions';
+        }
+
+        // Adaptation des Établissements pour le technicien
+        if (item.label === 'Établissements') {
+          route = role === 'TECHNICIEN' ? '/technicien/etablissements' : '/admin/etablissements';
+        }
+
+        // Adaptation du Simulateur de trajet pour le technicien
+        if (item.label === 'Simulateur de trajet') {
+          route = role === 'TECHNICIEN' ? '/technicien/simulateur-trajet' : '/admin/simulateur-trajet';
         }
 
         return { ...item, route };

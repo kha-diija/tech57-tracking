@@ -43,18 +43,12 @@ export const routes: Routes = [
       { path: 'dashboard', component: Dashboard },
       { path: 'missions', component: Missions },
       { path: 'etablissements', component: Etablissements },
-      {
-        path: 'admin/simulateur-trajet',
-        canActivate: [roleGuard(['TECHNICIEN', 'ADMINISTRATEUR'])],
-        loadComponent: () =>
-          import('./features/simulateur-trajet/simulateur-trajet').then(m => m.SimulateurTrajet),
-      },
       { path: 'chat-ia', component: ChatIa },
       { path: 'guides', component: Guides },
-      { 
-        path: 'stock', 
-        component: Stock, 
-        canActivate: [roleGuard(['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK', 'TECHNICIEN'])] 
+      {
+        path: 'stock',
+        component: Stock,
+        canActivate: [roleGuard(['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK', 'TECHNICIEN'])]
       },
       {
         path: 'users',
@@ -63,25 +57,45 @@ export const routes: Routes = [
       },
 
       { path: 'ressources', component: Ressources },
-      
-      // --- SUPPRESSION DE LA ROUTE GLOBALE 'interventions' ---
-      // { path: 'interventions', component: Interventions }, <-- SUPPRIMÉE (Conflit avec l'admin)
 
       { path: 'settings', component: Settings },
 
-      // Dashboards et modules spécifiques par rôle (avec Lazy Loading)
+      // ===== Dashboards par rôle =====
       {
         path: 'admin/dashboard',
         canActivate: [roleGuard(['ADMINISTRATEUR'])],
         loadComponent: () =>
           import('./features/admin/dashboard').then((m) => m.Dashboard),
       },
+
+      // ===== Établissements : même composant, URL adaptée au rôle =====
       {
         path: 'admin/etablissements',
-        canActivate: [roleGuard(['ADMINISTRATEUR', 'TECHNICIEN'])],
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
         loadComponent: () =>
           import('./features/admin/Gs-etablissement/gs-etablissement').then((m) => m.GsEtablissement),
       },
+      {
+        path: 'technicien/etablissements',
+        canActivate: [roleGuard(['TECHNICIEN'])],
+        loadComponent: () =>
+          import('./features/admin/Gs-etablissement/gs-etablissement').then((m) => m.GsEtablissement),
+      },
+
+      // ===== Simulateur de trajet : même composant, URL adaptée au rôle =====
+      {
+        path: 'admin/simulateur-trajet',
+        canActivate: [roleGuard(['ADMINISTRATEUR'])],
+        loadComponent: () =>
+          import('./features/simulateur-trajet/simulateur-trajet').then(m => m.SimulateurTrajet),
+      },
+      {
+        path: 'technicien/simulateur-trajet',
+        canActivate: [roleGuard(['TECHNICIEN'])],
+        loadComponent: () =>
+          import('./features/simulateur-trajet/simulateur-trajet').then(m => m.SimulateurTrajet),
+      },
+
       {
         path: 'admin/missions',
         canActivate: [roleGuard(['ADMINISTRATEUR'])],
@@ -113,7 +127,6 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/technicien/technicien-dashboard').then((m) => m.TechnicienDashboard),
       },
-
       {
         path: 'technicien/missions',
         canActivate: [roleGuard(['TECHNICIEN'])],
@@ -123,7 +136,6 @@ export const routes: Routes = [
       {
         path: 'technicien/interventions',
         canActivate: [roleGuard(['TECHNICIEN'])],
-        // --- CORRECTION ICI : m.TechnicienInterventions (avec un 's') ---
         loadComponent: () =>
           import('./features/technicien/interventions').then((m) => m.TechnicienInterventions),
       },
@@ -140,10 +152,10 @@ export const routes: Routes = [
           import('./features/role_observateur/lecture/lecture').then(m => m.ObservateurLecture),
       },
       {
-      path: 'gestionnaire/dashboard',
-      canActivate: [roleGuard(['GESTIONNAIRE_STOCK'])],
-      loadComponent: () =>
-      import('./features/gestionnaire/stock-dashboard').then((m) => m.StockDashboard),
+        path: 'gestionnaire/dashboard',
+        canActivate: [roleGuard(['GESTIONNAIRE_STOCK'])],
+        loadComponent: () =>
+          import('./features/gestionnaire/stock-dashboard').then((m) => m.StockDashboard),
       },
       {
         path: 'sorties',
@@ -157,10 +169,10 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/gestionnaire/retours/retours').then((m) => m.RetoursStock),
       },
-           
+
       {
         path: 'partenaire',
-        canActivate: [roleGuard(['PARTENAIRE'])], // adaptez au nom réel de votre guard
+        canActivate: [roleGuard(['PARTENAIRE'])],
         children: [
           { path: 'dashboard', loadComponent: () => import('./features/partenaire/dash/dash').then(m => m.Dash) },
           { path: 'avancement', loadComponent: () => import('./features/partenaire/avancementByEtablissement/avancement-by-etablissement').then(m => m.AvancementByEtablissement) },
