@@ -17,7 +17,9 @@ import {
   Phone,
   Navigation,
   GraduationCap,
-   CheckCircle 
+  CheckCircle,
+  Mail,
+  AlertTriangle
 } from 'lucide-angular';
 import { EtablissementService } from '../../../shared/services/etablissement.service';
 import { FormateurService } from '../../../shared/services/formateur.service';
@@ -91,9 +93,9 @@ export class GsEtablissement {
   });
 
   readonly icons = {
-  Building2, MapPin, Users, UserX, Search, Plus, Download, Upload,
-  Pencil, Trash2, X, Phone, Navigation, GraduationCap, CheckCircle
-};
+    Building2, MapPin, Users, UserX, Search, Plus, Download, Upload,
+    Pencil, Trash2, X, Phone, Navigation, GraduationCap, CheckCircle, Mail, AlertTriangle
+  };
 
   readonly typeOptions = ['École', 'Collège', 'Lycée', 'Université', 'Centre de formation', 'Autre'];
 
@@ -153,6 +155,9 @@ export class GsEtablissement {
   // --- Modale de gestion des formateurs (ex-Observateur côté backend) ---
   readonly formateurModal = signal<FormateurModalState>(this.emptyFormateurModal());
 
+  // --- Modale d'erreur lors de la sauvegarde d'un formateur (ex: email dupliqué) ---
+  readonly formateurError = signal<string | null>(null);
+
   // --- Modale d'import Excel ---
   readonly importModal = signal<ImportModalState>(this.emptyImportModal());
   readonly importProvinces = signal<Province[]>([]);
@@ -183,7 +188,7 @@ export class GsEtablissement {
       formateurs: [],
       isLoading: false,
       editingId: null,
-      form: { nom: '', prenom: '', telephone: '', adresse: '' }
+      form: { nom: '', prenom: '', telephone: '', adresse: '', email: '' }
     };
   }
 
@@ -433,7 +438,7 @@ export class GsEtablissement {
       formateurs: [],
       isLoading: true,
       editingId: null,
-      form: { nom: '', prenom: '', telephone: '', adresse: '' }
+      form: { nom: '', prenom: '', telephone: '', adresse: '', email: '' }
     });
 
     this.formateurService.getByEtablissement(etab.idEtablissement).subscribe((list) => {
@@ -457,7 +462,8 @@ export class GsEtablissement {
         nom: f.nom,
         prenom: f.prenom,
         telephone: f.telephone ?? '',
-        adresse: f.adresse ?? ''
+        adresse: f.adresse ?? '',
+        email: f.email ?? ''
       }
     }));
   }
@@ -466,7 +472,7 @@ export class GsEtablissement {
     this.formateurModal.update((m) => ({
       ...m,
       editingId: null,
-      form: { nom: '', prenom: '', telephone: '', adresse: '' }
+      form: { nom: '', prenom: '', telephone: '', adresse: '', email: '' }
     }));
   }
 
@@ -480,20 +486,31 @@ export class GsEtablissement {
       ? this.formateurService.update(etab.idEtablissement, modal.editingId, modal.form)
       : this.formateurService.create(etab.idEtablissement, modal.form);
 
-    request.subscribe(() => {
-      this.formateurService.getByEtablissement(etab.idEtablissement).subscribe((list) => {
-        this.formateurModal.update((m) => ({
-          ...m,
-          formateurs: list,
-          editingId: null,
-          form: { nom: '', prenom: '', telephone: '', adresse: '' }
-        }));
-      });
+    request.subscribe({
+      next: () => {
+        this.formateurService.getByEtablissement(etab.idEtablissement).subscribe((list) => {
+          this.formateurModal.update((m) => ({
+            ...m,
+            formateurs: list,
+            editingId: null,
+            form: { nom: '', prenom: '', telephone: '', adresse: '', email: '' }
+          }));
+        });
 
-      if (isCreate) {
-        this.syncEtablissementFormateurCount(etab.idEtablissement, 1);
+        if (isCreate) {
+          this.syncEtablissementFormateurCount(etab.idEtablissement, 1);
+        }
+      },
+      error: (err) => {
+        // Cas typique : email déjà utilisé par un autre utilisateur (contrainte unique côté backend)
+        const message = err?.error?.error || "Une erreur est survenue lors de l'enregistrement du formateur.";
+        this.formateurError.set(message);
       }
     });
+  }
+
+  closeFormateurError(): void {
+    this.formateurError.set(null);
   }
 
   deleteFormateur(f: Formateur): void {
