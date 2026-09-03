@@ -40,15 +40,40 @@ public class RetourMaterielGestionService {
     // ------------------------------------------------------------------
     // Liste des sorties à régulariser
     // ------------------------------------------------------------------
+    //
+    // une SortieMateriel est créée automatiquement lors de la
+    // création d'une mission (voir MissionInstallationService.creerSortieMaterielAutomatically)
+    // et est liée à la MISSION (sortie.setMission(mission)), PAS à une intervention
+    // précise. Une mission pouvant contenir plusieurs interventions, c'est donc le
+    // statut de la MISSION ("Terminée", calculé automatiquement dans
+    // MissionInstallationService.recalculerStatut() une fois TOUTES les
+    // interventions "Clôturée") qui doit être vérifié ici, et non plus le statut
+    // d'une intervention isolée.
     @Transactional(readOnly = true)
     public List<SortieARegulariserDto> listerARegulariser() {
         List<SortieMateriel> sorties = sortieMaterielRepository.findByStatut("Validée").stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getRetourTraite()))
-                .filter(s -> s.getIntervention() != null
-                        && "Terminée".equals(s.getIntervention().getStatut()))
+                .filter(this::missionTerminee)
                 .collect(Collectors.toList());
 
         return sorties.stream().map(this::toRegulariserDto).collect(Collectors.toList());
+    }
+
+    /**
+     * Vérifie que la mission liée à la sortie est "Terminée".
+     * Gère à la fois :
+     * - le cas normal : sortie liée directement à une mission
+     * - un cas legacy éventuel : sortie liée uniquement à une intervention
+     *   (on remonte alors à la mission de cette intervention)
+     */
+    private boolean missionTerminee(SortieMateriel s) {
+        if (s.getMission() != null) {
+            return "Terminée".equals(s.getMission().getStatut());
+        }
+        if (s.getIntervention() != null && s.getIntervention().getMission() != null) {
+            return "Terminée".equals(s.getIntervention().getMission().getStatut());
+        }
+        return false;
     }
 
     private SortieARegulariserDto toRegulariserDto(SortieMateriel s) {
@@ -56,9 +81,14 @@ public class RetourMaterielGestionService {
         dto.setIdSortie(s.getIdSortie());
         dto.setDateSortie(s.getDateSortie());
 
-        if (s.getIntervention() != null && s.getIntervention().getMission() != null) {
+        // ✅ On lit la référence mission directement depuis la sortie,
+        // avec repli sur intervention.mission si jamais ce lien existe.
+        if (s.getMission() != null) {
+            dto.setMissionReference(s.getMission().getReference());
+        } else if (s.getIntervention() != null && s.getIntervention().getMission() != null) {
             dto.setMissionReference(s.getIntervention().getMission().getReference());
         }
+
         if (s.getTechnicien() != null) {
             dto.setTechnicienId(s.getTechnicien().getId());
             dto.setTechnicienNom(s.getTechnicien().getNom() + " " + s.getTechnicien().getPrenom());
