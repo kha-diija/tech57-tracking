@@ -20,7 +20,9 @@ export function roleGuard(allowedRoles: UserRole[]): CanActivateFn {
       return true;
     }
 
-    router.navigateByUrl('/login');
+    // replaceUrl: true => évite d'empiler une entrée d'historique
+    // vers une route protégée à laquelle l'utilisateur n'a pas accès
+    router.navigateByUrl('/login', { replaceUrl: true });
     return false;
   };
 }
