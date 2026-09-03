@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import {
   LucideAngularModule,
@@ -43,7 +43,6 @@ export class Sidebar {
   @Output() collapsedChange = new EventEmitter<boolean>();
 
   private authService = inject(AuthService);
-  private router = inject(Router);
 
   readonly icons = {
     LogOut,
@@ -126,6 +125,8 @@ export class Sidebar {
   }
 
   logout() {
-    this.router.navigate(['/login']);
+    // Détruit les tokens (localStorage) + révoque le refresh token côté backend
+    // + redirige vers /login en remplaçant l'entrée d'historique (replaceUrl)
+    this.authService.logout();
   }
 }
