@@ -83,13 +83,14 @@ export class Sidebar {
         let route = item.route;
 
         // Adaptation du Tableau de bord
+        // ⚠️ Ces routes doivent correspondre EXACTEMENT à app.routes.ts
         if (item.label === 'Tableau de bord') {
           if (role === 'TECHNICIEN') {
             route = '/technicien/dashboard';
           } else if (role === 'OBSERVATEUR') {
-            route = '/observateur/dashboard';
+            route = '/client/dashboard';        // corrigé (était /observateur/dashboard)
           } else if (role === 'GESTIONNAIRE_STOCK') {
-            route = '/stock/dashboard';
+            route = '/gestionnaire/dashboard';   // corrigé (était /stock/dashboard)
           } else if (role === 'PARTENAIRE') {
             route = '/partenaire/dashboard';
           } else {
@@ -127,8 +128,6 @@ export class Sidebar {
   }
 
   logout() {
-    // Détruit les tokens (localStorage) + révoque le refresh token côté backend
-    // + redirige vers /login en remplaçant l'entrée d'historique (replaceUrl)
     this.authService.logout();
   }
 }
