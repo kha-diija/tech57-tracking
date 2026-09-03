@@ -1,1 +1,622 @@
-<p>stock works!</p>
+<div class="stock-page">
+
+  <!-- ============================= HEADER ============================= -->
+  <header class="stock-header">
+    <div class="header-titles">
+      <p class="eyebrow">Inventaire</p>
+      <h1>Stock &amp; matériel</h1>
+      <p class="subtitle">
+        {{ totalElements() }} référence{{ totalElements() > 1 ? 's' : '' }} suivie{{ totalElements() > 1 ? 's' : '' }}
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" *ngIf="!lectureSeule()" (click)="ouvrirCreation('kit')">
+        <lucide-icon [img]="icons.Boxes" [size]="18"></lucide-icon>
+        <span>Nouveau kit</span>
+      </button>
+      <button class="btn btn-primary"  *ngIf="!lectureSeule()" (click)="ouvrirCreation('simple')">
+        <lucide-icon [img]="icons.Plus" [size]="18"></lucide-icon>
+        <span>Nouveau matériel</span>
+      </button>
+      <button class="btn btn-primary" *ngIf="peutAcheter()" (click)="ouvrirAchat()">
+        <lucide-icon [img]="icons.ShoppingCart" [size]="18"></lucide-icon>
+        <span>Nouvel achat</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================= TOOLBAR ============================= -->
+  <div class="toolbar">
+    <div class="search-box">
+      <lucide-icon [img]="icons.Search" [size]="18"></lucide-icon>
+      <input
+        type="text"
+        placeholder="Rechercher une référence, un nom, un n° série…"
+        [value]="search()"
+        (input)="onSearchInput($any($event.target).value)"
+      />
+    </div>
+
+    <div class="etat-pills">
+      <button
+        *ngFor="let e of etats"
+        type="button"
+        class="etat-pill"
+        [ngClass]="classeEtat(e)"
+        [class.active]="etatFiltre() === e"
+        (click)="setEtatFiltre(e)"
+      >
+        <span class="dot"></span>{{ e }}
+      </button>
+    </div>
+
+    <div class="select-wrap">
+      <lucide-icon [img]="icons.SlidersHorizontal" [size]="16"></lucide-icon>
+      <select
+        [ngModel]="categorieFiltre()"
+        (ngModelChange)="setCategorieFiltre($event)"
+      >
+        <option [ngValue]="null">Toutes les catégories</option>
+        <option *ngFor="let c of categories()" [ngValue]="c.idCategorie">{{ c.nom }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ============================= GRID ============================= -->
+  <div class="materiel-grid" [class.is-loading]="loading()">
+
+    <div
+      class="asset-card"
+      [class.is-kit]="m.estKit"
+      [class.in-maintenance]="m.enMaintenance"
+      *ngFor="let m of materiels(); trackBy: trackByMateriel"
+      role="button"
+      tabindex="0"
+      (click)="ouvrirDetail(m)"
+      (keydown.enter)="ouvrirDetail(m)"
+    >
+      <div class="asset-card-face">
+        <span class="punch-hole"></span>
+
+        <div class="card-top">
+          <span class="qr-glyph"><lucide-icon [img]="icons.QrCode" [size]="18"></lucide-icon></span>
+          <span class="etat-badge" [ngClass]="classeEtat(m.etat)">
+            <span class="dot"></span>{{ m.etat }}
+          </span>
+        </div>
+
+        <!-- Bouton delete (Protégé par le code TS si lectureSeule) -->
+        <button
+          type="button"
+          class="card-delete-btn"
+          *ngIf="!lectureSeule()"
+          title="Supprimer ce matériel"
+          (click)="supprimerMateriel(m, $event)"
+        >
+          <lucide-icon [img]="icons.Trash2" [size]="14"></lucide-icon>
+        </button>
+
+        <h3 class="card-title">{{ m.nom }}</h3>
+        <p class="card-ref">{{ m.reference }}</p>
+        <p class="card-serial" *ngIf="m.numeroSerie">S/N&nbsp;{{ m.numeroSerie }}</p>
+
+        <div class="card-footer">
+          <span class="card-category">{{ m.nomCategorie || 'Sans catégorie' }}</span>
+          <span class="card-etablissement" *ngIf="m.designationEtablissement">
+            <lucide-icon [img]="icons.Building2" [size]="12"></lucide-icon>
+            {{ m.designationEtablissement }}
+          </span>
+        </div>
+
+        <span class="maintenance-flag" *ngIf="m.enMaintenance" title="En maintenance">
+          <lucide-icon [img]="icons.Wrench" [size]="13"></lucide-icon>
+        </span>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading() && materiels().length === 0">
+      <lucide-icon [img]="icons.Package" [size]="40"></lucide-icon>
+      <h3>Aucun matériel trouvé</h3>
+      <p>Ajustez vos filtres ou ajoutez une nouvelle référence à l'inventaire.</p>
+      <button class="btn btn-primary" *ngIf="!lectureSeule()" (click)="ouvrirCreation('simple')">
+        <lucide-icon [img]="icons.Plus" [size]="16"></lucide-icon>
+        Ajouter un matériel
+      </button>
+    </div>
+
+    <div class="grid-loading-overlay" *ngIf="loading() && materiels().length > 0">
+      <lucide-icon [img]="icons.RefreshCw" [size]="22" class="spin"></lucide-icon>
+    </div>
+  </div>
+
+  <!-- ============================= PAGINATION ============================= -->
+  <div class="pagination" *ngIf="totalPages() > 1">
+    <button type="button" [disabled]="page() === 0" (click)="allerPage(page() - 1)">
+      <lucide-icon [img]="icons.ChevronRight" [size]="16" class="rotate-180"></lucide-icon>
+      Précédent
+    </button>
+    <span class="pagination-info">Page {{ page() + 1 }} / {{ totalPages() }}</span>
+    <button type="button" [disabled]="page() >= totalPages() - 1" (click)="allerPage(page() + 1)">
+      Suivant
+      <lucide-icon [img]="icons.ChevronRight" [size]="16"></lucide-icon>
+    </button>
+  </div>
+</div>
+
+<!-- ============================= DRAWER DÉTAIL ============================= -->
+<div class="drawer-backdrop" *ngIf="drawerOpen()" (click)="fermerDrawer()"></div>
+
+<aside class="drawer" [class.open]="drawerOpen()" *ngIf="selected() as m">
+  <header class="drawer-header">
+    <div class="drawer-header-icon" [ngClass]="classeEtat(m.etat)">
+      <lucide-icon [img]="iconePourCategorie(m.nomCategorie ?? undefined)" [size]="22"></lucide-icon>
+    </div>
+    <div class="drawer-header-titles">
+      <div class="title-row">
+        <h2>{{ m.nom }}</h2>
+        <span class="kit-tag" *ngIf="m.estKit"><lucide-icon [img]="icons.Boxes" [size]="12"></lucide-icon> Kit</span>
+      </div>
+      <p class="drawer-ref">{{ m.reference }}</p>
+    </div>
+    <button type="button" class="icon-btn" (click)="fermerDrawer()">
+      <lucide-icon [img]="icons.X" [size]="20"></lucide-icon>
+    </button>
+  </header>
+
+  <div class="drawer-toolbar">
+    <div class="etat-quickset" *ngIf="!lectureSeule()">
+      <button
+        *ngFor="let e of etats"
+        type="button"
+        class="etat-chip"
+        [ngClass]="classeEtat(e)"
+        [class.active]="m.etat === e"
+        (click)="changerEtat(e)"
+      >
+        <span class="dot"></span>{{ e }}
+      </button>
+    </div>
+    <div class="etat-quickset" *ngIf="lectureSeule()">
+      <span class="etat-chip active" [ngClass]="classeEtat(m.etat)">
+        <span class="dot"></span>{{ m.etat }}
+      </span>
+    </div>
+
+    <div class="drawer-actions" *ngIf="!lectureSeule()">
+      <button type="button" class="icon-btn" title="Régénérer le QR" (click)="regenererQr()">
+        <lucide-icon [img]="icons.RefreshCw" [size]="16"></lucide-icon>
+      </button>
+      <button type="button" class="icon-btn" title="Modifier" *ngIf="!editMode()" (click)="entrerEditMode()">
+        <lucide-icon [img]="icons.Pencil" [size]="16"></lucide-icon>
+      </button>
+      <button type="button" class="icon-btn danger" title="Supprimer" (click)="supprimerDepuisDrawer()">
+        <lucide-icon [img]="icons.Trash2" [size]="16"></lucide-icon>
+      </button>
+    </div>
+  </div>
+
+  <nav class="drawer-tabs">
+    <button type="button" [class.active]="activeTab() === 'info'" (click)="changerOnglet('info')">
+      <lucide-icon [img]="icons.Info" [size]="15"></lucide-icon> Informations
+    </button>
+    <button type="button" [class.active]="activeTab() === 'mouvements'" (click)="changerOnglet('mouvements')">
+      <lucide-icon [img]="icons.History" [size]="15"></lucide-icon> Mouvements
+    </button>
+    <button type="button" [class.active]="activeTab() === 'maintenance'" (click)="changerOnglet('maintenance')">
+      <lucide-icon [img]="icons.Wrench" [size]="15"></lucide-icon> Maintenance
+    </button>
+  </nav>
+
+  <div class="drawer-body">
+    <div class="drawer-loading" *ngIf="detailLoading()">
+      <lucide-icon [img]="icons.RefreshCw" [size]="20" class="spin"></lucide-icon>
+    </div>
+
+    <ng-container *ngIf="!detailLoading()">
+
+      <!-- ---------- ONGLET INFO ---------- -->
+      <section class="tab-panel" *ngIf="activeTab() === 'info'">
+
+        <div class="error-banner" *ngIf="errorMessage()">
+          <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+          {{ errorMessage() }}
+        </div>
+
+        <!-- Vue lecture -->
+        <div class="info-grid" *ngIf="!editMode()">
+          <div class="info-field">
+            <span class="field-label">Référence</span>
+            <span class="field-value mono">{{ m.reference }}</span>
+          </div>
+          <div class="info-field">
+            <span class="field-label">N° série</span>
+            <span class="field-value mono">{{ m.numeroSerie || '—' }}</span>
+          </div>
+          <div class="info-field">
+            <span class="field-label">Catégorie</span>
+            <span class="field-value">{{ m.nomCategorie || '—' }}</span>
+          </div>
+          <div class="info-field">
+            <span class="field-label">Établissement</span>
+            <span class="field-value">
+              {{ m.designationEtablissement || (m.idEtablissement ? 'ID ' + m.idEtablissement : '—') }}
+            </span>
+          </div>
+        </div>
+
+        <div class="qr-panel" *ngIf="!editMode()">
+          <div class="qr-glyph-lg"><lucide-icon [img]="icons.QrCode" [size]="26"></lucide-icon></div>
+          <div>
+            <span class="field-label">Code QR</span>
+            <p class="field-value mono">{{ m.codeQr || 'Aucun code généré' }}</p>
+          </div>
+        </div>
+
+        <!-- Vue édition -->
+        <form class="edit-form" *ngIf="editMode() && !lectureSeule()" (ngSubmit)="enregistrerEdition()">
+          <label>Référence
+            <input type="text" [(ngModel)]="editForm.reference" name="editReference" required />
+          </label>
+          <label>Nom
+            <input type="text" [(ngModel)]="editForm.nom" name="editNom" required />
+          </label>
+          <label>N° série
+            <input type="text" [(ngModel)]="editForm.numeroSerie" name="editSerie" />
+          </label>
+          <label>Code QR
+            <input type="text" [(ngModel)]="editForm.codeQr" name="editQr" />
+          </label>
+          <label>État
+            <select [(ngModel)]="editForm.etat" name="editEtat">
+              <option *ngFor="let e of etats" [value]="e">{{ e }}</option>
+            </select>
+          </label>
+          <label>Catégorie
+            <select [(ngModel)]="editForm.idCategorie" name="editCategorie">
+              <option *ngFor="let c of categories()" [ngValue]="c.idCategorie">{{ c.nom }}</option>
+            </select>
+          </label>
+          <label>Établissement
+            <select [(ngModel)]="editForm.idEtablissement" name="editEtab">
+              <option [ngValue]="null">Aucun</option>
+              <option *ngFor="let e of etablissements()" [ngValue]="e.idEtablissement">
+                {{ e.designation }}
+              </option>
+            </select>
+          </label>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost" (click)="editMode.set(false)">Annuler</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving()">
+              <lucide-icon *ngIf="saving()" [img]="icons.RefreshCw" [size]="14" class="spin"></lucide-icon>
+              Enregistrer
+            </button>
+          </div>
+        </form>
+
+        <!-- Composants (kit uniquement) -->
+        <div class="composants-section" *ngIf="m.estKit">
+          <div class="section-head">
+            <h3><lucide-icon [img]="icons.Boxes" [size]="15"></lucide-icon> Composants</h3>
+            <button type="button" class="icon-btn" *ngIf="!lectureSeule()" (click)="ouvrirFormComposant()">
+              <lucide-icon [img]="icons.PackagePlus" [size]="16"></lucide-icon>
+            </button>
+          </div>
+
+          <ul class="composant-tree">
+            <li *ngFor="let comp of m.composants">
+              <div class="composant-row">
+                <span class="composant-name">{{ comp.nom }}</span>
+                <span class="composant-qty" *ngIf="comp.quantiteComposant">×{{ comp.quantiteComposant }}</span>
+                <button type="button" class="icon-btn danger sm" *ngIf="!lectureSeule()" (click)="retirerComposant(comp.idMateriel)">
+                  <lucide-icon [img]="icons.Trash2" [size]="13"></lucide-icon>
+                </button>
+              </div>
+            </li>
+            <li class="tree-empty" *ngIf="!m.composants || m.composants.length === 0">
+              Aucun composant enregistré.
+            </li>
+          </ul>
+
+          <form class="inline-form" *ngIf="showComposantForm() && !lectureSeule()" (ngSubmit)="ajouterComposant()">
+            <input type="text" placeholder="Nom du composant" [(ngModel)]="composantForm.nom" name="compNom" required />
+            <input type="text" placeholder="Référence (optionnel)" [(ngModel)]="composantForm.reference" name="compRef" />
+            <input type="number" min="1" placeholder="Qté" [(ngModel)]="composantForm.quantiteComposant" name="compQty" />
+            <div class="form-actions">
+              <button type="button" class="btn btn-ghost sm" (click)="showComposantForm.set(false)">Annuler</button>
+              <button type="submit" class="btn btn-primary sm" [disabled]="saving()">Ajouter</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ---------- ONGLET MOUVEMENTS ---------- -->
+      <section class="tab-panel" *ngIf="activeTab() === 'mouvements'">
+        <ul class="timeline">
+          <li *ngFor="let mv of mouvements()">
+            <span class="timeline-dot"></span>
+            <div class="timeline-content">
+              <div class="timeline-top">
+                <span class="timeline-type">{{ mv.type }}</span>
+                <span class="timeline-date">{{ mv.dateMouvement | date: 'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              <p class="timeline-route" *ngIf="mv.origine || mv.destination">
+                {{ mv.origine || '—' }} <lucide-icon [img]="icons.ChevronRight" [size]="12"></lucide-icon> {{ mv.destination || '—' }}
+              </p>
+            </div>
+          </li>
+          <li class="tree-empty" *ngIf="mouvements().length === 0">Aucun mouvement enregistré.</li>
+        </ul>
+      </section>
+
+      <!-- ---------- ONGLET MAINTENANCE ---------- -->
+      <section class="tab-panel" *ngIf="activeTab() === 'maintenance'">
+        <div class="section-head">
+          <h3><lucide-icon [img]="icons.Wrench" [size]="15"></lucide-icon> Historique</h3>
+          <button type="button" class="icon-btn" *ngIf="!lectureSeule()" (click)="ouvrirFormMaintenance()">
+            <lucide-icon [img]="icons.Plus" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="error-banner" *ngIf="errorMessage()">
+          <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+          {{ errorMessage() }}
+        </div>
+
+        <form class="inline-form" *ngIf="showMaintenanceForm() && !lectureSeule()" (ngSubmit)="creerMaintenance()">
+          <label>Date
+            <input type="date" [(ngModel)]="maintenanceForm.dateMaintenance" name="mDate" required />
+          </label>
+          <label>Description
+            <input type="text" [(ngModel)]="maintenanceForm.description" name="mDesc" />
+          </label>
+          <label>Coût (DH)
+            <input type="number" min="0" step="0.01" [(ngModel)]="maintenanceForm.cout" name="mCout" />
+          </label>
+          <label class="checkbox-line">
+            <input type="checkbox" [(ngModel)]="maintenanceForm.disponible" name="mDispo" />
+            Matériel disponible après intervention
+          </label>
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost sm" (click)="showMaintenanceForm.set(false)">Annuler</button>
+            <button type="submit" class="btn btn-primary sm" [disabled]="saving()">Enregistrer</button>
+          </div>
+        </form>
+
+        <ul class="maintenance-list">
+          <li *ngFor="let mt of maintenances()">
+            <div class="maintenance-row">
+              <div>
+                <span class="maintenance-date">{{ mt.dateMaintenance | date: 'dd/MM/yyyy' }}</span>
+                <p class="maintenance-desc">{{ mt.description || 'Sans description' }}</p>
+              </div>
+              <div class="maintenance-meta">
+                <span class="maintenance-cout" *ngIf="mt.cout !== null">{{ mt.cout }}&nbsp;DH</span>
+                <span class="maintenance-status" [class.done]="mt.disponible">
+                  <lucide-icon [img]="mt.disponible ? icons.CheckCircle2 : icons.AlertTriangle" [size]="13"></lucide-icon>
+                  {{ mt.disponible ? 'Clôturée' : 'En cours' }}
+                </span>
+                <button type="button" class="btn btn-ghost sm" *ngIf="!mt.disponible && !lectureSeule()" (click)="cloturerMaintenance(mt.idMaintenance)">
+                  Clôturer
+                </button>
+              </div>
+            </div>
+          </li>
+          <li class="tree-empty" *ngIf="maintenances().length === 0">Aucune intervention enregistrée.</li>
+        </ul>
+      </section>
+    </ng-container>
+  </div>
+</aside>
+
+<!-- ============================= MODAL CRÉATION ============================= -->
+<div class="modal-backdrop" *ngIf="showCreateModal() && !lectureSeule()" (click)="fermerCreation()"></div>
+
+<div class="create-modal" *ngIf="showCreateModal() && !lectureSeule()">
+  <header class="modal-header">
+    <h2>Nouveau {{ createMode() === 'kit' ? 'kit' : 'matériel' }}</h2>
+    <button type="button" class="icon-btn" (click)="fermerCreation()">
+      <lucide-icon [img]="icons.X" [size]="20"></lucide-icon>
+    </button>
+  </header>
+
+  <div class="modal-tabs">
+    <button type="button" [class.active]="createMode() === 'simple'" (click)="createMode.set('simple')">
+      <lucide-icon [img]="icons.Package" [size]="15"></lucide-icon> Matériel simple
+    </button>
+    <button type="button" [class.active]="createMode() === 'kit'" (click)="createMode.set('kit')">
+      <lucide-icon [img]="icons.Boxes" [size]="15"></lucide-icon> Kit
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <div class="error-banner" *ngIf="errorMessage()">
+      <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+      {{ errorMessage() }}
+    </div>
+
+    <!-- ---- FORM SIMPLE ---- -->
+    <form class="edit-form" *ngIf="createMode() === 'simple'" (ngSubmit)="soumettreCreation()">
+      <label>Référence *
+        <input type="text" [(ngModel)]="simpleForm.reference" name="sRef" required />
+      </label>
+      <label>Nom *
+        <input type="text" [(ngModel)]="simpleForm.nom" name="sNom" required />
+      </label>
+      <label>N° série
+        <input type="text" [(ngModel)]="simpleForm.numeroSerie" name="sSerie" />
+      </label>
+      <label>Code QR
+        <input type="text" [(ngModel)]="simpleForm.codeQr" name="sQr" placeholder="Généré automatiquement si vide" />
+      </label>
+      <label>État
+        <select [(ngModel)]="simpleForm.etat" name="sEtat">
+          <option *ngFor="let e of etats" [value]="e">{{ e }}</option>
+        </select>
+      </label>
+      <label>Catégorie *
+        <select [(ngModel)]="simpleForm.idCategorie" name="sCategorie" required>
+          <option [ngValue]="0" disabled>Choisir une catégorie</option>
+          <option *ngFor="let c of categoriesSimples()" [ngValue]="c.idCategorie">{{ c.nom }}</option>
+        </select>
+      </label>
+      <label>Établissement
+        <select [(ngModel)]="simpleForm.idEtablissement" name="sEtab">
+          <option [ngValue]="null">Aucun</option>
+          <option *ngFor="let e of etablissements()" [ngValue]="e.idEtablissement">
+            {{ e.designation }}
+          </option>
+        </select>
+      </label>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" (click)="fermerCreation()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          <lucide-icon *ngIf="saving()" [img]="icons.RefreshCw" [size]="14" class="spin"></lucide-icon>
+          Créer le matériel
+        </button>
+      </div>
+    </form>
+
+    <!-- ---- FORM KIT ---- -->
+    <form class="edit-form" *ngIf="createMode() === 'kit'" (ngSubmit)="soumettreCreation()">
+      <label>Référence *
+        <input type="text" [(ngModel)]="kitForm.reference" name="kRef" required />
+      </label>
+      <label>Nom *
+        <input type="text" [(ngModel)]="kitForm.nom" name="kNom" required />
+      </label>
+      <label>N° série
+        <input type="text" [(ngModel)]="kitForm.numeroSerie" name="kSerie" />
+      </label>
+      <label>Code QR
+        <input type="text" [(ngModel)]="kitForm.codeQr" name="kQr" placeholder="Généré automatiquement si vide" />
+      </label>
+      <label>Catégorie *
+        <select [(ngModel)]="kitForm.idCategorie" name="kCategorie" required>
+          <option [ngValue]="0" disabled>Choisir une catégorie</option>
+          <option *ngFor="let c of categoriesKit()" [ngValue]="c.idCategorie">{{ c.nom }}</option>
+        </select>
+      </label>
+      <label>Établissement
+        <select [(ngModel)]="kitForm.idEtablissement" name="kEtab">
+          <option [ngValue]="null">Aucun</option>
+          <option *ngFor="let e of etablissements()" [ngValue]="e.idEtablissement">
+            {{ e.designation }}
+          </option>
+        </select>
+      </label>
+      <label class="checkbox-line">
+        <input type="checkbox" [(ngModel)]="kitForm.composantsHeritentQr" name="kHerite" />
+        Les composants héritent du code QR du kit
+      </label>
+
+      <div class="kit-composants-editor">
+        <span class="field-label">Composants du kit</span>
+        <ul>
+          <li *ngFor="let comp of kitComposants(); let i = index">
+            <span>{{ comp }}</span>
+            <button type="button" class="icon-btn danger sm" (click)="retirerLigneComposantKit(i)">
+              <lucide-icon [img]="icons.X" [size]="13"></lucide-icon>
+            </button>
+          </li>
+        </ul>
+        <div class="add-composant-row">
+          <input
+            type="text"
+            placeholder="Ajouter un composant…"
+            [(ngModel)]="nouveauComposantKit"
+            name="newComposant"
+            [ngModelOptions]="{ standalone: true }"
+            (keyup.enter)="ajouterLigneComposantKit()"
+          />
+          <button type="button" class="btn btn-ghost sm" (click)="ajouterLigneComposantKit()">
+            <lucide-icon [img]="icons.Plus" [size]="14"></lucide-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" (click)="fermerCreation()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          <lucide-icon *ngIf="saving()" [img]="icons.RefreshCw" [size]="14" class="spin"></lucide-icon>
+          Créer le kit
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================= MODAL ACHAT ============================= -->
+<div class="modal-backdrop" *ngIf="showAchatModal() && !lectureSeule()" (click)="fermerAchat()"></div>
+
+<div class="create-modal" *ngIf="showAchatModal() && !lectureSeule()">
+  <header class="modal-header">
+    <h2>Nouvel achat</h2>
+    <button type="button" class="icon-btn" (click)="fermerAchat()">
+      <lucide-icon [img]="icons.X" [size]="20"></lucide-icon>
+    </button>
+  </header>
+
+  <div class="modal-body">
+    <div class="error-banner" *ngIf="achatError()">
+      <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+      {{ achatError() }}
+    </div>
+
+    <form class="edit-form" (ngSubmit)="soumettreAchat()">
+      <label>Matériel *
+        <select [(ngModel)]="achatForm.idMateriel" name="achatMateriel" required>
+          <option [ngValue]="0" disabled>Choisir un matériel</option>
+          <option *ngFor="let m of achatMateriels()" [ngValue]="m.idMateriel">
+            {{ m.nom }} ({{ m.reference }})
+          </option>
+        </select>
+      </label>
+      <label>Quantité achetée *
+        <input type="number" min="1" [(ngModel)]="achatForm.quantite" name="achatQuantite" required />
+      </label>
+      <label>Fournisseur
+        <input type="text" [(ngModel)]="achatForm.fournisseur" name="achatFournisseur" />
+      </label>
+      <label>N° facture
+        <input type="text" [(ngModel)]="achatForm.numeroFacture" name="achatFacture" />
+      </label>
+      <label>Prix unitaire HT (DH)
+        <input type="number" min="0" step="0.01" [(ngModel)]="achatForm.prixUnitaireHt" name="achatPrix" />
+      </label>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" (click)="fermerAchat()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="achatSaving()">
+          <lucide-icon *ngIf="achatSaving()" [img]="icons.RefreshCw" [size]="14" class="spin"></lucide-icon>
+          Enregistrer l'achat
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================= MODAL DE CONFIRMATION ============================= -->
+<div class="modal-backdrop" *ngIf="showConfirmModal()" (click)="annulerConfirmation()"></div>
+
+<div class="confirm-modal" *ngIf="showConfirmModal()">
+  <header class="modal-header">
+    <div class="confirm-header-title">
+      <lucide-icon [img]="icons.AlertTriangle" [size]="20" class="warning-icon"></lucide-icon>
+      <h2>{{ confirmTitle() }}</h2>
+    </div>
+    <button type="button" class="icon-btn" (click)="annulerConfirmation()">
+      <lucide-icon [img]="icons.X" [size]="20"></lucide-icon>
+    </button>
+  </header>
+
+  <div class="modal-body">
+    <p class="confirm-message">{{ confirmMessage() }}</p>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" (click)="annulerConfirmation()">Non, annuler</button>
+      <button type="button" class="btn btn-danger" (click)="confirmerAction()">Oui, confirmer</button>
+    </div>
+  </div>
+</div>

@@ -1,22 +1,28 @@
 import { Component, Input, Output, EventEmitter, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
-import { AuthService } from '../../services/auth.service'; // ⚠️ adapte selon le chemin réel depuis sidebar/
+import { RouterModule } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import {
   LucideAngularModule,
   LayoutDashboard,
   Building2,
   Briefcase,
   Package,
+  PackageMinus,
+  PackagePlus,
   Users,
   Bot,
-  BookOpen,
+  PackageSearch,
+  ClipboardList,
   Settings,
   LogOut,
   PanelLeft,
-  Sparkles
+  Sparkles,
+  Route,
+  BookOpen,
+  TrendingUp
 } from 'lucide-angular';
-import { UserRole } from '../../models/auth.model'; // ⚠️ adapte selon le chemin réel
+import { UserRole } from '../../models/auth.model';
 
 interface NavItem {
   label: string;
@@ -45,23 +51,76 @@ export class Sidebar {
   };
 
   private readonly allNavItems: NavItem[] = [
-    { label: 'Tableau de bord', route: '/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
-    { label: 'Établissements', route: '/etablissements', icon: Building2, roles: ['ADMINISTRATEUR'] },
-    { label: 'Missions', route: '/missions', icon: Briefcase, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
-    { label: 'Stock & Matériel', route: '/stock', icon: Package, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
+
+    { label: 'Tableau de bord', route: '/admin/dashboard', icon: LayoutDashboard, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
+    { label: 'Tableau de bord', route: '/client/dashboard', icon: LayoutDashboard, roles: ['OBSERVATEUR'] },
+    { label: 'Tableau de bord', route: '/gestionnaire/dashboard', icon: LayoutDashboard, roles: ['GESTIONNAIRE_STOCK'] },
+    { label: 'Tableau de bord', route: '/partenaire/dashboard', icon: LayoutDashboard, roles: ['PARTENAIRE'] },
+    { label: 'Mes ressources', route: '/observateur/ressources', icon: BookOpen, roles: ['OBSERVATEUR'] },
+    { label: 'Établissements', route: '/admin/etablissements', icon: Building2, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
+    { label: 'Avancement établissements', route: '/partenaire/avancement', icon: TrendingUp, roles: ['PARTENAIRE'] },
+    { label: 'Simulateur de trajet', route: '/admin/simulateur-trajet', icon: Route, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
+    { label: 'Missions', route: '/admin/missions', icon: Briefcase, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
+    { label: 'Stock & Matériel', route: '/stock', icon: Package, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK', 'TECHNICIEN'] },
+    { label: 'Sorties de matériel', route: '/sorties', icon: PackageMinus, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
+    { label: 'Retours & inspection', route: '/retours', icon: PackagePlus, roles: ['ADMINISTRATEUR', 'GESTIONNAIRE_STOCK'] },
     { label: 'Utilisateurs', route: '/users', icon: Users, roles: ['ADMINISTRATEUR'] },
+    { label: 'Formateurs', route: '/admin/observateurs', icon: Users, roles: ['ADMINISTRATEUR'] },
     { label: 'Assistant IA', route: '/chat-ia', icon: Bot, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
-    { label: 'Guides & Support', route: '/guides', icon: BookOpen, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] },
-    { label: 'Paramètres', route: '/settings', icon: Settings, roles: ['ADMINISTRATEUR', 'TECHNICIEN', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK'] }
+    // { label: 'Gestion des ressources', route: '/admin/ressources', icon: PackageSearch, roles: ['ADMINISTRATEUR'] },
+    { label: 'Gestion et suivi des interventions', route: '/admin/interventions', icon: ClipboardList, roles: ['ADMINISTRATEUR', 'TECHNICIEN'] },
+    { label: 'Paramètres', route: '/settings', icon: Settings, roles: ['ADMINISTRATEUR', 'OBSERVATEUR', 'GESTIONNAIRE_STOCK', 'PARTENAIRE'] }
   ];
 
+  // Adapter dynamiquement les routes selon le rôle de l'utilisateur
   navItems = computed(() => {
     const role = this.authService.currentUser()?.role;
     if (!role) return [];
-    return this.allNavItems.filter(item => item.roles.includes(role));
-  });
 
-  constructor(private router: Router) {}
+    return this.allNavItems
+      .filter(item => item.roles.includes(role))
+      .map(item => {
+        let route = item.route;
+
+        // Adaptation du Tableau de bord
+        // ⚠️ Ces routes doivent correspondre EXACTEMENT à app.routes.ts
+        if (item.label === 'Tableau de bord') {
+          if (role === 'TECHNICIEN') {
+            route = '/technicien/dashboard';
+          } else if (role === 'OBSERVATEUR') {
+            route = '/client/dashboard';        // corrigé (était /observateur/dashboard)
+          } else if (role === 'GESTIONNAIRE_STOCK') {
+            route = '/gestionnaire/dashboard';   // corrigé (était /stock/dashboard)
+          } else if (role === 'PARTENAIRE') {
+            route = '/partenaire/dashboard';
+          } else {
+            route = '/admin/dashboard';
+          }
+        }
+
+        // Adaptation des Missions pour le technicien
+        if (item.label === 'Missions') {
+          route = role === 'TECHNICIEN' ? '/technicien/missions' : '/admin/missions';
+        }
+
+        // Adaptation de la Gestion et suivi des interventions pour le technicien
+        if (item.label === 'Gestion et suivi des interventions') {
+          route = role === 'TECHNICIEN' ? '/technicien/interventions' : '/admin/interventions';
+        }
+
+        // Adaptation des Établissements pour le technicien
+        if (item.label === 'Établissements') {
+          route = role === 'TECHNICIEN' ? '/technicien/etablissements' : '/admin/etablissements';
+        }
+
+        // Adaptation du Simulateur de trajet pour le technicien
+        if (item.label === 'Simulateur de trajet') {
+          route = role === 'TECHNICIEN' ? '/technicien/simulateur-trajet' : '/admin/simulateur-trajet';
+        }
+
+        return { ...item, route };
+      });
+  });
 
   toggle() {
     this.collapsed = !this.collapsed;
@@ -69,6 +128,6 @@ export class Sidebar {
   }
 
   logout() {
-    this.router.navigate(['/login']);
+    this.authService.logout();
   }
 }

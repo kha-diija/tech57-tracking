@@ -6,7 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "equipe_technique")
+@Table(name = "equipe_technique", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"nom_equipe"}) })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class EquipeTechnique {
 
@@ -15,7 +16,7 @@ public class EquipeTechnique {
     @Column(name = "id_equipe")
     private Integer idEquipe;
 
-    @Column(name = "nom_equipe", nullable = false, length = 100)
+    @Column(name = "nom_equipe", nullable = false, length = 100 , unique = true)
     private String nomEquipe;
 
     @ManyToMany(fetch = FetchType.LAZY)

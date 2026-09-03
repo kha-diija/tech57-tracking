@@ -1,0 +1,260 @@
+<div class="observateur-container">
+
+  <div class="observateur-header">
+    <div>
+      <h1>Permissions des observateurs</h1>
+      <p>Assignez ou révoquez l'accès aux vidéos, ressources et documents.</p>
+    </div>
+    <button class="btn-primary" (click)="openUploadModal()">+ Ajouter une ressource</button>
+  </div>
+
+  <div class="search-bar-container">
+    <div class="search-input-wrapper">
+      <span>🔍</span>
+      <input
+        type="text"
+        placeholder="Rechercher un observateur..."
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  <div class="alert-error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+  <div class="table-card">
+    <table class="observateur-table" *ngIf="!loading(); else loadingTpl">
+      <thead>
+        <tr>
+          <th>Nom complet</th>
+          <th>Email</th>
+          <th>Type client</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let obs of filteredObservateurs()">
+          <td>{{ obs.nom }} {{ obs.prenom }}</td>
+          <td>{{ obs.email }}</td>
+          <td>{{ obs.typeClient || '—' }}</td>
+          <td>
+            <button class="btn-action btn-manage-access" (click)="openModal(obs)">Gérer les accès</button>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredObservateurs().length === 0">
+          <td colspan="4" class="empty-row">Aucun observateur trouvé.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #loadingTpl>
+      <p class="loading-text">Chargement des observateurs...</p>
+    </ng-template>
+  </div>
+
+  <!-- Modal de gestion des accès -->
+  <div class="modal-overlay" *ngIf="isModalOpen()" (click)="closeModal()">
+    <div class="modal-card modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Accès de {{ selectedObservateur()?.nom }} {{ selectedObservateur()?.prenom }}</h2>
+        <button type="button" (click)="closeModal()">✕</button>
+      </div>
+
+      <div class="alert-error" *ngIf="modalError()">{{ modalError() }}</div>
+
+      <p class="loading-text" *ngIf="modalLoading()">Chargement...</p>
+
+      <div class="modal-body" *ngIf="!modalLoading()">
+
+        <!-- VIDEOS -->
+        <section class="permission-section">
+          <h3>Vidéos</h3>
+
+          <ul class="assigned-list" *ngIf="assignedVideos().length > 0; else noVideo">
+            <li *ngFor="let v of assignedVideos()">
+              <span>{{ v.titreVideo }}</span>
+              <button class="btn-action btn-danger" (click)="revokeVideo(v)">Désassigner</button>
+            </li>
+          </ul>
+          <ng-template #noVideo><p class="empty-hint">Aucune vidéo assignée.</p></ng-template>
+
+          <div class="assign-row">
+            <select [(ngModel)]="selectedVideoId">
+              <option [ngValue]="null">-- Choisir une vidéo --</option>
+              <option *ngFor="let v of availableVideos()" [ngValue]="v.idVideo">
+                {{ v.titre }} ({{ v.fournisseur }})
+              </option>
+            </select>
+            <button
+              class="btn-primary"
+              [disabled]="selectedVideoId == null || assigningVideo()"
+              (click)="assignVideo()"
+            >
+              {{ assigningVideo() ? '...' : 'Assigner' }}
+            </button>
+          </div>
+        </section>
+
+        <!-- RESSOURCES -->
+        <section class="permission-section">
+          <h3>Ressources</h3>
+
+          <ul class="assigned-list" *ngIf="assignedResources().length > 0; else noResource">
+            <li *ngFor="let r of assignedResources()">
+              <span>{{ r.titreRessource }} <em>({{ r.typeRessource }})</em></span>
+              <button class="btn-action btn-danger" (click)="revokeResource(r)">Désassigner</button>
+            </li>
+          </ul>
+          <ng-template #noResource><p class="empty-hint">Aucune ressource assignée.</p></ng-template>
+
+          <div class="assign-row">
+            <select [(ngModel)]="selectedResourceId">
+              <option [ngValue]="null">-- Choisir une ressource --</option>
+              <option *ngFor="let r of availableResources()" [ngValue]="r.idRessource">
+                {{ r.titre }} ({{ r.type }})
+              </option>
+            </select>
+            <button
+              class="btn-primary"
+              [disabled]="selectedResourceId == null || assigningResource()"
+              (click)="assignResource()"
+            >
+              {{ assigningResource() ? '...' : 'Assigner' }}
+            </button>
+          </div>
+        </section>
+
+        <!-- DOCUMENTS -->
+        <section class="permission-section">
+          <h3>Documents</h3>
+
+          <ul class="assigned-list" *ngIf="assignedDocuments().length > 0; else noDocument">
+            <li *ngFor="let d of assignedDocuments()">
+              <span>{{ d.nomFichier }} <em>({{ d.typeDocument }})</em></span>
+              <button class="btn-action btn-danger" (click)="revokeDocument(d)">Désassigner</button>
+            </li>
+          </ul>
+          <ng-template #noDocument><p class="empty-hint">Aucun document assigné.</p></ng-template>
+
+          <div class="assign-row">
+            <select [(ngModel)]="selectedDocumentId">
+              <option [ngValue]="null">-- Choisir un document --</option>
+              <option *ngFor="let d of availableDocuments()" [ngValue]="d.idSource">
+                {{ d.nomFichier }} ({{ d.typeSource }})
+              </option>
+            </select>
+            <button
+              class="btn-primary"
+              [disabled]="selectedDocumentId == null || assigningDocument()"
+              (click)="assignDocument()"
+            >
+              {{ assigningDocument() ? '...' : 'Assigner' }}
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal d'upload de ressources -->
+  <div class="modal-overlay" *ngIf="isUploadModalOpen()" (click)="closeUploadModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Ajouter une ressource</h2>
+        <button type="button" (click)="closeUploadModal()">✕</button>
+      </div>
+
+      <div class="upload-tabs">
+        <button [class.active]="uploadTab() === 'document'" (click)="uploadTab.set('document')">Document</button>
+        <button [class.active]="uploadTab() === 'ressource'" (click)="uploadTab.set('ressource')">Ressource</button>
+        <button [class.active]="uploadTab() === 'video'" (click)="uploadTab.set('video')">Vidéo</button>
+      </div>
+
+      <div class="alert-error" *ngIf="uploadError()">{{ uploadError() }}</div>
+      <div class="alert-success" *ngIf="uploadSuccess()">{{ uploadSuccess() }}</div>
+
+      <!-- DOCUMENT -->
+      <div *ngIf="uploadTab() === 'document'" class="upload-form">
+        <label>Type de source</label>
+        <select [(ngModel)]="docForm.typeSource">
+          <option value="PDF">PDF</option>
+          <option value="EXCEL">EXCEL</option>
+          <option value="MANUEL">MANUEL</option>
+          <option value="WEB">WEB</option>
+        </select>
+
+        <label>Fichier</label>
+        <input type="file" (change)="onFileSelected($event)" accept=".pdf,.xlsx,.xls,.doc,.docx,.txt" />
+
+        <button
+          class="btn-primary"
+          [disabled]="uploading() || !selectedFile"
+          (click)="submitDocument()"
+        >
+          {{ uploading() ? 'Envoi...' : 'Envoyer le document' }}
+        </button>
+      </div>
+
+      <!-- RESSOURCE -->
+      <div *ngIf="uploadTab() === 'ressource'" class="upload-form">
+        <label>Titre</label>
+        <input type="text" [(ngModel)]="ressourceForm.titre" placeholder="Ex: Guide installation borne wifi" />
+
+        <label>Type</label>
+        <select [(ngModel)]="ressourceForm.type">
+          <option value="Guide">Guide</option>
+          <option value="PDF">PDF</option>
+          <option value="Vidéo">Vidéo</option>
+        </select>
+
+        <label>Établissement</label>
+        <select [(ngModel)]="ressourceForm.idEtablissement">
+          <option [ngValue]="null">-- Choisir un établissement --</option>
+          <option *ngFor="let e of etablissements()" [ngValue]="e.idEtablissement">
+            {{ e.designation }}
+          </option>
+        </select>
+
+        <label>Fichier</label>
+        <input type="file" (change)="onFileSelected($event)" accept=".pdf,.doc,.docx" />
+
+        <button
+          class="btn-primary"
+          [disabled]="uploading() || !ressourceForm.titre || ressourceForm.idEtablissement == null || !selectedFile"
+          (click)="submitRessource()"
+        >
+          {{ uploading() ? 'Envoi...' : 'Envoyer la ressource' }}
+        </button>
+      </div>
+
+      <!-- VIDEO -->
+      <div *ngIf="uploadTab() === 'video'" class="upload-form">
+        <label>Titre</label>
+        <input type="text" [(ngModel)]="videoForm.titre" placeholder="Ex: Configuration initiale" />
+
+        <label>Description</label>
+        <textarea [(ngModel)]="videoForm.description" rows="2"></textarea>
+
+        <label>URL YouTube</label>
+        <input type="text" [(ngModel)]="videoForm.urlVideo" placeholder="https://youtube.com/watch?v=..." />
+
+        <label>URL miniature (optionnel)</label>
+        <input type="text" [(ngModel)]="videoForm.urlMiniature" placeholder="https://img.youtube.com/..." />
+
+        <label>Durée (secondes)</label>
+        <input type="number" [(ngModel)]="videoForm.dureeSecondes" />
+
+        <button
+          class="btn-primary"
+          [disabled]="uploading() || !videoForm.titre || !videoForm.urlVideo"
+          (click)="submitVideo()"
+        >
+          {{ uploading() ? 'Envoi...' : 'Ajouter la vidéo' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

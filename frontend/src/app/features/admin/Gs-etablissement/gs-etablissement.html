@@ -1,0 +1,498 @@
+<div class="gs-etab">
+
+  <div class="gs-etab__header">
+    <div>
+      <span class="gs-etab__eyebrow">
+        <span class="gs-etab__eyebrow-dot"></span>
+        Gestion des établissements
+      </span>
+      <h1 class="gs-etab__title">Établissements</h1>
+      <p class="gs-etab__subtitle">
+        Régions, provinces, communes et responsables — vue complète du réseau.
+      </p>
+    </div>
+
+    <div class="gs-etab__actions">
+      <button class="btn btn--ghost" (click)="openImportModal()">
+        <lucide-icon [img]="icons.Upload" [size]="16"></lucide-icon>
+        Importer
+      </button>
+      <button class="btn btn--ghost" (click)="onExport()">
+        <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
+        Exporter
+      </button>
+      <button class="btn btn--primary" (click)="openCreateForm()">
+        <lucide-icon [img]="icons.Plus" [size]="16"></lucide-icon>
+        Nouvel établissement
+      </button>
+    </div>
+  </div>
+
+  <!-- APRÈS — carte ajoutée entre les deux -->
+      <div class="kpi-grid" *ngIf="kpis() as k">
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Établissements suivis</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.Building2" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ k.totalEtablissements }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Régions couvertes</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.MapPin" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ k.regionsCouvertes }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Bénéficiaires totaux</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.Users" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ k.totalBeneficiaires | number }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Bénéficiaires réels</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.CheckCircle" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ k.totalBeneficiairesReel | number }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__top">
+        <span class="kpi-card__label">Sans responsable</span>
+        <span class="kpi-card__icon"><lucide-icon [img]="icons.UserX" [size]="16"></lucide-icon></span>
+      </div>
+      <div class="kpi-card__value">{{ k.sansResponsable }}</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar__search">
+      <lucide-icon [img]="icons.Search" [size]="16"></lucide-icon>
+      <input
+        type="text"
+        placeholder="Rechercher par nom, référence, commune, responsable..."
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+      />
+    </div>
+
+    <select class="toolbar__select" [ngModel]="selectedRegionFilter()" (ngModelChange)="selectedRegionFilter.set($event)">
+      <option value="toutes">Toutes les régions</option>
+      <option *ngFor="let r of regionsFilterList()" [value]="r.nom">{{ r.nom }}</option>
+    </select>
+
+    <span class="toolbar__count">{{ filteredEtablissements().length }} résultat(s)</span>
+  </div>
+
+  <div class="panel panel--table">
+    <div class="table-wrapper">
+      <table class="etab-table">
+        <thead>
+          <tr>
+            <th>Référence</th>
+            <th>Désignation</th>
+            <th>Localisation</th>
+            <th>Bénéficiaires</th>
+            <th>Bénéf. réel</th>
+            <th>Responsable</th>
+            <th>Contact</th>
+            <th>Formateurs</th>
+            <th class="etab-table__actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let etab of filteredEtablissements()">
+            <td>
+              <span class="etab-table__ref">{{ etab.reference }}</span>
+            </td>
+            <td>
+              <span class="etab-table__name">{{ etab.designation }}</span>
+              <span class="etab-table__type">{{ etab.type }}</span>
+            </td>
+            <td>
+              <div class="etab-table__location">
+                <span class="location-chain">{{ etab.regionNom }} › {{ etab.provinceNom }} › {{ etab.communeNom }}</span>
+                <button class="location-link" *ngIf="etab.localisationGps" (click)="openOnMap(etab)">
+                  <lucide-icon [img]="icons.Navigation" [size]="12"></lucide-icon>
+                  Voir sur la carte
+                </button>
+              </div>
+            </td>
+           
+
+            <td>
+  <span class="badge">
+    <lucide-icon [img]="icons.Users" [size]="12"></lucide-icon>
+    {{ etab.nombreBeneficiaires ?? 0 | number }}
+  </span>
+</td>
+<td>
+  <span class="badge badge--success" *ngIf="etab.nombreBeneficiairesReel != null; else noBeneficiairesReel">
+    <lucide-icon [img]="icons.CheckCircle" [size]="12"></lucide-icon>
+    {{ etab.nombreBeneficiairesReel | number }}
+  </span>
+  <ng-template #noBeneficiairesReel>
+    <span class="text-muted">—</span>
+  </ng-template>
+</td>
+
+            <td>
+              <span *ngIf="etab.responsable as resp; else noResp">
+                {{ resp.prenom }} {{ resp.nom }}
+              </span>
+              <ng-template #noResp>
+                <span class="text-muted">Non assigné</span>
+              </ng-template>
+            </td>
+            <td>
+              <div class="etab-table__contact" *ngIf="etab.responsable as resp">
+                <a class="contact-link" *ngIf="resp.telephone" [href]="'tel:' + resp.telephone">
+                  <lucide-icon [img]="icons.Phone" [size]="12"></lucide-icon>
+                  {{ resp.telephone }}
+                </a>
+              </div>
+            </td>
+            <td>
+              <button class="badge badge--clickable" (click)="openFormateurModal(etab)" title="Gérer les formateurs">
+                <lucide-icon [img]="icons.GraduationCap" [size]="12"></lucide-icon>
+                {{ etab.nbFormateurs ?? 0 }} formateur(s)
+              </button>
+            </td>
+            <td>
+              <div class="etab-table__row-actions">
+                <button class="icon-btn" title="Modifier" (click)="openEditForm(etab)">
+                  <lucide-icon [img]="icons.Pencil" [size]="15"></lucide-icon>
+                </button>
+
+                <button
+                  class="icon-btn icon-btn--danger"
+                  title="Supprimer"
+                  *ngIf="isAdmin()"
+                  (click)="deleteEtablissement(etab)">
+                  <lucide-icon [img]="icons.Trash2" [size]="15"></lucide-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="!isLoading() && filteredEtablissements().length === 0">
+            <td colspan="9" class="etab-table__empty">
+              Aucun établissement ne correspond à ta recherche.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Panneau latéral : création / édition d'un établissement -->
+  <div class="side-panel-backdrop" *ngIf="showForm()" (click)="closeForm()"></div>
+
+  <aside class="side-panel" *ngIf="showForm()">
+    <div class="side-panel__header">
+      <h2>{{ editingId() ? "Modifier l'établissement" : 'Nouvel établissement' }}</h2>
+      <button class="icon-btn" (click)="closeForm()">
+        <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="side-panel__body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Référence</label>
+          <input type="text" [ngModel]="formModel().reference" (ngModelChange)="updateField('reference', $event)" placeholder="ETB-0147" />
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select [ngModel]="formModel().type" (ngModelChange)="updateField('type', $event)">
+            <option value="" disabled>Choisir un type</option>
+            <option *ngFor="let t of typeOptions" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Désignation</label>
+        <input type="text" [ngModel]="formModel().designation" (ngModelChange)="updateField('designation', $event)" placeholder="Nom de l'établissement" />
+      </div>
+
+      <div class="form-divider">Localisation administrative</div>
+
+      <div class="form-group">
+        <label>Région</label>
+        <select [ngModel]="formModel().idRegion" (ngModelChange)="onFormRegionChange($event)">
+          <option [ngValue]="null" disabled>Choisir une région</option>
+          <option *ngFor="let r of formRegions()" [ngValue]="r.idRegion">{{ r.nom }}</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Province</label>
+          <select [ngModel]="formModel().idProvince" (ngModelChange)="onFormProvinceChange($event)" [disabled]="!formModel().idRegion">
+            <option [ngValue]="null" disabled>Choisir une province</option>
+            <option *ngFor="let p of formProvinces()" [ngValue]="p.idProvince">{{ p.nom }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Commune</label>
+          <select [ngModel]="formModel().idCommune" (ngModelChange)="onFormCommuneChange($event)" [disabled]="!formModel().idProvince">
+            <option [ngValue]="null" disabled>Choisir une commune</option>
+            <option *ngFor="let c of formCommunes()" [ngValue]="c.idCommune">{{ c.nom }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Coordonnées GPS</label>
+        <input type="text" [ngModel]="formModel().localisationGps" (ngModelChange)="updateField('localisationGps', $event)" placeholder="33.5951, -7.5898" />
+      </div>
+
+      <div class="form-group">
+        <label>Bénéficiaires</label>
+        <input type="number" [ngModel]="formModel().nombreBeneficiaires" (ngModelChange)="updateField('nombreBeneficiaires', +$event)" />
+      </div>
+
+      
+
+      <div class="form-divider">Contact de l'établissement</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" [ngModel]="formModel().telephoneContact" (ngModelChange)="updateField('telephoneContact', $event)" />
+        </div>
+      </div>
+
+      <div class="form-divider">Responsable (optionnel)</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Prénom</label>
+          <input type="text" [ngModel]="formModel().responsablePrenom" (ngModelChange)="updateField('responsablePrenom', $event)" />
+        </div>
+        <div class="form-group">
+          <label>Nom</label>
+          <input type="text" [ngModel]="formModel().responsableNom" (ngModelChange)="updateField('responsableNom', $event)" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Fonction</label>
+        <input type="text" [ngModel]="formModel().responsableFonction" (ngModelChange)="updateField('responsableFonction', $event)" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" [ngModel]="formModel().responsableTelephone" (ngModelChange)="updateField('responsableTelephone', $event)" />
+        </div>
+      </div>
+    </div>
+
+    <div class="side-panel__footer">
+      <button class="btn btn--ghost" (click)="closeForm()">Annuler</button>
+      <button class="btn btn--primary" (click)="saveForm()">
+        {{ editingId() ? 'Enregistrer les modifications' : "Créer l'établissement" }}
+      </button>
+    </div>
+  </aside>
+
+  <!-- Panneau latéral : gestion des formateurs d'un établissement -->
+  <div class="side-panel-backdrop" *ngIf="formateurModal().isOpen" (click)="closeFormateurModal()"></div>
+
+  <aside class="side-panel" *ngIf="formateurModal().isOpen">
+    <div class="side-panel__header">
+      <h2>Formateurs — {{ formateurModal().etablissement?.designation }}</h2>
+      <button class="icon-btn" (click)="closeFormateurModal()">
+        <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="side-panel__body">
+      <div *ngIf="formateurModal().isLoading" class="text-muted">Chargement...</div>
+
+      <ng-container *ngIf="!formateurModal().isLoading">
+        <div class="formateur-list" *ngIf="formateurModal().formateurs.length > 0; else noFormateur">
+          <div class="formateur-item" *ngFor="let f of formateurModal().formateurs">
+            <div class="formateur-item__info">
+              <span class="formateur-item__name">{{ f.prenom }} {{ f.nom }}</span>
+              <span class="formateur-item__meta" *ngIf="f.telephone">
+                <lucide-icon [img]="icons.Phone" [size]="11"></lucide-icon>
+                {{ f.telephone }}
+              </span>
+              <span class="formateur-item__meta" *ngIf="f.email">
+                <lucide-icon [img]="icons.Mail" [size]="11"></lucide-icon>
+                {{ f.email }}
+              </span>
+              <span class="formateur-item__meta" *ngIf="f.adresse">
+                <lucide-icon [img]="icons.MapPin" [size]="11"></lucide-icon>
+                {{ f.adresse }}
+              </span>
+            </div>
+            <div class="formateur-item__actions">
+              <button class="icon-btn" title="Modifier" (click)="editFormateur(f)">
+                <lucide-icon [img]="icons.Pencil" [size]="14"></lucide-icon>
+              </button>
+              <button class="icon-btn icon-btn--danger" title="Supprimer" (click)="deleteFormateur(f)">
+                <lucide-icon [img]="icons.Trash2" [size]="14"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noFormateur>
+          <p class="text-muted">Aucun formateur enregistré pour cet établissement.</p>
+        </ng-template>
+
+        <div class="form-divider">
+          {{ formateurModal().editingId ? 'Modifier le formateur' : 'Ajouter un formateur' }}
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prénom</label>
+            <input type="text" [ngModel]="formateurModal().form.prenom" (ngModelChange)="updateFormateurField('prenom', $event)" />
+          </div>
+          <div class="form-group">
+            <label>Nom</label>
+            <input type="text" [ngModel]="formateurModal().form.nom" (ngModelChange)="updateFormateurField('nom', $event)" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" [ngModel]="formateurModal().form.telephone" (ngModelChange)="updateFormateurField('telephone', $event)" />
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" [ngModel]="formateurModal().form.email" (ngModelChange)="updateFormateurField('email', $event)" placeholder="nom@exemple.com" />
+        </div>
+
+        <div class="form-group">
+          <label>Adresse</label>
+          <input type="text" [ngModel]="formateurModal().form.adresse" (ngModelChange)="updateFormateurField('adresse', $event)" />
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="side-panel__footer">
+      <button class="btn btn--ghost" *ngIf="formateurModal().editingId" (click)="cancelEditFormateur()">
+        Annuler la modification
+      </button>
+      <button class="btn btn--primary" (click)="saveFormateur()">
+        {{ formateurModal().editingId ? 'Enregistrer' : 'Ajouter le formateur' }}
+      </button>
+    </div>
+  </aside>
+
+  <!-- Modale d'erreur : sauvegarde du formateur échouée (ex: email dupliqué) -->
+  <div class="side-panel-backdrop" *ngIf="formateurError()" (click)="closeFormateurError()"></div>
+
+  <div class="custom-modal-container" *ngIf="formateurError()">
+    <div class="custom-modal">
+      <div class="custom-modal__header">
+        <h3>
+          <lucide-icon [img]="icons.AlertTriangle" [size]="18" class="custom-modal__icon-danger"></lucide-icon>
+          Impossible d'enregistrer le formateur
+        </h3>
+        <button class="icon-btn" (click)="closeFormateurError()">
+          <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <div class="custom-modal__body">
+        <p>{{ formateurError() }}</p>
+      </div>
+      <div class="custom-modal__footer">
+        <button class="btn btn--primary" (click)="closeFormateurError()">Compris</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale de confirmation de suppression -->
+  <ng-container *ngIf="isAdmin()">
+    <div class="side-panel-backdrop" *ngIf="confirmModal().isOpen" (click)="closeConfirmModal()"></div>
+
+    <div class="custom-modal-container" *ngIf="confirmModal().isOpen">
+      <div class="custom-modal">
+        <div class="custom-modal__header">
+          <h3>{{ confirmModal().title }}</h3>
+          <button class="icon-btn" (click)="closeConfirmModal()">
+            <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+          </button>
+        </div>
+        <div class="custom-modal__body">
+          <p>{{ confirmModal().message }}</p>
+        </div>
+        <div class="custom-modal__footer">
+          <button class="btn btn--ghost" (click)="closeConfirmModal()">Annuler</button>
+          <button class="btn" [ngClass]="confirmModal().force ? 'btn--danger' : 'btn--primary'" (click)="executeDelete()">
+            Confirmer
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Modale d'import Excel -->
+  <div class="side-panel-backdrop" *ngIf="importModal().isOpen" (click)="closeImportModal()"></div>
+
+  <div class="custom-modal-container" *ngIf="importModal().isOpen">
+    <div class="custom-modal">
+      <div class="custom-modal__header">
+        <h3>Importer des établissements</h3>
+        <button class="icon-btn" (click)="closeImportModal()">
+          <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="custom-modal__body">
+        <ng-container *ngIf="!importModal().result; else importDone">
+          <div class="form-group">
+            <label>Province concernée</label>
+            <select [ngModel]="importModal().idProvince" (ngModelChange)="onImportProvinceChange($event)">
+              <option [ngValue]="null" disabled>Choisir une province</option>
+              <option *ngFor="let p of importProvinces()" [ngValue]="p.idProvince">{{ p.nom }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Fichier Excel (.xlsx)</label>
+            <input type="file" accept=".xlsx" (change)="onImportFileSelected($event)" />
+          </div>
+
+          <p class="text-muted" *ngIf="importModal().error">{{ importModal().error }}</p>
+        </ng-container>
+
+        <ng-template #importDone>
+          <p>
+            {{ importModal().result?.crees }} créé(s), {{ importModal().result?.misAJour }} mis à jour,
+            {{ importModal().result?.ignores }} ignoré(s) sur {{ importModal().result?.totalLignes }} ligne(s) lues.
+          </p>
+          <ul *ngIf="importModal().result?.erreurs?.length">
+            <li *ngFor="let e of importModal().result?.erreurs">{{ e }}</li>
+          </ul>
+        </ng-template>
+      </div>
+
+      <div class="custom-modal__footer">
+        <button class="btn btn--ghost" (click)="closeImportModal()">Fermer</button>
+        <button
+          class="btn btn--primary"
+          *ngIf="!importModal().result"
+          [disabled]="importModal().isImporting"
+          (click)="submitImport()">
+          {{ importModal().isImporting ? 'Import en cours...' : 'Importer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

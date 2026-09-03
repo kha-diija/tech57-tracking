@@ -2,12 +2,24 @@
   <!-- En-tête -->
   <div class="sidebar__header">
     <div class="sidebar__brand">
-      <div class="sidebar__logo-badge">
-        <span class="sidebar__logo-symbol">57</span>
-      </div>
-      <div class="sidebar__logo-text" *ngIf="!collapsed">
-        <span class="sidebar__logo-title">TECH<span class="sidebar__logo-accent">-57</span></span>
-        <span class="sidebar__logo-sub">Installation Tracking</span>
+      <!-- Logo principal (pleine largeur) -->
+      <img
+        *ngIf="!collapsed"
+        src="/bg.png"
+        alt="Coding pour tout apprendre l'avenir"
+        class="sidebar__logo-full"
+      >
+      <!-- Logo réduit (mode replié) -->
+      <img
+        *ngIf="collapsed"
+        src="/bg.png"
+        alt="Coding"
+        class="sidebar__logo-icon"
+      >
+      <!-- Texte de la marque (affiché seulement en mode déployé) -->
+      <div *ngIf="!collapsed" class="sidebar__brand-text">
+        <span class="brand-line-1">Coding pour tout</span>
+        <span class="brand-line-2">apprendre l'avenir</span>
       </div>
     </div>
 
@@ -18,10 +30,13 @@
 
   <!-- Menu de navigation -->
   <nav class="sidebar__nav">
-    <a *ngFor="let item of navItems()"
-       [routerLink]="item.route"
-       routerLinkActive="sidebar__link--active"
-       class="sidebar__link">
+    <a
+      *ngFor="let item of navItems()"
+      
+      [routerLink]="item.route"
+      routerLinkActive="sidebar__link--active"
+      class="sidebar__link"
+    >
       <lucide-icon [img]="item.icon" [size]="20" class="sidebar__icon"></lucide-icon>
       <span *ngIf="!collapsed" class="sidebar__label">{{ item.label }}</span>
       <span *ngIf="!collapsed" class="sidebar__active-dot"></span>
@@ -35,7 +50,7 @@
   </nav>
 
   <!-- Carte IA -->
-  <div class="sidebar__ai-card" *ngIf="!collapsed">
+  <!-- <div class="sidebar__ai-card" *ngIf="!collapsed">
     <div class="sidebar__ai-header">
       <lucide-icon [img]="icons.Sparkles" [size]="16" class="sidebar__ai-icon"></lucide-icon>
       <span>ASSISTANT IA</span>
@@ -46,5 +61,5 @@
     <button class="sidebar__ai-btn" [routerLink]="'/chat-ia'">
       Ouvrir l'assistant
     </button>
-  </div>
+  </div> -->
 </aside>

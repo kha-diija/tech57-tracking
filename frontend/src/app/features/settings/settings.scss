@@ -1,0 +1,214 @@
+/* ============================================================
+   settings-container.scss
+   Composant : Settings (Paramètres)
+   Palette : #233A6E (bleu foncé), #FEBE29 (jaune/orange),
+             #BAD439 (vert citron), #69AFB1 (bleu turquoise)
+   ============================================================ */
+
+.settings-container {
+  padding: 2rem;
+  color: #e2e8f0;
+  max-width: 800px;
+}
+
+.header-section {
+  margin-bottom: 2rem;
+}
+
+.header-section h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+.card {
+  background-color: #121824;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #1e293b;
+  background-color: #161e2e;
+}
+
+.icon-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #69AFB1; /* Bleu turquoise (palette) */
+}
+
+.icon-title h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.form-group input {
+  background-color: #0b0f17;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus {
+  border-color: #69AFB1; /* Bleu turquoise */
+  box-shadow: 0 0 0 2px rgba(105, 175, 177, 0.2);
+}
+
+.form-group input.invalid {
+  border-color: #ef4444; /* Rouge (alerte, hors palette) */
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 0.8rem;
+}
+
+.alert {
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.alert-success {
+  background-color: rgba(186, 212, 57, 0.15); /* Vert citron */
+  border: 1px solid #BAD439;
+  color: #BAD439;
+}
+
+.alert-danger {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #f87171;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.btn-primary {
+  /* Dégradé inspiré de la palette (bleu foncé → turquoise → jaune) */
+  background: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(35, 58, 110, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
+  box-shadow: 0 6px 14px rgba(35, 58, 110, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding-right: 2.75rem;
+}
+
+.toggle-visibility {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.toggle-visibility:hover {
+  opacity: 1;
+}
+
+.strength-meter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.strength-bars {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.strength-bars .bar {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  transition: background-color 0.25s ease;
+}
+
+/* Exemple de couleurs pour les barres de force (optionnel, selon le niveau) */
+.strength-bars .bar.weak {
+  background-color: #ef4444;
+}
+.strength-bars .bar.medium {
+  background-color: #FEBE29;
+}
+.strength-bars .bar.strong {
+  background-color: #BAD439;
+}
+
+.strength-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #94a3b8;
+}
