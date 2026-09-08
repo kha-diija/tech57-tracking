@@ -36,18 +36,19 @@ public class MissionInstallation {
     private Etablissement etablissement;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_administrateur", nullable = false)
+    @JoinColumn(name = "id_administrateur", nullable = true)
     private Administrateur administrateur;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_equipe")
     private EquipeTechnique equipe;
+    // ✅ NOUVELLE RELATION : Matériels associés à la mission
+    @OneToMany(mappedBy = "mission", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MissionMateriel> materiels = new ArrayList<>();
 
-    // --- NOUVELLES RELATIONS v3.0 ---
-
-    @OneToMany(mappedBy = "missionInstallation", cascade = CascadeType.ALL)
-    private List<SortieMateriel> sortiesMateriel = new ArrayList<>();
-
-    @OneToMany(mappedBy = "missionInstallation", cascade = CascadeType.ALL)
-    private List<RetourMateriel> retoursMateriel = new ArrayList<>();
+    // sortiesMateriel / retoursMateriel supprimés : pas de colonne
+    // id_mission dans sortie_materiel / retour_materiel. Le lien passe
+    // uniquement par intervention -> sortiesMateriel / retoursMateriel
+    // (voir SortieMaterielRepository.findByIntervention, utilisé dans
+    // InterventionService.convertToResponse)
 }

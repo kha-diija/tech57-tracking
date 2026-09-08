@@ -1,4 +1,4 @@
-<div class="dashboard">
+<div class="dashboard" #dashboardContent>
 
   <!-- En-tête -->
   <div class="dashboard__header">
@@ -7,7 +7,7 @@
         <span class="dashboard__eyebrow-dot"></span>
         Opérations en direct
       </span>
-      <h1 class="dashboard__title">Bonjour, {{ prenomAdmin() }} 👋</h1>
+      <h1 class="dashboard__title">Bonjour, {{ prenomAdmin() }} </h1>
       <p class="dashboard__subtitle">
         Voici l'état de vos installations et de vos équipes aujourd'hui.
       </p>
@@ -16,7 +16,11 @@
     <div class="dashboard__actions">
       <button class="btn btn--ghost" (click)="onExport()">
         <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
-        Exporter
+        Exporter CSV
+      </button>
+      <button class="btn btn--primary" (click)="onExportPdf()" [disabled]="isExporting()">
+        <lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon>
+        {{ isExporting() ? 'Export en cours...' : 'Exporter PDF' }}
       </button>
     </div>
   </div>
@@ -162,9 +166,10 @@
       <div class="line-chart-wrapper">
         <svg class="line-chart" viewBox="0 0 100 100" preserveAspectRatio="none">
           <defs>
+            <!-- Dégradé modifié : bleu au lieu d'orange -->
             <linearGradient id="progressAreaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#f97316" stop-opacity="0.35"></stop>
-              <stop offset="100%" stop-color="#f97316" stop-opacity="0"></stop>
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35"></stop>
+              <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"></stop>
             </linearGradient>
           </defs>
 

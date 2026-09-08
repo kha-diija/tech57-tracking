@@ -1,0 +1,220 @@
+<div class="dashboard" #dashboardContent>
+
+  <!-- En-tête -->
+  <div class="dashboard__header">
+    <div>
+      <span class="dashboard__eyebrow">
+        <span class="dashboard__eyebrow-dot"></span>
+        Espace Technicien
+      </span>
+      <h1 class="dashboard__title">Bonjour, {{ prenomTechnicien() }} </h1>
+      <p class="dashboard__subtitle">
+        Consultez vos indicateurs d'interventions et vos missions du jour.
+      </p>
+    </div>
+    <div class="dashboard__actions">
+      <!-- Bouton Export Excel existant -->
+      <button class="btn btn--ghost" (click)="onExport()">
+        <lucide-icon [img]="icons.Download" [size]="16"></lucide-icon>
+        Exporter Excel
+      </button>
+      
+      <!-- Bouton Export PDF (CORRIGÉ avec Signal) -->
+      <button class="btn btn--primary" (click)="onExportPdf()" [disabled]="isExportingPdf()">
+        <lucide-icon [img]="icons.FileText" [size]="16"></lucide-icon>
+        {{ isExportingPdf() ? 'Export en cours...' : 'Exporter PDF' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="panel" style="text-align: center; padding: 2rem;">
+    Chargement des indicateurs...
+  </div>
+  <div *ngIf="erreur" class="badge badge--danger" style="padding: 1rem; width: 100%;">
+    {{ erreur }}
+  </div>
+
+  <ng-container *ngIf="kpis && !loading">
+
+    <!-- KPI principaux -->
+    <div class="kpi-grid">
+
+      <div class="kpi-card">
+        <div class="kpi-card__top">
+          <span class="kpi-card__label">Interventions réalisées</span>
+          <span class="kpi-card__icon"><lucide-icon [img]="icons.CheckCircle2" [size]="16"></lucide-icon></span>
+        </div>
+        <div class="kpi-card__value">{{ kpis.interventionsRealisees }}</div>
+        <div class="kpi-card__footer">
+          <span class="kpi-card__comparison">exécutées ou clôturées</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-card__top">
+          <span class="kpi-card__label">En cours</span>
+          <span class="kpi-card__icon"><lucide-icon [img]="icons.Clock" [size]="16"></lucide-icon></span>
+        </div>
+        <div class="kpi-card__value">{{ kpis.interventionsEnCours }}</div>
+      </div>
+
+      <div class="kpi-card" *ngIf="kpis.interventionsEnRetard > 0">
+        <div class="kpi-card__top">
+          <span class="kpi-card__label">En retard</span>
+          <span class="kpi-card__icon"><lucide-icon [img]="icons.AlertCircle" [size]="16"></lucide-icon></span>
+        </div>
+        <div class="kpi-card__value">{{ kpis.interventionsEnRetard }}</div>
+        <div class="kpi-card__footer">
+          <span class="kpi-card__comparison text-danger">nécessitent une visite</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-card__top">
+          <span class="kpi-card__label">Avancement moyen</span>
+          <span class="kpi-card__icon"><lucide-icon [img]="icons.TrendingUp" [size]="16"></lucide-icon></span>
+        </div>
+        <div class="kpi-card__value">{{ kpis.tauxAvancementMoyen }}<span class="kpi-card__suffix">%</span></div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-card__top">
+          <span class="kpi-card__label">Taux de conformité</span>
+          <span class="kpi-card__icon"><lucide-icon [img]="icons.CheckCircle2" [size]="16"></lucide-icon></span>
+        </div>
+        <div class="kpi-card__value">{{ kpis.tauxConformite }}<span class="kpi-card__suffix">%</span></div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-card__top">
+          <span class="kpi-card__label">Temps moyen / visite</span>
+          <span class="kpi-card__icon"><lucide-icon [img]="icons.Clock" [size]="16"></lucide-icon></span>
+        </div>
+        <div class="kpi-card__value">{{ kpis.tempsMoyenInterventionMinutes }}<span class="kpi-card__suffix"> min</span></div>
+      </div>
+
+      <div class="kpi-card" *ngIf="kpis.anomaliesDetectees > 0">
+        <div class="kpi-card__top">
+          <span class="kpi-card__label">Anomalies détectées</span>
+          <span class="kpi-card__icon"><lucide-icon [img]="icons.AlertCircle" [size]="16"></lucide-icon></span>
+        </div>
+        <div class="kpi-card__value">{{ kpis.anomaliesDetectees }}</div>
+        <div class="kpi-card__footer">
+          <span class="kpi-card__comparison text-danger">éléments non conformes</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-card__top">
+          <span class="kpi-card__label">Établissements assignés</span>
+          <span class="kpi-card__icon"><lucide-icon [img]="icons.MapPin" [size]="16"></lucide-icon></span>
+        </div>
+        <div class="kpi-card__value">{{ kpis.etablissementsCount }}</div>
+      </div>
+
+    </div>
+
+    <!-- Graphique donut : répartition par statut -->
+    <div class="dashboard__row dashboard__row--2-1" *ngIf="statutRepartition.length">
+      <div class="panel">
+        <div class="panel__header">
+          <h2 class="panel__title">Répartition de mes interventions</h2>
+          <p class="panel__subtitle">{{ statutTotal }} intervention(s) au total</p>
+        </div>
+
+        <div class="donut">
+          <div class="donut__ring" [style.background]="donutGradient">
+            <div class="donut__hole">
+              <span class="donut__total">
+                {{ activeDonutTooltip ? activeDonutTooltip.value : statutTotal }}
+              </span>
+              <span class="donut__total-label">
+                {{ activeDonutTooltip ? activeDonutTooltip.label : 'au total' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <ul class="donut-legend">
+          <li class="donut-legend__item"
+              *ngFor="let item of statutRepartition"
+              (mouseenter)="activeDonutTooltip = { label: item.label, value: item.value, percent: statutPercent(item.value) }"
+              (mouseleave)="activeDonutTooltip = null">
+            <div class="donut-legend__top">
+              <span class="donut-legend__left">
+                <i class="dot" [style.background]="item.color"></i>
+                {{ item.label }}
+              </span>
+              <span class="donut-legend__right">
+                {{ item.value }}
+                <span class="donut-legend__percent">({{ statutPercent(item.value) }}%)</span>
+              </span>
+            </div>
+            <div class="donut-legend__bar">
+              <div class="donut-legend__bar-fill" [style.width.%]="statutPercent(item.value)" [style.background]="item.color"></div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Comparaison matériel -->
+      <div class="panel">
+        <div class="panel__header">
+          <h2 class="panel__title">Matériel</h2>
+          <p class="panel__subtitle">Retours effectués</p>
+        </div>
+
+                   <div class="material-bars">
+          <div class="material-bar-col">
+            <span class="material-bar-value">{{ kpis.quantiteMaterielRendue }}</span>
+            <div class="material-bar-track">
+              <div class="material-bar-fill material-bar-fill--green" [style.height.%]="materielBarHeight(kpis.quantiteMaterielRendue || 0)"></div>
+            </div>
+            <span class="material-bar-label">Rendu</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Missions actuelles -->
+    <div class="panel">
+      <div class="panel__header">
+        <h2 class="panel__title">Mes missions</h2>
+      </div>
+      <ul class="mission-list" *ngIf="kpis.missionsActuelles.length; else noMission">
+        <li class="mission-list__item" *ngFor="let mission of kpis.missionsActuelles">
+          <div class="mission-list__meta">
+            <span class="mission-list__code">{{ mission.titre }}</span>
+            <span class="mission-list__time" *ngIf="mission.horaire">
+              <lucide-icon [img]="icons.Clock" [size]="12"></lucide-icon>
+              {{ mission.horaire | date:'dd/MM/yy HH:mm' }}
+            </span>
+          </div>
+          <p class="mission-list__title">{{ mission.etablissement }}</p>
+          <span class="badge" [ngClass]="statutClass(mission.statut)">{{ mission.statut }}</span>
+        </li>
+      </ul>
+      <ng-template #noMission>
+        <div class="empty-hint">Aucune mission en cours.</div>
+      </ng-template>
+    </div>
+
+    <!-- Établissements assignés -->
+    <div class="panel">
+      <div class="panel__header">
+        <h2 class="panel__title">Mes établissements</h2>
+      </div>
+      <ul class="mission-list">
+        <li class="mission-list__item" *ngFor="let etab of kpis.etablissementsAssignes">
+          <p class="mission-list__title">{{ etab.nom }}</p>
+          <span class="mission-list__tech">
+            <lucide-icon [img]="icons.MapPin" [size]="12"></lucide-icon>
+            {{ etab.ville }}
+          </span>
+          <span class="badge">{{ etab.interventions }} intervention(s)</span>
+        </li>
+      </ul>
+    </div>
+
+  </ng-container>
+</div>

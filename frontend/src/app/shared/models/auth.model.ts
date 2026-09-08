@@ -7,7 +7,8 @@ export type UserRole =
   | 'ADMINISTRATEUR'
   | 'TECHNICIEN'
   | 'OBSERVATEUR'
-  | 'GESTIONNAIRE_STOCK';
+  | 'GESTIONNAIRE_STOCK'
+  | 'PARTENAIRE';
 
 export interface LoginResponse {
   accessToken: string;
@@ -40,4 +41,16 @@ export interface ApiErrorResponse {
   message: string;
   path: string;
   fieldErrors?: Record<string, string>;
+}
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  nouveauMotDePasse: string;
+}
+
+export interface MessageResponse {
+  message: string;
 }

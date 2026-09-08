@@ -11,6 +11,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
@@ -83,13 +85,20 @@ public class SecurityConfig {
                         // Authentification publique
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/user/**").authenticated()
 
                         // Routes protégées par rôle (à adapter au fur et à mesure des modules)
-                        .requestMatchers("/api/admin/**").hasRole("ADMINISTRATEUR")
+                        .requestMatchers("/api/locations/**").hasAnyRole("ADMINISTRATEUR", "TECHNICIEN")
+
+                        .requestMatchers("/api/admin/resources/**").hasRole("ADMINISTRATEUR")
+                        .requestMatchers("/api/etablissements/**").hasAnyRole("ADMINISTRATEUR", "TECHNICIEN", "GESTIONNAIRE_STOCK")                        .requestMatchers("/api/admin/**").hasRole("ADMINISTRATEUR")
                         .requestMatchers("/api/technicien/**").hasAnyRole("TECHNICIEN", "ADMINISTRATEUR")
                         .requestMatchers("/api/observateur/**").hasAnyRole("OBSERVATEUR", "ADMINISTRATEUR")
+                        .requestMatchers("/api/gestionnaire-stock/**").hasAnyRole("GESTIONNAIRE_STOCK", "ADMINISTRATEUR")
                         .requestMatchers("/api/stock/**").hasAnyRole("GESTIONNAIRE_STOCK", "ADMINISTRATEUR")
-
+                        .requestMatchers("/api/partenaire/**").hasRole("PARTENAIRE")
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

@@ -1,0 +1,564 @@
+package com.example.backend.service.admin;
+
+import com.example.backend.dto.admin.intervention.*;
+import com.example.backend.entity.*;
+import com.example.backend.repository.UtilisateurRepository;
+import com.example.backend.repository.admin.*;
+import com.example.backend.service.NotificationHelperService;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class InterventionService {
+
+    private final InterventionRepository interventionRepository;
+    private final MissionInstallationRepository missionRepository;
+    private final TechnicienRepository technicienRepository;
+    private final PhotoRepository photoRepository;
+    private final AttestationRepository attestationRepository;
+
+    private final SortieMaterielRepository sortieMaterielRepository;
+    private final RetourMaterielRepository retourMaterielRepository;
+    private final ChecklistEquipementRepository checklistEquipementRepository;
+    private final ChecklistItemRepository checklistItemRepository;
+
+    private final MissionInstallationService missionInstallationService;
+
+    private final UtilisateurRepository utilisateurRepository;
+    private final NotificationHelperService notificationHelperService;
+
+    public InterventionService(
+            InterventionRepository interventionRepository,
+            MissionInstallationRepository missionRepository,
+            TechnicienRepository technicienRepository,
+            PhotoRepository photoRepository,
+            AttestationRepository attestationRepository,
+            SortieMaterielRepository sortieMaterielRepository,
+            RetourMaterielRepository retourMaterielRepository,
+            ChecklistEquipementRepository checklistEquipementRepository,
+            ChecklistItemRepository checklistItemRepository,
+            MissionInstallationService missionInstallationService,
+            UtilisateurRepository utilisateurRepository,
+            NotificationHelperService notificationHelperService) {
+
+        this.interventionRepository = interventionRepository;
+        this.missionRepository = missionRepository;
+        this.technicienRepository = technicienRepository;
+        this.photoRepository = photoRepository;
+        this.attestationRepository = attestationRepository;
+        this.sortieMaterielRepository = sortieMaterielRepository;
+        this.retourMaterielRepository = retourMaterielRepository;
+        this.checklistEquipementRepository = checklistEquipementRepository;
+        this.checklistItemRepository = checklistItemRepository;
+        this.missionInstallationService = missionInstallationService;
+        this.utilisateurRepository = utilisateurRepository;
+        this.notificationHelperService = notificationHelperService;
+    }
+
+    public List<InterventionResponse> getAll() {
+        List<Intervention> interventions = interventionRepository.findAllWithMissionAndTechnicien();
+        List<InterventionResponse> responses = new ArrayList<>();
+        for (Intervention intervention : interventions) {
+            responses.add(convertToListResponse(intervention));
+        }
+        return responses;
+    }
+
+    public Attestation getAttestationFichier(Integer interventionId) {
+        Intervention intervention = interventionRepository.findById(interventionId)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+        List<Attestation> list = attestationRepository.findByIntervention(intervention);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    public InterventionResponse getById(Integer id) {
+        Intervention intervention = interventionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+        return convertToResponse(intervention);
+    }
+
+    public Intervention getInterventionEntity(Integer id) {
+        return interventionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+    }
+
+    public InterventionResponse create(CreateInterventionRequest request) {
+        MissionInstallation mission = missionRepository.findById(request.getMissionId())
+                .orElseThrow(() -> new EntityNotFoundException("Mission introuvable."));
+
+        Technicien technicien = technicienRepository.findById(request.getTechnicienId())
+                .orElseThrow(() -> new EntityNotFoundException("Technicien introuvable."));
+
+        Intervention intervention = new Intervention();
+        intervention.setDatePrevue(request.getDatePrevue());
+        intervention.setDateDebut(request.getDateDebut());
+        intervention.setDateFin(request.getDateFin());
+        intervention.setTauxAvancement(request.getTauxAvancement() != null ? request.getTauxAvancement() : 0.0);
+        intervention.setNumeroVisite(request.getNumeroVisite() != null ? request.getNumeroVisite() : 0);
+        intervention.setStatut(request.getStatut() != null ? request.getStatut() : "Planifiée");
+        intervention.setLocalisationGps(request.getLocalisationGps());
+        intervention.setMission(mission);
+        intervention.setTechnicien(technicien);
+
+        Intervention saved = interventionRepository.save(intervention);
+
+        missionInstallationService.recalculerStatut(mission.getIdMission());
+
+        return convertToResponse(saved);
+    }
+
+    /**
+     * @param idAuteur id de l'utilisateur connecté qui effectue la mise à jour,
+     *                 utilisé comme expéditeur si une notification de clôture
+     *                 est déclenchée. Peut être null.
+     */
+    public InterventionResponse update(Integer id, UpdateInterventionRequest request, Integer idAuteur) {
+        Intervention intervention = interventionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+
+        MissionInstallation mission = missionRepository.findById(request.getMissionId())
+                .orElseThrow(() -> new EntityNotFoundException("Mission introuvable."));
+
+        Technicien technicien = technicienRepository.findById(request.getTechnicienId())
+                .orElseThrow(() -> new EntityNotFoundException("Technicien introuvable."));
+
+        String ancienStatut = intervention.getStatut();
+
+        intervention.setDatePrevue(request.getDatePrevue());
+        intervention.setDateDebut(request.getDateDebut());
+        intervention.setDateFin(request.getDateFin());
+        intervention.setTauxAvancement(request.getTauxAvancement());
+        intervention.setLocalisationGps(request.getLocalisationGps());
+        intervention.setMission(mission);
+        intervention.setTechnicien(technicien);
+
+        // --- VALIDATION MÉTIER : basée sur les vraies visites (checkInOuts) ET l'avancement ---
+        List<CheckInOut> visitesActuelles = intervention.getCheckInOuts() != null
+                ? intervention.getCheckInOuts() : new ArrayList<>();
+
+        long visitesTermineesCount = visitesActuelles.stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+        boolean visiteEnCoursExiste = visitesActuelles.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+
+        double avancementDemande = request.getTauxAvancement() != null ? request.getTauxAvancement() : 0.0;
+        boolean travailCommence = !visitesActuelles.isEmpty() || avancementDemande > 0;
+
+        String statutDemande = request.getStatut();
+
+        if ("Exécutée".equals(statutDemande) || "Clôturée".equals(statutDemande)) {
+            if (visitesTermineesCount < 2) {
+                throw new IllegalArgumentException(
+                        "Impossible de clôturer : l'intervention doit comporter au moins 2 visites terminées (check-in + check-out).");
+            }
+            if (visiteEnCoursExiste) {
+                throw new IllegalArgumentException(
+                        "Impossible de clôturer : une visite en cours n'a pas encore de check-out enregistré.");
+            }
+            if ("Clôturée".equals(statutDemande) && avancementDemande < 100.0) {
+                throw new IllegalArgumentException(
+                        "Impossible de clôturer : l'avancement doit être à 100% (actuellement " + avancementDemande + "%).");
+            }
+        } else if (travailCommence && "Planifiée".equals(statutDemande)) {
+            statutDemande = "En cours";
+        }
+
+        intervention.setStatut(statutDemande);
+        intervention.setNumeroVisite(visitesActuelles.size());
+
+        Intervention updated = interventionRepository.save(intervention);
+
+        missionInstallationService.recalculerStatut(mission.getIdMission());
+
+        boolean vientDePasserATerminee = !"Exécutée".equals(ancienStatut) && "Exécutée".equals(updated.getStatut());
+        if (vientDePasserATerminee && idAuteur != null) {
+            utilisateurRepository.findById(idAuteur).ifPresent(auteur -> {
+                String refMission = updated.getMission() != null ? updated.getMission().getReference() : "N/A";
+                String message = "L'intervention " + refMission + " est passée au statut Exécutée. "
+                        + "Le matériel sorti doit être régularisé au stock.";
+                notificationHelperService.notifierTousLesAdmins(auteur, message, "INTERVENTION_TERMINEE");
+            });
+        }
+
+        return convertToResponse(updated);
+    }
+
+    public void delete(Integer id) {
+        Intervention intervention = interventionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+        Integer idMission = intervention.getMission().getIdMission();
+
+        interventionRepository.deleteById(id);
+
+        missionInstallationService.recalculerStatut(idMission);
+    }
+
+    // Version pour la liste du technicien : inclut les checkInOuts mais PAS les autres détails lourds
+    public InterventionResponse convertToTechnicienListResponse(Intervention intervention) {
+        InterventionResponse response = new InterventionResponse();
+        response.setId(intervention.getIdIntervention());
+        response.setDatePrevue(intervention.getDatePrevue());
+        response.setDateDebut(intervention.getDateDebut());
+        response.setDateFin(intervention.getDateFin());
+        response.setLocalisationGps(intervention.getLocalisationGps());
+
+        List<CheckInOut> visites = intervention.getCheckInOuts() != null
+                ? intervention.getCheckInOuts() : new ArrayList<>();
+
+        long visitesTerminees = visites.stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+        boolean uneVisiteEnCours = visites.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+
+        double avancement = intervention.getTauxAvancement() != null ? intervention.getTauxAvancement() : 0.0;
+        boolean travailCommence = !visites.isEmpty() || avancement > 0;
+
+        String statutAffichage;
+        if (!travailCommence) {
+            if (intervention.getDatePrevue() != null && intervention.getDatePrevue().isBefore(LocalDateTime.now())) {
+                statutAffichage = "En retard";
+            } else {
+                statutAffichage = "Planifiée";
+            }
+        } else if (visitesTerminees >= 2 && !uneVisiteEnCours) {
+            statutAffichage = "Exécutée";
+        } else {
+            statutAffichage = "En cours";
+        }
+
+        if ("Clôturée".equals(intervention.getStatut())) {
+            statutAffichage = "Clôturée";
+        }
+
+        double avancementAffiche = avancement;
+        if (!visites.isEmpty() && avancementAffiche <= 0.0) {
+            avancementAffiche = Math.min(95.0, visitesTerminees * 40.0);
+        }
+
+        response.setStatut(statutAffichage);
+        response.setTauxAvancement(avancementAffiche);
+        response.setNumeroVisite(visites.size());
+
+        // ✅ CRUCIAL : Ajouter les checkInOuts pour que l'interface sache si une visite est en cours
+        if (!visites.isEmpty()) {
+            List<CheckInOutDto> checkInOutDtos = visites.stream().map(cio -> {
+                CheckInOutDto dto = new CheckInOutDto();
+                dto.setIdCheckinout(cio.getIdCheckinout());
+                dto.setNumeroVisite(cio.getNumeroVisite());
+                dto.setDateHeureCheckin(cio.getDateHeureCheckin());
+                dto.setDateHeureCheckout(cio.getDateHeureCheckout());
+                dto.setDureeMinutes(cio.getDureeMinutes());
+                dto.setGpsCheckin(cio.getGpsCheckin());
+                dto.setGpsCheckout(cio.getGpsCheckout());
+                return dto;
+            }).collect(Collectors.toList());
+            response.setCheckInOuts(checkInOutDtos);
+        }
+
+        if (intervention.getMission() != null) {
+            response.setMissionId(intervention.getMission().getIdMission());
+            response.setMissionReference(intervention.getMission().getReference());
+        }
+
+        if (intervention.getTechnicien() != null) {
+            response.setTechnicienId(intervention.getTechnicien().getId());
+            response.setTechnicienNom(
+                    intervention.getTechnicien().getNom() + " " + intervention.getTechnicien().getPrenom()
+            );
+        }
+
+        return response;
+    }
+
+    // Version allégée pour la liste/tableau : pas de photos/attestation/sorties/retours/checklist
+    public InterventionResponse convertToListResponse(Intervention intervention) {
+        InterventionResponse response = new InterventionResponse();
+        response.setId(intervention.getIdIntervention());
+        response.setDatePrevue(intervention.getDatePrevue());
+        response.setDateDebut(intervention.getDateDebut());
+        response.setDateFin(intervention.getDateFin());
+        response.setLocalisationGps(intervention.getLocalisationGps());
+
+        List<CheckInOut> visites = intervention.getCheckInOuts() != null
+                ? intervention.getCheckInOuts() : new ArrayList<>();
+
+        long visitesTerminees = visites.stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+        boolean uneVisiteEnCours = visites.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+
+        double avancement = intervention.getTauxAvancement() != null ? intervention.getTauxAvancement() : 0.0;
+        boolean travailCommence = !visites.isEmpty() || avancement > 0;
+
+        String statutAffichage;
+        if (!travailCommence) {
+            if (intervention.getDatePrevue() != null
+                    && intervention.getDatePrevue().isBefore(LocalDateTime.now())) {
+                statutAffichage = "En retard";
+            } else {
+                statutAffichage = "Planifiée";
+            }
+        } else if (visitesTerminees >= 2 && !uneVisiteEnCours) {
+            statutAffichage = "Exécutée";
+        } else {
+            statutAffichage = "En cours";
+        }
+
+        if ("Clôturée".equals(intervention.getStatut())) {
+            statutAffichage = "Clôturée";
+        }
+
+        double avancementAffiche = avancement;
+        if (!visites.isEmpty() && avancementAffiche <= 0.0) {
+            avancementAffiche = Math.min(95.0, visitesTerminees * 40.0);
+        }
+
+        response.setStatut(statutAffichage);
+        response.setTauxAvancement(avancementAffiche);
+        response.setNumeroVisite(visites.size());
+
+        // ✅ AJOUT : Inclure les checkInOuts pour que l'interface du technicien puisse afficher le bouton Check-out
+        if (!visites.isEmpty()) {
+            List<CheckInOutDto> checkInOutDtos = visites.stream().map(cio -> {
+                CheckInOutDto dto = new CheckInOutDto();
+                dto.setIdCheckinout(cio.getIdCheckinout());
+                dto.setNumeroVisite(cio.getNumeroVisite());
+                dto.setDateHeureCheckin(cio.getDateHeureCheckin());
+                dto.setDateHeureCheckout(cio.getDateHeureCheckout());
+                dto.setDureeMinutes(cio.getDureeMinutes());
+                dto.setGpsCheckin(cio.getGpsCheckin());
+                dto.setGpsCheckout(cio.getGpsCheckout());
+                return dto;
+            }).collect(Collectors.toList());
+            response.setCheckInOuts(checkInOutDtos);
+        }
+
+        if (intervention.getMission() != null) {
+            response.setMissionId(intervention.getMission().getIdMission());
+            response.setMissionReference(intervention.getMission().getReference());
+
+            if (intervention.getMission().getEtablissement() != null) {
+                response.setEtablissementDesignation(intervention.getMission().getEtablissement().getDesignation());
+                response.setEtablissementReference(intervention.getMission().getEtablissement().getReference()); // ✅ AJOUT
+            }
+        }
+
+        if (intervention.getTechnicien() != null) {
+            response.setTechnicienId(intervention.getTechnicien().getId());
+            response.setTechnicienNom(
+                    intervention.getTechnicien().getNom() + " " + intervention.getTechnicien().getPrenom()
+            );
+        }
+
+        return response;
+    }
+
+    public InterventionResponse convertToResponse(Intervention intervention) {
+        InterventionResponse response = new InterventionResponse();
+        response.setId(intervention.getIdIntervention());
+        response.setDatePrevue(intervention.getDatePrevue());
+        response.setDateDebut(intervention.getDateDebut());
+        response.setDateFin(intervention.getDateFin());
+        response.setLocalisationGps(intervention.getLocalisationGps());
+
+        // --- CALCUL DU STATUT : basé sur les vraies visites (checkInOuts) ET l'avancement ---
+        List<CheckInOut> visites = intervention.getCheckInOuts() != null
+                ? intervention.getCheckInOuts() : new ArrayList<>();
+
+        long visitesTerminees = visites.stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+        boolean uneVisiteEnCours = visites.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+
+        double avancement = intervention.getTauxAvancement() != null ? intervention.getTauxAvancement() : 0.0;
+        boolean travailCommence = !visites.isEmpty() || avancement > 0;
+
+        String statutAffichage;
+
+        if (!travailCommence) {
+            if (intervention.getDatePrevue() != null
+                    && intervention.getDatePrevue().isBefore(LocalDateTime.now())) {
+                statutAffichage = "En retard";
+            } else {
+                statutAffichage = "Planifiée";
+            }
+        } else if (visitesTerminees >= 2 && !uneVisiteEnCours) {
+            statutAffichage = "Exécutée";
+        } else {
+            statutAffichage = "En cours";
+        }
+
+        if ("Clôturée".equals(intervention.getStatut())) {
+            statutAffichage = "Clôturée";
+        }
+
+        double avancementAffiche = avancement;
+        if (!visites.isEmpty() && avancementAffiche <= 0.0) {
+            avancementAffiche = Math.min(95.0, visitesTerminees * 40.0);
+        }
+
+        response.setStatut(statutAffichage);
+        response.setTauxAvancement(avancementAffiche);
+        response.setNumeroVisite(visites.size());
+
+        // ✅ AJOUT : Inclure les checkInOuts
+        if (!visites.isEmpty()) {
+            List<CheckInOutDto> checkInOutDtos = visites.stream().map(cio -> {
+                CheckInOutDto dto = new CheckInOutDto();
+                dto.setIdCheckinout(cio.getIdCheckinout());
+                dto.setNumeroVisite(cio.getNumeroVisite());
+                dto.setDateHeureCheckin(cio.getDateHeureCheckin());
+                dto.setDateHeureCheckout(cio.getDateHeureCheckout());
+                dto.setDureeMinutes(cio.getDureeMinutes());
+                dto.setGpsCheckin(cio.getGpsCheckin());
+                dto.setGpsCheckout(cio.getGpsCheckout());
+                return dto;
+            }).collect(Collectors.toList());
+            response.setCheckInOuts(checkInOutDtos);
+        }
+
+        if (intervention.getMission() != null) {
+            response.setMissionId(intervention.getMission().getIdMission());
+            response.setMissionReference(intervention.getMission().getReference());
+
+            if (intervention.getMission().getEtablissement() != null) {
+                response.setEtablissementDesignation(intervention.getMission().getEtablissement().getDesignation());
+                response.setEtablissementReference(intervention.getMission().getEtablissement().getReference()); // ✅ AJOUT
+            }
+        }
+
+        if (intervention.getTechnicien() != null) {
+            response.setTechnicienId(intervention.getTechnicien().getId());
+            response.setTechnicienNom(
+                    intervention.getTechnicien().getNom() + " " + intervention.getTechnicien().getPrenom()
+            );
+        }
+
+        List<Photo> photos = photoRepository.findByIntervention(intervention);
+        if (photos != null && !photos.isEmpty()) {
+            List<PhotoDto> photoDtos = photos.stream().map(p -> {
+                PhotoDto dto = new PhotoDto();
+                dto.setId(p.getIdPhoto());
+                dto.setCheminFichier(p.getCheminFichier());
+                dto.setTypePhoto(p.getTypePhoto());
+                return dto;
+            }).collect(Collectors.toList());
+            response.setPhotos(photoDtos);
+        }
+
+        List<Attestation> attestations = attestationRepository.findByIntervention(intervention);
+        if (attestations != null && !attestations.isEmpty()) {
+            Attestation attestation = attestations.stream()
+                    .max(java.util.Comparator.comparing(
+                            Attestation::getDateSignature,
+                            java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
+                    .orElse(attestations.get(0));
+
+            AttestationDto attDto = new AttestationDto();
+            attDto.setId(attestation.getIdAttestation());
+            attDto.setNomSignataire(attestation.getNomSignataire());
+            attDto.setDateSignature(attestation.getDateSignature());
+            attDto.setSignatureNumerique(attestation.getSignatureNumerique());
+            attDto.setValide(attestation.getValide());
+            response.setAttestation(attDto);
+        }
+
+        List<SortieMateriel> sorties = sortieMaterielRepository.findByIntervention(intervention);
+        if (sorties != null && !sorties.isEmpty()) {
+            List<SortieMaterielDto> sortieDtos = sorties.stream().map(s -> {
+                SortieMaterielDto dto = new SortieMaterielDto();
+                dto.setIdSortie(s.getIdSortie());
+                dto.setDateSortie(s.getDateSortie());
+
+                if (s.getDetails() != null && !s.getDetails().isEmpty()) {
+                    DetailSortieMateriel detail = s.getDetails().get(0);
+                    dto.setMaterielReference(detail.getMateriel().getReference());
+                    dto.setQuantite(detail.getQuantite());
+                }
+                return dto;
+            }).collect(Collectors.toList());
+            response.setSortiesMateriel(sortieDtos);
+        }
+
+        List<RetourMateriel> retours = retourMaterielRepository.findByIntervention(intervention);
+        if (retours != null && !retours.isEmpty()) {
+            List<RetourMaterielDto> retourDtos = retours.stream().map(r -> {
+                RetourMaterielDto dto = new RetourMaterielDto();
+                dto.setIdRetour(r.getIdRetour());
+                dto.setDateRetour(r.getDateRetour());
+                dto.setMaterielReference(r.getMateriel().getReference());
+                dto.setQuantite(r.getQuantite());
+                dto.setEtatMateriel(r.getEtatMateriel());
+                return dto;
+            }).collect(Collectors.toList());
+            response.setRetoursMateriel(retourDtos);
+        }
+
+        List<ChecklistEquipement> checklists = checklistEquipementRepository.findByIntervention(intervention);
+        if (checklists != null && !checklists.isEmpty()) {
+            ChecklistEquipement checklist = checklists.stream()
+                    .max(java.util.Comparator.comparing(
+                            ChecklistEquipement::getDateValidation,
+                            java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
+                    .orElse(checklists.get(0));
+            List<ChecklistItem> items = checklistItemRepository.findByChecklist(checklist);
+
+            if (items != null && !items.isEmpty()) {
+                List<ChecklistItemDto> itemDtos = items.stream().map(item -> {
+                    ChecklistItemDto dto = new ChecklistItemDto();
+                    dto.setIdItem(item.getIdItem());
+                    dto.setMaterielReference(item.getMateriel().getReference());
+                    dto.setQuantite(item.getQuantite());
+                    dto.setEtatConstate(item.getEtatConstate());
+                    dto.setConforme(item.getConforme());
+                    return dto;
+                }).collect(Collectors.toList());
+                response.setChecklistItems(itemDtos);
+            }
+        }
+
+        return response;
+    }
+
+    public InterventionResponse forceCompleteByAdmin(Integer id) {
+        Intervention intervention = interventionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Intervention introuvable."));
+
+        List<CheckInOut> visites = intervention.getCheckInOuts() != null
+                ? intervention.getCheckInOuts() : new ArrayList<>();
+
+        long visitesTerminees = visites.stream()
+                .filter(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() != null)
+                .count();
+        boolean uneVisiteEnCours = visites.stream()
+                .anyMatch(v -> v.getDateHeureCheckin() != null && v.getDateHeureCheckout() == null);
+
+        if (visitesTerminees < 2) {
+            throw new IllegalArgumentException(
+                    "Impossible de clôturer : au moins 2 visites terminées (check-in + check-out) sont requises.");
+        }
+        if (uneVisiteEnCours) {
+            throw new IllegalArgumentException(
+                    "Impossible de clôturer : une visite est encore en cours (pas de check-out).");
+        }
+
+        intervention.setStatut("Clôturée");
+        intervention.setTauxAvancement(100.0);
+
+        Intervention updated = interventionRepository.save(intervention);
+
+        missionInstallationService.recalculerStatut(intervention.getMission().getIdMission());
+
+        return convertToResponse(updated);
+    }
+}

@@ -1,0 +1,1069 @@
+/* ============================================================
+   Fichier : gs-mission.scss
+   Composant : GsMission
+   Version stylée avec accents colorés (dégradés, glows, icônes)
+   ============================================================ */
+
+.gs-etab {
+  padding: 28px;
+  max-width: 1600px;
+  margin: 0 auto;
+  color: #f8fafc;
+
+  // ---------- Variables de la charte ----------
+  --primary: #69AFB1;
+  --primary-glow: rgba(105, 175, 177, 0.35);
+  --secondary: #233A6E;
+  --accent-green: #BAD439;
+  --accent-yellow: #FEBE29;
+
+  // Dégradé horizontal pour le bouton principal (dominante bleue)
+  --btn-gradient: linear-gradient(to right, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+  --btn-gradient-hover: linear-gradient(to right, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
+  --btn-shadow: 0 8px 20px rgba(35, 58, 110, 0.45);
+
+  // --- EN-TÊTE AVEC DÉGRADÉ & GLOW ---
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    position: relative;
+
+    // Ligne décorative en bas de l'en-tête
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 0;
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(to right, #69AFB1, #FEBE29);
+      border-radius: 4px;
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+  }
+
+  &__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--primary);
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+
+    &-dot {
+      width: 8px;
+      height: 8px;
+      background: linear-gradient(135deg, #69AFB1, #BAD439);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--primary-glow);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+  }
+
+  &__title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 6px 0;
+    background: linear-gradient(to right, #ffffff 60%, #69AFB1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+  }
+
+  &__subtitle {
+    font-size: 14px;
+    color: #94a3b8;
+    margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+  }
+}
+
+// --- BARRE D'OUTILS AVEC BORDURE COLORÉE ---
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  background: #1e1e2d;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+
+  // Lueur subtile sur la bordure
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 14px;
+    padding: 1px;
+    background: linear-gradient(to right, rgba(105, 175, 177, 0.3), rgba(254, 190, 41, 0.1));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  &__search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    background: #151521;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    transition: border-color 0.3s, box-shadow 0.3s;
+
+    &:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(105, 175, 177, 0.15);
+    }
+
+    input {
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      font-size: 14px;
+      color: #ffffff;
+
+      &::placeholder {
+        color: #64748b;
+      }
+    }
+  }
+
+  &__select {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #151521;
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.3s, box-shadow 0.3s;
+
+    &:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(105, 175, 177, 0.15);
+    }
+  }
+
+  &__count {
+    font-size: 13px;
+    color: #94a3b8;
+    white-space: nowrap;
+    background: rgba(105, 175, 177, 0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(105, 175, 177, 0.15);
+  }
+}
+
+// --- PANEL AVEC BORDURE SUPÉRIEURE DÉGRADÉE ---
+.panel {
+  background: #1e1e2d;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  position: relative;
+
+  // Bandeau supérieur dégradé
+  &--table::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(to right, #233A6E, #69AFB1, #FEBE29);
+    z-index: 2;
+  }
+}
+
+// --- TABLEAU AVEC SURVOL COLORÉ ---
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.etab-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+
+  th {
+    background: #151521;
+    color: #94a3b8;
+    font-weight: 600;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  td {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: #e2e8f0;
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: all 0.25s ease;
+    position: relative;
+
+    &:hover td {
+      background: rgba(105, 175, 177, 0.06);
+    }
+
+    // Effet de bordure latérale colorée au survol
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: transparent;
+      transition: background 0.3s ease;
+    }
+    &:hover::after {
+      background: linear-gradient(to bottom, #69AFB1, #BAD439);
+    }
+  }
+
+  &__ref {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 13px;
+    background: rgba(105, 175, 177, 0.08);
+    padding: 2px 10px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  &__name {
+    display: block;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+    font-size: 15px;
+  }
+
+  &__type {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  &__empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 40px !important;
+  }
+
+  &__actions-col {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  &__row-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+}
+
+// --- LOCALISATION / CHAÎNE AVEC ICÔNES COLORÉES ---
+.location-chain {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #cbd5e1;
+
+  lucide-icon {
+    color: var(--primary);
+    background: rgba(105, 175, 177, 0.12);
+    padding: 4px;
+    border-radius: 6px;
+  }
+
+  // Icône spéciale pour "Building2"
+  [img="Building2"] {
+    color: #BAD439;
+    background: rgba(186, 212, 57, 0.15);
+  }
+  // Icône spéciale pour "Users"
+  [img="Users"] {
+    color: #69AFB1;
+    background: rgba(105, 175, 177, 0.15);
+  }
+  // Icône spéciale pour "User"
+  [img="User"] {
+    color: #FEBE29;
+    background: rgba(254, 190, 41, 0.15);
+  }
+}
+
+// --- TAG ID ---
+.id-tag {
+  font-size: 11px;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+// --- BANNIÈRE DU CRÉATEUR (STYLÉE) ---
+.creator-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #94a3b8;
+  background: linear-gradient(135deg, rgba(105, 175, 177, 0.12), rgba(35, 58, 110, 0.20));
+  border: 1px solid rgba(105, 175, 177, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  backdrop-filter: blur(4px);
+  position: relative;
+  overflow: hidden;
+
+  // Accent lumineux
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 100px;
+    height: 200%;
+    background: radial-gradient(circle, rgba(254, 190, 41, 0.08), transparent 70%);
+    pointer-events: none;
+  }
+
+  strong {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  lucide-icon {
+    color: #FEBE29;
+  }
+}
+
+// --- BADGES DE STATUT AVEC GLOW ---
+.badge {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.3s ease;
+
+  &--info {
+    background: rgba(105, 175, 177, 0.15);
+    color: #69AFB1;
+    border: 1px solid rgba(105, 175, 177, 0.3);
+    box-shadow: 0 0 15px rgba(105, 175, 177, 0.10);
+    &:hover { box-shadow: 0 0 25px rgba(105, 175, 177, 0.25); }
+  }
+  &--warning {
+    background: rgba(254, 190, 41, 0.15);
+    color: #FEBE29;
+    border: 1px solid rgba(254, 190, 41, 0.3);
+    box-shadow: 0 0 15px rgba(254, 190, 41, 0.10);
+    &:hover { box-shadow: 0 0 25px rgba(254, 190, 41, 0.25); }
+  }
+  &--success {
+    background: rgba(186, 212, 57, 0.15);
+    color: #BAD439;
+    border: 1px solid rgba(186, 212, 57, 0.3);
+    box-shadow: 0 0 15px rgba(186, 212, 57, 0.10);
+    &:hover { box-shadow: 0 0 25px rgba(186, 212, 57, 0.25); }
+  }
+  &--danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    &:hover { box-shadow: 0 0 25px rgba(239, 68, 68, 0.25); }
+  }
+  // ✅ BADGE PROPOSEE (violet)
+  &--purple {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.30);
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.10);
+    &:hover {
+      box-shadow: 0 0 25px rgba(168, 85, 247, 0.25);
+    }
+  }
+}
+
+// --- BOUTONS ---
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+
+  // ★ BOUTON PRINCIPAL AVEC DÉGRADÉ ET GLOW ★
+  &--primary {
+    background: var(--btn-gradient);
+    color: white;
+    box-shadow: var(--btn-shadow);
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(255,255,255,0.1), transparent);
+      pointer-events: none;
+    }
+    &:hover {
+      background: var(--btn-gradient-hover);
+      box-shadow: 0 8px 28px rgba(35, 58, 110, 0.6);
+      transform: translateY(-2px);
+    }
+  }
+
+  // Bouton ghost avec bordure colorée au survol
+  &--ghost {
+    background: rgba(255, 255, 255, 0.04);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    &:hover {
+      background: rgba(105, 175, 177, 0.10);
+      border-color: var(--primary);
+      color: white;
+      transform: translateY(-1px);
+    }
+  }
+
+  &--danger {
+    background: #ef4444;
+    color: white;
+    &:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+    }
+  }
+
+  &--success {
+    background: #22c55e;
+    color: white;
+    &:hover {
+      background: #16a34a;
+      transform: translateY(-1px);
+    }
+  }
+
+  // Taille small pour les boutons d'action dans le tableau
+  &--sm {
+    padding: 5px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    gap: 4px;
+  }
+}
+
+// --- ICÔNES D'ACTION ---
+.icon-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  padding: 7px;
+  border-radius: 8px;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s;
+
+  &:hover {
+    background: rgba(105, 175, 177, 0.12);
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: scale(1.05);
+  }
+
+  &--danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+}
+
+// --- PANEL LATÉRAL (DRAWER) AVEC ACCENT COLORÉ ---
+.side-panel-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 480px;
+  height: 100vh;
+  background: #1e1e2d;
+  z-index: 101;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    padding: 22px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+
+    // Accent supérieur dégradé
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(to right, #233A6E, #69AFB1, #FEBE29);
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 0;
+      color: #ffffff;
+      font-weight: 700;
+      background: linear-gradient(to right, #ffffff, #69AFB1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  }
+
+  &__body {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  &__footer {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: #151521;
+  }
+}
+
+// --- FORMULAIRES AVEC BORDURES COLORÉES AU FOCUS ---
+.form-group {
+  margin-bottom: 18px;
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 14px;
+    outline: none;
+    background: #151521;
+    color: white;
+    transition: all 0.3s ease;
+
+    &:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(105, 175, 177, 0.15), inset 0 0 0 1px rgba(105, 175, 177, 0.05);
+    }
+
+    &::placeholder {
+      color: #64748b;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  &--readonly {
+    .responsable-card {
+      background: #151521;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #e2e8f0;
+      transition: border-color 0.3s;
+      &:hover {
+        border-color: rgba(105, 175, 177, 0.3);
+      }
+    }
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.text-muted {
+  color: #94a3b8;
+}
+.text-xs {
+  font-size: 12px;
+}
+
+.responsable-card {
+  background: #151521;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #e2e8f0;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &:not(:last-child) {
+      margin-bottom: 4px;
+    }
+  }
+}
+
+// --- MODALE DE CONFIRMATION (suppression) ---
+.custom-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 102;
+}
+
+.custom-modal {
+  background: #1e1e2d;
+  width: 420px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  position: relative;
+
+  // Bandeau supérieur dégradé
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(to right, #233A6E, #69AFB1, #FEBE29);
+  }
+
+  &__header {
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    h3 {
+      font-size: 16px;
+      margin: 0;
+      color: #ffffff;
+      font-weight: 600;
+    }
+  }
+
+  &__body {
+    padding: 22px;
+    p {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  }
+
+  &__footer {
+    padding: 14px 22px;
+    background: #151521;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+}
+
+// ============================================================
+// MODALE DES MATÉRIELS (existant, complété)
+// ============================================================
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-container {
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-card {
+  width: 100%;
+  background: #1e1e2d;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  position: relative;
+
+  // Bandeau supérieur dégradé (par défaut)
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(to right, #233A6E, #69AFB1, #FEBE29);
+  }
+
+  // Variante pour la modale de rejet (bandeau rouge)
+  &--rejet {
+    &::before {
+      background: linear-gradient(to right, #ef4444, #f87171);
+    }
+  }
+
+  &__header {
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+    }
+  }
+
+  &__body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__footer {
+    padding: 16px 24px;
+    background: #151521;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+
+    &--rejet {
+      background: #13131e;
+    }
+  }
+}
+
+// --- MODALE REJET : messages et champs ---
+.modal-rejet-message {
+  margin: 0;
+  font-size: 14px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.modal-rejet-champ {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #94a3b8;
+
+    .required {
+      color: #ef4444;
+      margin-left: 2px;
+    }
+  }
+
+  textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #151521;
+    color: #ffffff;
+    font-size: 14px;
+    resize: vertical;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    min-height: 80px;
+
+    &:focus {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+      outline: none;
+    }
+  }
+}
+
+.modal-rejet-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #fbbf24;
+
+  lucide-icon {
+    flex-shrink: 0;
+  }
+}
+
+// --- MODALE MATÉRIELS : liste ---
+.modal-mission-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 12px;
+
+  .modal-mission-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .modal-mission-ref {
+    font-size: 13px;
+    color: var(--primary);
+    background: rgba(105, 175, 177, 0.1);
+    padding: 2px 10px;
+    border-radius: 6px;
+  }
+}
+
+.modal-materiels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+
+  .modal-materiel-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .modal-materiel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &.dot-green { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
+    &.dot-red { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+    &.dot-orange { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+  }
+
+  .modal-materiel-nom {
+    flex: 1;
+    font-size: 13px;
+    color: #e2e8f0;
+  }
+
+  .modal-materiel-qty {
+    font-size: 12px;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .modal-materiel-statut {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 20px;
+
+    &.statut-approuve {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+    &.statut-rejete {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+    &.statut-attente {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+  }
+}
+
+.modal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: #94a3b8;
+  text-align: center;
+
+  lucide-icon {
+    opacity: 0.3;
+  }
+}
+
+// --- RÉSUMÉ MATÉRIEL DANS LE TABLEAU ---
+.materiel-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .materiel-count {
+    font-size: 13px;
+    color: #e2e8f0;
+    background: rgba(105, 175, 177, 0.08);
+    padding: 2px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(105, 175, 177, 0.15);
+  }
+
+  .btn--ghost.btn--sm {
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    &:hover {
+      background: rgba(105, 175, 177, 0.12);
+      color: var(--primary);
+    }
+  }
+}
+
+// ============================================================
+// ANIMATIONS
+// ============================================================
+@keyframes pulse-dot {
+  0% { opacity: 0.6; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 20px var(--primary-glow); }
+  100% { opacity: 0.6; transform: scale(0.9); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

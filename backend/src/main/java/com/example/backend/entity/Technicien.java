@@ -1,7 +1,6 @@
 package com.example.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,13 +19,10 @@ public class Technicien extends Utilisateur {
     @Column(name = "matricule", length = 50)
     private String matricule;
 
-    // --- NOUVELLES RELATIONS v3.0 ---
+    // --- RELATIONS v4 (fusion de sortiesRecues + sortiesDemandees) ---
 
-    @OneToMany(mappedBy = "technicienRecepteur")
-    private List<SortieMateriel> sortiesRecues = new ArrayList<>();
-
-    @OneToMany(mappedBy = "demandeur")
-    private List<SortieMateriel> sortiesDemandees = new ArrayList<>();
+    @OneToMany(mappedBy = "technicien")
+    private List<SortieMateriel> sortiesMateriel = new ArrayList<>();
 
     @OneToMany(mappedBy = "technicien")
     private List<RetourMateriel> retoursEffectues = new ArrayList<>();
@@ -45,5 +41,21 @@ public class Technicien extends Utilisateur {
 
     public void setMatricule(String matricule) {
         this.matricule = matricule;
+    }
+
+    public List<SortieMateriel> getSortiesMateriel() {
+        return sortiesMateriel;
+    }
+
+    public void setSortiesMateriel(List<SortieMateriel> sortiesMateriel) {
+        this.sortiesMateriel = sortiesMateriel;
+    }
+
+    public List<RetourMateriel> getRetoursEffectues() {
+        return retoursEffectues;
+    }
+
+    public void setRetoursEffectues(List<RetourMateriel> retoursEffectues) {
+        this.retoursEffectues = retoursEffectues;
     }
 }

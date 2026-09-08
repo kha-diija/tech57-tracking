@@ -1,0 +1,454 @@
+// ===== Fichier complet : trajet.component.scss =====
+// Palette : #233A6E (bleu foncé), #FEBE29 (jaune/orange),
+//           #BAD439 (vert citron), #69AFB1 (bleu turquoise)
+
+// 1. Hôte du composant – garantit que le composant occupe toute la hauteur disponible
+:host {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+// 2. Conteneur principal
+.trajet {
+  position: relative;      // ancre pour les éléments absolus
+  width: 100%;
+  height: 100%;
+  min-height: 600px;       // sécurité si le parent n'impose pas de hauteur
+  overflow: hidden;
+}
+
+// 3. Carte Leaflet – doit remplir tout l'espace
+.trajet__map {
+  position: absolute;
+  inset: 0;               // top:0; right:0; bottom:0; left:0
+  width: 100%;
+  height: 100%;
+  z-index: 0;             // en dessous du panneau (z-index plus élevé)
+}
+
+// 4. Panneau flottant – au-dessus de la carte
+.trajet__panel {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 1000;          // supérieur aux tuiles Leaflet (400–800)
+  width: 23rem;
+  max-height: calc(100% - 3rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.5rem;
+  background-color: var(--glass-bg, rgba(20, 20, 20, 0.92));
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+
+  @media (max-width: 768px) {
+    left: 0.75rem;
+    right: 0.75rem;
+    top: 0.75rem;
+    width: auto;
+    max-height: calc(100% - 1.5rem);
+  }
+}
+
+// 5. Tous les sous-éléments (inchangés, avec vos styles)
+.trajet__panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-main, #fff);
+    margin: 0;
+  }
+
+  p {
+    font-size: 0.72rem;
+    color: var(--text-muted, #aaa);
+    margin: 0.1rem 0 0;
+  }
+}
+
+.trajet__panel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 12px;
+  color: #fff;
+  /* Dégradé palette : bleu foncé → turquoise → jaune */
+  background: linear-gradient(135deg, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+  box-shadow: 0 6px 16px rgba(35, 58, 110, 0.35);
+  flex-shrink: 0;
+}
+
+.trajet__search {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted, #aaa);
+  }
+}
+
+.trajet__search-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--bg-surface, rgba(255,255,255,0.08));
+  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus-within {
+    border-color: #69AFB1; /* turquoise */
+    box-shadow: 0 0 0 3px rgba(105, 175, 177, 0.15);
+  }
+
+  &.filled {
+    border-color: rgba(186, 212, 57, 0.4); /* vert citron */
+  }
+
+  input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 0.85rem;
+    color: var(--text-main, #fff);
+
+    &::placeholder {
+      color: var(--text-muted, #aaa);
+    }
+  }
+}
+
+.trajet__search-icon {
+  color: var(--text-muted, #aaa);
+  flex-shrink: 0;
+}
+
+.trajet__search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--bg-surface-hover, rgba(255,255,255,0.15));
+  color: var(--text-muted, #aaa);
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--text-main, #fff);
+  }
+}
+
+.trajet__suggestions {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  background-color: var(--bg-surface, rgba(20,20,20,0.95));
+  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+  max-height: 15rem;
+  overflow-y: auto;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.6rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: var(--bg-surface-hover, rgba(255,255,255,0.08));
+    }
+
+    div {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+
+      strong {
+        font-size: 0.82rem;
+        color: var(--text-main, #fff);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      small {
+        font-size: 0.7rem;
+        color: var(--text-muted, #aaa);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
+.trajet__suggestion-badge {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  color: var(--text-muted, #aaa);
+  background-color: var(--bg-surface-hover, rgba(255,255,255,0.1));
+  white-space: nowrap;
+
+  &.badge--etab {
+    color: #BAD439; /* vert citron */
+    background-color: rgba(186, 212, 57, 0.12);
+  }
+}
+
+.trajet__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted, #aaa);
+  }
+}
+
+.trajet__input-simple {
+  background-color: var(--bg-surface, rgba(255,255,255,0.08));
+  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-main, #fff);
+
+  &:focus {
+    outline: none;
+    border-color: #69AFB1; /* turquoise */
+    box-shadow: 0 0 0 3px rgba(105, 175, 177, 0.15);
+  }
+}
+
+.trajet__toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+
+  button {
+    padding: 0.6rem 0.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+    background-color: var(--bg-surface, rgba(255,255,255,0.08));
+    color: var(--text-muted, #aaa);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &.active {
+      /* Dégradé palette : bleu foncé → turquoise → jaune */
+      background: linear-gradient(135deg, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 6px 16px rgba(35, 58, 110, 0.35);
+    }
+
+    &:hover:not(.active) {
+      background-color: var(--bg-surface-hover, rgba(255,255,255,0.12));
+      color: var(--text-main, #fff);
+    }
+  }
+}
+
+.trajet__erreur {
+  font-size: 0.8rem;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  margin: 0;
+}
+
+.trajet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  .btn {
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    &--primary {
+      /* Dégradé palette : bleu foncé → turquoise → jaune */
+      background: linear-gradient(135deg, #233A6E 0%, #69AFB1 60%, #FEBE29 100%);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(35, 58, 110, 0.32);
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #1d315c 0%, #5a9e9f 60%, #e8b020 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(35, 58, 110, 0.4);
+      }
+    }
+
+    &--ghost {
+      background-color: var(--bg-surface, rgba(255,255,255,0.08));
+      border-color: var(--border-color, rgba(255,255,255,0.15));
+      color: var(--text-main, #fff);
+
+      &:hover:not(:disabled) {
+        background-color: var(--bg-surface-hover, rgba(255,255,255,0.12));
+      }
+    }
+
+    &--accent {
+      background-color: rgba(105, 175, 177, 0.1); /* turquoise */
+      color: #69AFB1;
+      border-color: rgba(105, 175, 177, 0.3);
+      width: 100%;
+
+      &:hover {
+        background-color: rgba(105, 175, 177, 0.18);
+      }
+    }
+  }
+}
+
+.trajet__resultat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1rem;
+  background-color: var(--bg-surface, rgba(255,255,255,0.06));
+  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-radius: 16px;
+  animation: trajet-apparition 0.25s ease;
+}
+
+.trajet__resultat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-muted, #aaa);
+
+  strong {
+    color: var(--text-main, #fff);
+    font-weight: 700;
+  }
+
+  &--total {
+    padding-top: 0.55rem;
+    margin-top: 0.2rem;
+    border-top: 1px dashed var(--border-color, rgba(255,255,255,0.15));
+
+    strong {
+      color: #FEBE29; /* jaune de la palette */
+      font-size: 1.05rem;
+    }
+  }
+}
+
+.trajet__comparatif {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted, #aaa);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0;
+  }
+}
+
+.trajet__comparatif-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  background-color: var(--bg-surface, rgba(255,255,255,0.06));
+  font-size: 0.8rem;
+  color: var(--text-muted, #aaa);
+
+  strong {
+    color: var(--text-main, #fff);
+  }
+
+  &--best {
+    border-color: rgba(186, 212, 57, 0.4); /* vert citron */
+    background-color: rgba(186, 212, 57, 0.08);
+
+    span {
+      color: #BAD439; /* vert citron */
+      font-weight: 700;
+    }
+  }
+}
+
+// Animation d'apparition du résultat
+@keyframes trajet-apparition {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Style des marqueurs Leaflet personnalisés (sans ombre ni bordure par défaut)
+::ng-deep .trajet-marker {
+  background: transparent;
+  border: none;
+}
